@@ -57,6 +57,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 視覚フィードバック（背景色変更）
 - リアルタイム参加者ステータス表示
 
+## 開発フロー
+
+### Git運用
+- **ブランチ戦略**: feature/* → develop → main
+- **開発開始**: 必ず適切なブランチから新しいfeatureブランチを作成
+- **コミット**: 機能単位で小さくコミット、明確なメッセージ
+- **マージ**: PRレビュー後にdevelopへマージ
+
+### 開発コマンド
+```bash
+# 新機能開発開始
+git checkout develop
+git checkout -b feature/機能名
+
+# 開発環境起動
+npm run dev
+firebase emulators:start
+
+# テスト実行
+npm run test
+npm run test:e2e
+
+# デプロイ
+firebase deploy
+```
+
+### 重要なルール
+- **意思決定ログ**: 全ての技術選択、設計判断は`docs/`配下に記録
+- **環境変数**: `.env.local`で管理（Git除外済み）
+- **セキュリティ**: FirestoreルールとAPI キー管理を徹底
+- **テスト**: 各機能実装後は必ずテスト実行
+
 ## 開発メモ
 
 - 既存コードベースなし - 新規プロジェクト
