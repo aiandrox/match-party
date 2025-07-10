@@ -99,3 +99,19 @@ firebase deploy
 - お題: 事前定義JSON管理、30文字以下
 - MVP重視: 音声効果・監視ツール・セキュリティ対策は後フェーズ
 - 詳細要件: `docs/requirements.md`参照
+
+## セッション継続性のための重要ファイル
+
+新しいセッション開始時は以下を必ず確認：
+1. **CLAUDE.md**（このファイル）- プロジェクト全体概要
+2. **docs/requirements.md** - 詳細要件定義
+3. **docs/tech-decision.md** - 技術選定の経緯と理由
+4. **docs/development-workflow.md** - 開発プロセス
+5. **docs/diary.md** - 開発日記（前回の思考・感情）
+6. **docs/user-todos.md** - ユーザーのTODOリスト
+
+## 現在の状況（2025-07-10終了時点）
+
+- **フェーズ**: 企画・要件定義完了、開発準備完了
+- **次のステップ**: developブランチ作成 → feature/project-setup開始
+- **ユーザーTODO**: MCP設定（Firebase MCP、GitHub MCP、Web Development MCP）
