@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getRoomByCode, subscribeToRoom } from '@/lib/roomService';
-import { Room, User } from '@/types';
+import { getRoomByCode } from '@/lib/roomService';
+import { Room } from '@/types';
+
+// 静的エクスポートのためのgenerateStaticParams
+export async function generateStaticParams() {
+  // 動的ルートなので空配列を返す（実際のルームは動的に作成される）
+  return [];
+}
 
 export default function RoomPage() {
   const params = useParams();
@@ -56,7 +62,8 @@ export default function RoomPage() {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
-      console.error('コピーに失敗しました:', err);
+      // コピーに失敗した場合は無視（ユーザーに特別な操作は不要）
+      void err;
     }
   };
 
