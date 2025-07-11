@@ -6,10 +6,16 @@ Claude Codeセッションが切れても継続してタスクを管理できる
 ## TODO項目
 
 ### 未完了
-- [ ] MCP設定を行う（Firebase MCP、GitHub MCP、Web Development MCPの検討・設定）
+- [ ] Web Development MCPの検討・設定（必要に応じて）
+- [ ] Next.jsプロジェクトの構築
+- [ ] プロジェクト基本構造の作成
 
 ### 完了済み
-_現在完了済みのタスクはありません_
+- [x] Firebase MCP設定（2025-07-11）
+- [x] GitHub MCP設定（2025-07-11）
+- [x] Firebase プロジェクト初期化（match-party-findy）
+- [x] developブランチ作成・初期コミット
+- [x] GitHub Actions自動デプロイ設定
 
 ## 使用方法
 
