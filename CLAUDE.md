@@ -28,15 +28,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `revealing`: 全回答表示中、判定待ち
 - `ended`: ゲーム終了
 
-## 技術選択肢
+## 技術選択（確定）
 
-仕様書では3つの実装方針を提案：
+**Firebase採用**により決定済み：
+- **理由**: 設定ファイルベースで管理しやすい、サーバーレス、無料枠が充実
+- **実装**: Firestore + Firebase Hosting + GitHub Actions
+- **リアルタイム**: Firestore Realtime Listeners（WebSocketは使用せず）
 
-1. **Firebase** (Realtime Database + Hosting + Auth) - サーバーレス、シンプル、プロトタイプ向け
-2. **Supabase** (PostgreSQL + Realtime + Auth) + Vercel/Next.js - リレーショナルDBとリアルタイム機能
-3. **Node.js + Express + Socket.IO + PostgreSQL** - WebSocket実装の完全制御
-
-## 実装すべき主要機能
+## 実装予定の主要機能（Phase 2以降）
 
 ### ルーム管理
 - 固有ルームコード生成
@@ -92,13 +91,14 @@ firebase deploy
 
 ## 開発メモ
 
-- 既存コードベースなし - 新規プロジェクト
-- Firebase無料枠での運用（Rate limit対策必要）
+- プロジェクト基盤構築完了（Next.js + Firebase + CI/CD）
+- Firebase無料枠での運用（使用量監視機能実装予定）
 - 認証: 名前入力のみ（ルーム内重複不可、2-20文字、日英数字）
 - ルーム: 20文字英数字コード、20人上限、30分有効期限
 - お題: 事前定義JSON管理、30文字以下
 - MVP重視: 音声効果・監視ツール・セキュリティ対策は後フェーズ
 - 詳細要件: `docs/requirements.md`参照
+- 本番環境: https://match-party-findy.web.app
 
 ## セッション継続性のための重要ファイル
 
@@ -110,8 +110,34 @@ firebase deploy
 5. **docs/diary.md** - 開発日記（前回の思考・感情）
 6. **docs/user-todos.md** - ユーザーのTODOリスト
 
-## 現在の状況（2025-07-10終了時点）
+## 現在の状況（2025-07-11終了時点）
 
-- **フェーズ**: 企画・要件定義完了、開発準備完了
-- **次のステップ**: developブランチ作成 → feature/project-setup開始
-- **ユーザーTODO**: MCP設定（Firebase MCP、GitHub MCP、Web Development MCP）
+- **フェーズ**: プロジェクト基盤構築完了（Phase 1完了）
+- **実装済み**: Next.js + Firebase + GitHub Actions環境構築完了
+- **次のステップ**: Phase 2 - ルーム管理機能実装開始
+- **進行中**: feature/project-setup → main へのプルリクエスト作成済み
+
+## 技術スタック（確定）
+
+- **フロントエンド**: Next.js 15.3.5 + TypeScript + Tailwind CSS
+- **バックエンド**: Firebase (Firestore + Realtime Database)
+- **ホスティング**: Firebase Hosting
+- **CI/CD**: GitHub Actions
+- **開発環境**: ESLint + npm
+
+## 重要な注意事項
+
+### Firebase無料枠制限
+- **Firestore**: 読み取り50,000回/日、書き込み20,000回/日
+- **Hosting**: ストレージ10GB、転送量360MB/月
+- **プレビューデプロイ**: 転送量消費に注意、必要時のみ有効化推奨
+
+### GitHub MCP権限設定
+- **必要権限**: `repo`（フルアクセス）または `pull_requests:write`
+- **現在の問題**: プルリクエスト作成時に「Resource not found」エラー
+- **解決方法**: Personal Access Tokenの権限追加が必要
+
+### 開発ブランチ戦略
+- **現在**: `feature/project-setup`（基盤構築完了）
+- **次回**: `feature/room-management`（ルーム管理機能）
+- **運用**: feature/* → main（developブランチは不使用）
