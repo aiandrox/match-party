@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getRoomByCode } from '@/lib/roomService';
 import { Room } from '@/types';
 
 export default function RoomPage() {
@@ -22,6 +21,8 @@ export default function RoomPage() {
 
     const loadRoom = async () => {
       try {
+        // 動的インポートでFirebase初期化を避ける
+        const { getRoomByCode } = await import('@/lib/roomService');
         const roomData = await getRoomByCode(roomCode);
         if (!roomData) {
           setError('ルームが見つかりません');

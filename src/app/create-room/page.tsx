@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createRoom } from '@/lib/roomService';
 
 export default function CreateRoomPage() {
   const [hostName, setHostName] = useState('');
@@ -32,6 +31,8 @@ export default function CreateRoomPage() {
     setError(null);
 
     try {
+      // 動的インポートでFirebase初期化を避ける
+      const { createRoom } = await import('@/lib/roomService');
       const result = await createRoom(hostName);
       
       // ルーム作成成功時にルームページへリダイレクト

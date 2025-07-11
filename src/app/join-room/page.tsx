@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { joinRoom } from '@/lib/roomService';
 
 export default function JoinRoomPage() {
   const [roomCode, setRoomCode] = useState('');
@@ -43,6 +42,8 @@ export default function JoinRoomPage() {
     setError(null);
 
     try {
+      // 動的インポートでFirebase初期化を避ける
+      const { joinRoom } = await import('@/lib/roomService');
       await joinRoom(roomCode, userName);
       
       // ルーム参加成功時にルームページへリダイレクト
