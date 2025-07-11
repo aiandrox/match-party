@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // 動的ルートでクライアントコンポーネントを使用するため静的エクスポートを無効化
+  // output: 'export',
   trailingSlash: true,
   distDir: 'dist',
   images: {

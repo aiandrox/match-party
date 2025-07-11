@@ -5,12 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { getRoomByCode } from '@/lib/roomService';
 import { Room } from '@/types';
 
-// 静的エクスポートのためのgenerateStaticParams
-export async function generateStaticParams() {
-  // 動的ルートなので空配列を返す（実際のルームは動的に作成される）
-  return [];
-}
-
 export default function RoomPage() {
   const params = useParams();
   const router = useRouter();
