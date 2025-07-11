@@ -1,10 +1,10 @@
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-6">
-            🎉 Match Party
+            Match Party
           </h1>
           <p className="text-xl text-gray-600 mb-8">
             みんなで回答の一致を目指すリアルタイムゲーム
@@ -33,9 +33,9 @@ export default function Home() {
           </div>
           
           <div className="mt-8 text-sm text-gray-500">
-            <p>🎮 最大20人まで参加可能</p>
-            <p>⏰ ルームは30分間有効</p>
-            <p>📱 スマホ・タブレット対応</p>
+            <p>最大20人まで参加可能</p>
+            <p>ルームは30分間有効</p>
+            <p>スマホ・タブレット対応</p>
           </div>
         </div>
       </div>
