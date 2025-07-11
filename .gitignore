@@ -8,6 +8,7 @@
 # Next.js
 .next/
 out/
+dist/
 
 # Dependencies
 node_modules/
