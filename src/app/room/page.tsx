@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Room } from '@/types';
 
 export default function RoomPage() {
-  const params = useParams();
   const router = useRouter();
-  const roomCode = params.roomCode as string;
+  const searchParams = useSearchParams();
+  const roomCode = searchParams.get('code') || '';
   
   const [room, setRoom] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,7 +15,11 @@ export default function RoomPage() {
   const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
-    if (!roomCode) return;
+    if (!roomCode) {
+      setError('ルームコードが指定されていません');
+      setIsLoading(false);
+      return;
+    }
 
     let unsubscribe: (() => void) | undefined;
 
