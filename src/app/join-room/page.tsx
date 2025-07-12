@@ -47,7 +47,7 @@ export default function JoinRoomPage() {
       await joinRoom(roomCode, userName);
       
       // ルーム参加成功時にルームページへリダイレクト
-      router.push(`/room/${roomCode}`);
+      router.push(`/room?code=${roomCode}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ルームへの参加に失敗しました');
     } finally {
