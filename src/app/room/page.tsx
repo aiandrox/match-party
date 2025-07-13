@@ -22,8 +22,8 @@ function RoomContent() {
       return;
     }
 
-    // URLパラメータからユーザーIDを取得（ルーム作成・参加時に設定される）
-    const userId = searchParams.get('userId');
+    // localStorageからユーザーIDを取得
+    const userId = localStorage.getItem(`userId_${roomCode}`);
     setCurrentUserId(userId);
 
     let unsubscribe: (() => void) | undefined;
@@ -58,7 +58,7 @@ function RoomContent() {
         unsubscribe();
       }
     };
-  }, [roomCode, searchParams]);
+  }, [roomCode]);
 
   const copyRoomCode = async () => {
     try {
@@ -267,6 +267,28 @@ function RoomContent() {
                 <p className="text-gray-600">
                   ホストがゲームを開始するまでお待ちください
                 </p>
+              </div>
+            )}
+            {/* ユーザーIDが取得できない場合のメッセージ */}
+            {!currentUserId && (
+              <div className="text-center">
+                <p className="text-gray-600 mb-4">
+                  このルームへの参加権限が確認できません
+                </p>
+                <div className="space-x-2">
+                  <button
+                    onClick={() => router.push('/join-room')}
+                    className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    ルームに参加
+                  </button>
+                  <button
+                    onClick={() => router.push('/')}
+                    className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    ホームに戻る
+                  </button>
+                </div>
               </div>
             )}
           </div>

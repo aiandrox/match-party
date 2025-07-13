@@ -35,8 +35,11 @@ export default function CreateRoomPage() {
       const { createRoom } = await import('@/lib/roomService');
       const result = await createRoom(hostName);
       
-      // ルーム作成成功時にルームページへリダイレクト（hostIdを含める）
-      router.push(`/room?code=${result.roomCode}&userId=${result.hostId}`);
+      // userIdをlocalStorageに保存
+      localStorage.setItem(`userId_${result.roomCode}`, result.hostId);
+      
+      // ルーム作成成功時にルームページへリダイレクト
+      router.push(`/room?code=${result.roomCode}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ルームの作成に失敗しました');
     } finally {
