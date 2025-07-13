@@ -13,6 +13,7 @@ function RoomContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!roomCode) {
@@ -20,6 +21,10 @@ function RoomContent() {
       setIsLoading(false);
       return;
     }
+
+    // URLパラメータからユーザーIDを取得（ルーム作成・参加時に設定される）
+    const userId = searchParams.get('userId');
+    setCurrentUserId(userId);
 
     let unsubscribe: (() => void) | undefined;
 
@@ -53,7 +58,7 @@ function RoomContent() {
         unsubscribe();
       }
     };
-  }, [roomCode]);
+  }, [roomCode, searchParams]);
 
   const copyRoomCode = async () => {
     try {
@@ -236,10 +241,15 @@ function RoomContent() {
             <p className="text-gray-600 mb-4">
               参加者がそろったらホストがゲームを開始できます。
             </p>
-            {room.participants.some(p => p.isHost) && (
+            {/* ホストのみにゲーム開始ボタンを表示 */}
+            {currentUserId && room.participants.some(p => p.id === currentUserId && p.isHost) && (
               <div className="space-y-3">
                 <button
-                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                    room.participants.length < 2
+                      ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
+                  }`}
                   disabled={room.participants.length < 2}
                 >
                   ゲーム開始
@@ -249,6 +259,14 @@ function RoomContent() {
                     ゲーム開始には2人以上の参加者が必要です
                   </p>
                 )}
+              </div>
+            )}
+            {/* ホスト以外の参加者には待機メッセージを表示 */}
+            {currentUserId && !room.participants.some(p => p.id === currentUserId && p.isHost) && (
+              <div className="text-center">
+                <p className="text-gray-600">
+                  ホストがゲームを開始するまでお待ちください
+                </p>
               </div>
             )}
           </div>

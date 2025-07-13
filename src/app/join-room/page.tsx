@@ -44,10 +44,10 @@ export default function JoinRoomPage() {
     try {
       // 動的インポートでFirebase初期化を避ける
       const { joinRoom } = await import('@/lib/roomService');
-      await joinRoom(roomCode, userName);
+      const result = await joinRoom(roomCode, userName);
       
-      // ルーム参加成功時にルームページへリダイレクト
-      router.push(`/room?code=${roomCode}`);
+      // ルーム参加成功時にルームページへリダイレクト（userIdを含める）
+      router.push(`/room?code=${roomCode}&userId=${result.userId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ルームへの参加に失敗しました');
     } finally {
