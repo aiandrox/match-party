@@ -97,6 +97,10 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
       hostId: hostRef.id
     };
   } catch (error) {
+    console.error('createRoom error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
     throw new Error('ルームの作成に失敗しました');
   }
 }

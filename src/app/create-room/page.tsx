@@ -36,7 +36,7 @@ export default function CreateRoomPage() {
       const result = await createRoom(hostName);
       
       // ルーム作成成功時にルームページへリダイレクト
-      router.push(`/room/${result.roomCode}`);
+      router.push(`/room?code=${result.roomCode}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ルームの作成に失敗しました');
     } finally {
