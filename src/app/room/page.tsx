@@ -229,32 +229,52 @@ function RoomContent() {
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="text-sm font-medium text-gray-700 mb-3">参加者一覧</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {room.participants.map((participant) => (
-                <div
-                  key={participant.id}
-                  className="flex items-center space-x-3 bg-white rounded-lg p-3"
-                >
-                  <div className="flex-shrink-0">
-                    {participant.isHost ? (
-                      <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <span className="text-yellow-600 text-sm font-medium">👑</span>
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-600 text-sm font-medium">👤</span>
-                      </div>
-                    )}
+              {room.participants.map((participant) => {
+                const isCurrentUser = participant.id === currentUserId;
+                return (
+                  <div
+                    key={participant.id}
+                    className={`flex items-center space-x-3 rounded-lg p-3 ${
+                      isCurrentUser 
+                        ? 'bg-blue-50 border-2 border-blue-200' 
+                        : 'bg-white border border-gray-200'
+                    }`}
+                  >
+                    <div className="flex-shrink-0">
+                      {participant.isHost ? (
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          isCurrentUser ? 'bg-blue-200' : 'bg-yellow-100'
+                        }`}>
+                          <span className={`text-sm font-medium ${
+                            isCurrentUser ? 'text-blue-700' : 'text-yellow-600'
+                          }`}>👑</span>
+                        </div>
+                      ) : (
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          isCurrentUser ? 'bg-blue-200' : 'bg-blue-100'
+                        }`}>
+                          <span className={`text-sm font-medium ${
+                            isCurrentUser ? 'text-blue-700' : 'text-blue-600'
+                          }`}>👤</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${
+                        isCurrentUser ? 'text-blue-900' : 'text-gray-900'
+                      }`}>
+                        {participant.name}
+                        {isCurrentUser && <span className="text-blue-600 ml-1">(あなた)</span>}
+                      </p>
+                      <p className={`text-xs ${
+                        isCurrentUser ? 'text-blue-600' : 'text-gray-500'
+                      }`}>
+                        {participant.isHost ? 'ホスト' : '参加者'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {participant.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {participant.isHost ? 'ホスト' : '参加者'}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
