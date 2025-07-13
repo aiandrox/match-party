@@ -110,21 +110,26 @@ firebase deploy
 5. **docs/diary.md** - 開発日記（前回の思考・感情）
 6. **docs/user-todos.md** - ユーザーのTODOリスト
 
-## 現在の状況（2025-07-12更新）
+## 現在の状況（2025-07-13更新）
 
-- **フェーズ**: Phase 2完了 - ルーム管理機能デプロイ済み
-- **技術スタック確定**: Next.js 15 + TypeScript + Tailwind CSS + Firebase Hosting + Firestore
-- **デプロイ状況**: Firebase Hosting正常稼働（静的サイト）
+- **フェーズ**: Phase 2完全完了 - ルーム管理機能・ユーザー管理・セキュリティ実装済み
+- **技術スタック確定**: Next.js 15 + TypeScript + Tailwind CSS + Firebase Hosting + Firestore + localStorage
+- **デプロイ状況**: Firebase Hosting正常稼働（https://match-party-findy.web.app/）
 - **実装完了機能**:
-  - ✅ ルーム作成（ホスト名入力、20文字コード生成）
-  - ✅ ルーム参加（コード入力、名前重複チェック）  
-  - ✅ ルーム表示（参加者一覧、リアルタイム更新準備）
+  - ✅ ルーム作成（エラーハンドリング改善済み）
+  - ✅ ルーム参加（重複チェック、人数制限）  
+  - ✅ ルーム表示（参加者一覧、自己識別UI）
+  - ✅ ホスト権限管理（ゲーム開始ボタン制御）
+  - ✅ セキュリティチェック（参加権限確認）
+  - ✅ localStorage使用のユーザー識別システム
+  - ✅ Firebase Billing設定完了
   - ✅ GitHub Actions自動デプロイ
 
 ### 次のステップ（Phase 3）
-- Firebase Billing有効化（Firestore利用のため）
-- GitHub Secretsの環境変数設定確認  
-- ゲーム機能実装（お題表示、回答収集、一致判定）
+- お題表示システム実装
+- 回答収集とリアルタイム同期
+- 回答一致判定ロジック
+- ゲーム状態管理（waiting → playing → revealing → ended）
 
 ### URL構造
 - ホーム: `/`
@@ -135,5 +140,6 @@ firebase deploy
 ### 技術的な決定事項
 - **静的サイト方式採用**: Firebase Hostingの無料枠活用
 - **クエリパラメータ**: 動的ルートの代替として採用
-- **環境変数**: GitHub Secretsで本番管理
+- **localStorage管理**: ユーザーIDをルーム固有キーで保存
+- **セキュリティ**: 参加権限チェック、Firestore参加者リスト照合
 - **リアルタイム**: Firestore onSnapshotで実現予定
