@@ -97,6 +97,7 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
       hostId: hostRef.id
     };
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('createRoom error:', error);
     if (error instanceof Error) {
       throw error;
@@ -224,21 +225,21 @@ export async function getRoomByCode(roomCode: string): Promise<Room | null> {
 }
 
 // ルーム情報をリアルタイムで監視
-export function subscribeToRoom(roomId: string, callback: (room: Room | null) => void) {
+export function subscribeToRoom(roomId: string, callback: (roomData: Room | null) => void) {
   const roomRef = doc(db, 'rooms', roomId);
   
   return onSnapshot(roomRef, (doc) => {
     if (doc.exists()) {
-      const roomData = doc.data();
+      const data = doc.data();
       const room: Room = {
         id: doc.id,
-        ...roomData,
-        createdAt: roomData.createdAt instanceof Timestamp 
-          ? roomData.createdAt.toDate() 
-          : roomData.createdAt,
-        expiresAt: roomData.expiresAt instanceof Timestamp 
-          ? roomData.expiresAt.toDate() 
-          : roomData.expiresAt
+        ...data,
+        createdAt: data.createdAt instanceof Timestamp 
+          ? data.createdAt.toDate() 
+          : data.createdAt,
+        expiresAt: data.expiresAt instanceof Timestamp 
+          ? data.expiresAt.toDate() 
+          : data.expiresAt
       } as Room;
       callback(room);
     } else {
