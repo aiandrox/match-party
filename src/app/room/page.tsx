@@ -30,6 +30,13 @@ function RoomContent() {
 
     const loadRoom = async () => {
       try {
+        // userIdが取得できない場合はルーム情報を表示しない
+        if (!userId) {
+          setError('このルームへの参加権限が確認できません');
+          setIsLoading(false);
+          return;
+        }
+
         // 動的インポートでFirebase初期化を避ける
         const { getRoomByCode } = await import('@/lib/roomService');
         const roomData = await getRoomByCode(roomCode);
@@ -38,6 +45,15 @@ function RoomContent() {
           setIsLoading(false);
           return;
         }
+
+        // ユーザーがルームの参加者として存在するかチェック
+        const isParticipant = roomData.participants.some(p => p.id === userId);
+        if (!isParticipant) {
+          setError('このルームへの参加権限がありません');
+          setIsLoading(false);
+          return;
+        }
+
         setRoom(roomData);
         setIsLoading(false);
 
@@ -147,12 +163,22 @@ function RoomContent() {
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">エラー</h2>
             <p className="text-gray-600 mb-6">{error}</p>
-            <button
-              onClick={() => router.push('/')}
-              className="bg-slate-600 text-white py-2 px-4 rounded-lg hover:bg-slate-700 transition-colors"
-            >
-              ホームに戻る
-            </button>
+            <div className="space-x-2">
+              {error.includes('参加権限') && (
+                <button
+                  onClick={() => router.push('/join-room')}
+                  className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  ルームに参加
+                </button>
+              )}
+              <button
+                onClick={() => router.push('/')}
+                className="bg-slate-600 text-white py-2 px-4 rounded-lg hover:bg-slate-700 transition-colors"
+              >
+                ホームに戻る
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -242,7 +268,7 @@ function RoomContent() {
               参加者がそろったらホストがゲームを開始できます。
             </p>
             {/* ホストのみにゲーム開始ボタンを表示 */}
-            {currentUserId && room.participants.some(p => p.id === currentUserId && p.isHost) && (
+            {room.participants.some(p => p.id === currentUserId && p.isHost) ? (
               <div className="space-y-3">
                 <button
                   className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
@@ -260,35 +286,12 @@ function RoomContent() {
                   </p>
                 )}
               </div>
-            )}
-            {/* ホスト以外の参加者には待機メッセージを表示 */}
-            {currentUserId && !room.participants.some(p => p.id === currentUserId && p.isHost) && (
+            ) : (
+              /* ホスト以外の参加者には待機メッセージを表示 */
               <div className="text-center">
                 <p className="text-gray-600">
                   ホストがゲームを開始するまでお待ちください
                 </p>
-              </div>
-            )}
-            {/* ユーザーIDが取得できない場合のメッセージ */}
-            {!currentUserId && (
-              <div className="text-center">
-                <p className="text-gray-600 mb-4">
-                  このルームへの参加権限が確認できません
-                </p>
-                <div className="space-x-2">
-                  <button
-                    onClick={() => router.push('/join-room')}
-                    className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    ルームに参加
-                  </button>
-                  <button
-                    onClick={() => router.push('/')}
-                    className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
-                  >
-                    ホームに戻る
-                  </button>
-                </div>
               </div>
             )}
           </div>
