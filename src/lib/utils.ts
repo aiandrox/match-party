@@ -8,7 +8,16 @@ export function cn(...inputs: ClassValue[]) {
 export function generateRoomCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 20; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+export function generateUserId(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 16; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
@@ -21,8 +30,8 @@ export function validateUserName(name: string): boolean {
 }
 
 export function validateRoomCode(code: string): boolean {
-  // 6文字の英数字
-  const regex = /^[A-Z0-9]{6}$/;
+  // 20文字の英数字
+  const regex = /^[A-Z0-9]{20}$/;
   return regex.test(code);
 }
 
