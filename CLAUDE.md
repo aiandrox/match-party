@@ -110,8 +110,30 @@ firebase deploy
 5. **docs/diary.md** - 開発日記（前回の思考・感情）
 6. **docs/user-todos.md** - ユーザーのTODOリスト
 
-## 現在の状況（2025-07-10終了時点）
+## 現在の状況（2025-07-12更新）
 
-- **フェーズ**: 企画・要件定義完了、開発準備完了
-- **次のステップ**: developブランチ作成 → feature/project-setup開始
-- **ユーザーTODO**: MCP設定（Firebase MCP、GitHub MCP、Web Development MCP）
+- **フェーズ**: Phase 2完了 - ルーム管理機能デプロイ済み
+- **技術スタック確定**: Next.js 15 + TypeScript + Tailwind CSS + Firebase Hosting + Firestore
+- **デプロイ状況**: Firebase Hosting正常稼働（静的サイト）
+- **実装完了機能**:
+  - ✅ ルーム作成（ホスト名入力、20文字コード生成）
+  - ✅ ルーム参加（コード入力、名前重複チェック）  
+  - ✅ ルーム表示（参加者一覧、リアルタイム更新準備）
+  - ✅ GitHub Actions自動デプロイ
+
+### 次のステップ（Phase 3）
+- Firebase Billing有効化（Firestore利用のため）
+- GitHub Secretsの環境変数設定確認  
+- ゲーム機能実装（お題表示、回答収集、一致判定）
+
+### URL構造
+- ホーム: `/`
+- ルーム作成: `/create-room`
+- ルーム参加: `/join-room`  
+- ルーム表示: `/room?code=ABC123`
+
+### 技術的な決定事項
+- **静的サイト方式採用**: Firebase Hostingの無料枠活用
+- **クエリパラメータ**: 動的ルートの代替として採用
+- **環境変数**: GitHub Secretsで本番管理
+- **リアルタイム**: Firestore onSnapshotで実現予定

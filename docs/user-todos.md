@@ -5,17 +5,30 @@ Claude Codeセッションが切れても継続してタスクを管理できる
 
 ## TODO項目
 
-### 未完了
-- [ ] Web Development MCPの検討・設定（必要に応じて）
-- [ ] Next.jsプロジェクトの構築
-- [ ] プロジェクト基本構造の作成
+### 未完了（次回優先）
+- [ ] Firebase Billing有効化（Firestore利用のため）
+- [ ] GitHub Secretsの環境変数設定確認
+- [ ] Phase 3: ゲーム機能実装開始
 
-### 完了済み
+### Phase 3実装予定
+- [ ] お題表示システム
+- [ ] 回答収集とリアルタイム同期
+- [ ] 回答一致判定ロジック
+- [ ] ゲーム状態管理（waiting → playing → revealing → ended）
+
+### 完了済み（Phase 2）
 - [x] Firebase MCP設定（2025-07-11）
 - [x] GitHub MCP設定（2025-07-11）
 - [x] Firebase プロジェクト初期化（match-party-findy）
 - [x] developブランチ作成・初期コミット
 - [x] GitHub Actions自動デプロイ設定
+- [x] Next.jsプロジェクトの構築（2025-07-11）
+- [x] プロジェクト基本構造の作成（2025-07-11）
+- [x] ルーム作成機能実装（2025-07-12）
+- [x] ルーム参加機能実装（2025-07-12）
+- [x] ルーム表示機能実装（2025-07-12）
+- [x] Firebase Hosting静的サイトデプロイ（2025-07-12）
+- [x] GitHub Actions環境変数設定（2025-07-12）
 
 ## 使用方法
 
