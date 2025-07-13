@@ -57,12 +57,35 @@ function RoomContent() {
 
   const copyRoomCode = async () => {
     try {
-      await navigator.clipboard.writeText(roomCode);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(roomCode);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      } else {
+        // fallback for non-HTTPS environments
+        const textArea = document.createElement('textarea');
+        textArea.value = roomCode;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          document.execCommand('copy');
+          setCopySuccess(true);
+          setTimeout(() => setCopySuccess(false), 2000);
+        } catch (fallbackErr) {
+          // eslint-disable-next-line no-console
+          console.error('Copy failed:', fallbackErr);
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
     } catch (err) {
-      // コピーに失敗した場合は無視（ユーザーに特別な操作は不要）
-      void err;
+      // eslint-disable-next-line no-console
+      console.error('Copy failed:', err);
     }
   };
 
