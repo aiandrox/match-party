@@ -57,10 +57,25 @@ function RoomContent() {
         setRoom(roomData);
         setIsLoading(false);
 
-        // リアルタイム更新の監視を一時的に無効化（デバッグ用）
-        // unsubscribe = subscribeToRoom(roomData.id, (updatedRoom) => {
-        //   setRoom(updatedRoom);
-        // });
+        // リアルタイム更新の監視を開始
+        const { subscribeToRoom } = await import('@/lib/roomService');
+        unsubscribe = subscribeToRoom(roomData.id, (updatedRoom) => {
+          if (updatedRoom) {
+            // ユーザーがまだ参加者として存在するかチェック
+            const isStillParticipant = updatedRoom.participants.some(p => p.id === userId);
+            if (isStillParticipant) {
+              setRoom(updatedRoom);
+            } else {
+              // 参加者から削除された場合はエラー表示
+              setError('ルームから退出されました');
+              setRoom(null);
+            }
+          } else {
+            // ルームが削除された場合
+            setError('ルームが削除されました');
+            setRoom(null);
+          }
+        });
       } catch (err) {
         setError('ルームの読み込みに失敗しました');
         setIsLoading(false);

@@ -245,5 +245,9 @@ export function subscribeToRoom(roomId: string, callback: (roomData: Room | null
     } else {
       callback(null);
     }
+  }, (error) => {
+    // eslint-disable-next-line no-console
+    console.error('Firestore subscription error:', error);
+    callback(null);
   });
 }
