@@ -14,7 +14,7 @@ interface UseRevealingAnswersPresenterReturn {
   isHost: boolean;
   isStartingNextRound: boolean;
   isEndingGame: boolean;
-  submitJudgment: (judgment: JudgmentResult) => Promise<void>;
+  submitJudgment: (judgmentResult: JudgmentResult) => Promise<void>;
   startNextRound: () => Promise<void>;
   endGame: () => Promise<void>;
 }

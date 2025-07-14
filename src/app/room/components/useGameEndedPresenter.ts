@@ -11,12 +11,12 @@ interface UseGameEndedPresenterReturn {
   isLoadingHistory: boolean;
   selectedRound: any;
   roundAnswers: any[];
-  loadRoundAnswers: (round: any) => Promise<void>;
+  loadRoundAnswers: (gameRound: any) => Promise<void>;
 }
 
 export function useGameEndedPresenter({
   room,
-  currentUserId
+  currentUserId: _currentUserId
 }: UseGameEndedPresenterProps): UseGameEndedPresenterReturn {
   const [gameRounds, setGameRounds] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -40,12 +40,12 @@ export function useGameEndedPresenter({
   }, [room]);
 
   // 特定のラウンドの回答を読み込み
-  const loadRoundAnswers = useCallback(async (round: any) => {
+  const loadRoundAnswers = useCallback(async (gameRound: any) => {
     try {
       const { getGameRoundAnswers } = await import("@/lib/gameRoundService");
-      const answers = await getGameRoundAnswers(round.id);
+      const answers = await getGameRoundAnswers(gameRound.id);
       setRoundAnswers(answers);
-      setSelectedRound(round);
+      setSelectedRound(gameRound);
     } catch (error) {
       console.error("ラウンド回答の読み込みに失敗しました:", error);
     }

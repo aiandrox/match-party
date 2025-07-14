@@ -10,7 +10,7 @@ interface UsePlayingGamePresenterReturn {
   currentTopicContent: { content: string; round: number } | null;
   currentGameRoundId: string | null;
   answer: string;
-  setAnswer: (newAnswer: string) => void;
+  setAnswer: (value: string) => void;
   submittedAnswer: string;
   isSubmittingAnswer: boolean;
   hasSubmittedAnswer: boolean;

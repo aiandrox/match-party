@@ -1,7 +1,21 @@
 {
   "name": "match-party",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "リアルタイムお題回答一致ゲーム - みんなで同じ答えを目指そう！",
   "private": true,
+  "homepage": "https://match-party-findy.web.app/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aiandrox/match-party.git"
+  },
+  "keywords": [
+    "game",
+    "realtime",
+    "firebase",
+    "nextjs",
+    "typescript"
+  ],
+  "author": "aiandrox",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

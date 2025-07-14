@@ -11,7 +11,6 @@ export enum GameRoundStatus {
   COMPLETED = 'completed'
 }
 
-
 export enum JudgmentResult {
   MATCH = 'match',
   NO_MATCH = 'no-match'
