@@ -38,18 +38,6 @@ export function validateRoomCode(code: string): boolean {
   return regex.test(code);
 }
 
-export function formatTimeRemaining(expiresAt: Date): string {
-  const now = new Date();
-  const diff = expiresAt.getTime() - now.getTime();
-
-  if (diff <= 0) return "期限切れ";
-
-  const minutes = Math.floor(diff / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-}
-
 export function createExpirationTime(): Date {
   const now = new Date();
   return new Date(now.getTime() + ROOM_EXPIRY_MINUTES * 60 * 1000);

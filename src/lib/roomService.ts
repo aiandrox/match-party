@@ -13,7 +13,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Room, User, CreateRoomResponse, JoinRoomResponse, RoomStatus, JudgmentResult, GameHistoryStatus } from '@/types';
+import { Room, User, CreateRoomResponse, JoinRoomResponse, RoomStatus, JudgmentResult } from '@/types';
 import { generateRoomCode, generateUserId, createExpirationTime } from './utils';
 import { getRandomTopic } from './topicService';
 
@@ -249,7 +249,7 @@ export async function getRoomByCode(roomCode: string): Promise<Room | null> {
 }
 
 // ルーム情報をリアルタイムで監視
-export function subscribeToRoom(roomId: string, callback: (roomData: Room | null) => void) {
+export function subscribeToRoom(roomId: string, callback: (room: Room | null) => void) {
   const roomRef = doc(db, 'rooms', roomId);
   
   return onSnapshot(roomRef, (doc) => {
@@ -309,26 +309,16 @@ export async function startGame(roomId: string): Promise<void> {
       createdAt: serverTimestamp()
     });
     
-    // ゲーム履歴を作成
-    const { createGameHistory } = await import('@/lib/gameHistoryService');
-    const gameHistoryId = await createGameHistory({
-      ...roomData,
-      id: roomId
-    });
-    
     // ゲームラウンドを作成
     const { createGameRound } = await import('@/lib/gameRoundService');
     const gameRoundId = await createGameRound(
-      gameHistoryId,
       topicRef.id,
-      1,
-      roomData.participants.length
+      1
     );
     
     // ルーム状態を更新
     await updateDoc(roomRef, {
       status: RoomStatus.PLAYING,
-      gameHistoryId: gameHistoryId,
       currentGameRoundId: gameRoundId,
       // 全参加者の回答状態をリセット
       participants: roomData.participants.map(p => ({
@@ -432,12 +422,11 @@ export async function submitAnswer(roomId: string, userId: string, topicId: stri
     });
     
     // ゲーム履歴に回答を保存
-    if (roomData.gameHistoryId && roomData.currentGameRoundId) {
+    if (roomData.currentGameRoundId) {
       const { createGameAnswer } = await import('@/lib/gameHistoryService');
       const user = roomData.participants.find(p => p.id === userId);
       if (user) {
         await createGameAnswer(
-          roomData.gameHistoryId,
           roomData.currentGameRoundId,
           user.name,
           answer.trim(),
@@ -606,7 +595,6 @@ export async function startNextRound(roomId: string): Promise<void> {
     // 前回のゲームラウンドを完了状態に更新
     if (roomData.currentGameRoundId) {
       const { completeGameRound } = await import('@/lib/gameRoundService');
-      const answeredCount = roomData.participants.filter(p => p.hasAnswered).length;
       
       // 現在のゲームラウンドから判定を取得
       let judgment: JudgmentResult | undefined;
@@ -616,20 +604,15 @@ export async function startNextRound(roomId: string): Promise<void> {
         judgment = round?.judgment;
       }
       
-      await completeGameRound(roomData.currentGameRoundId, answeredCount, judgment);
+      await completeGameRound(roomData.currentGameRoundId, judgment);
     }
     
     // 新しいゲームラウンドを作成
-    let newGameRoundId: string | undefined;
-    if (roomData.gameHistoryId) {
-      const { createGameRound } = await import('@/lib/gameRoundService');
-      newGameRoundId = await createGameRound(
-        roomData.gameHistoryId,
-        topicRef.id,
-        nextRound,
-        roomData.participants.length
-      );
-    }
+    const { createGameRound } = await import('@/lib/gameRoundService');
+    const newGameRoundId = await createGameRound(
+      topicRef.id,
+      nextRound
+    );
     
     // ルーム状態を更新（playingに戻す）
     await updateDoc(roomRef, {
@@ -663,22 +646,7 @@ export async function endGame(roomId: string): Promise<void> {
       throw new Error('ルームが見つかりません');
     }
     
-    const roomData = roomDoc.data() as Room;
-    
-    // ゲーム履歴を完了状態に更新
-    if (roomData.gameHistoryId) {
-      const { updateGameHistoryOnComplete } = await import('@/lib/gameHistoryService');
-      const { getTopicByRoomId } = await import('@/lib/roomService');
-      const currentTopic = await getTopicByRoomId(roomId);
-      const totalRounds = currentTopic ? currentTopic.round : 1;
-      
-      await updateGameHistoryOnComplete(
-        roomData.gameHistoryId,
-        totalRounds,
-        roomData.createdAt,
-        GameHistoryStatus.COMPLETED
-      );
-    }
+    // ゲーム履歴関連の処理は不要（gameHistoriesコレクション削除により）
     
     await updateDoc(roomRef, {
       status: RoomStatus.ENDED

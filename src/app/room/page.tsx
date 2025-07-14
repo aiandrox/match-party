@@ -28,7 +28,6 @@ function RoomContent() {
   const [isStartingNextRound, setIsStartingNextRound] = useState(false);
   const [isEndingGame, setIsEndingGame] = useState(false);
   const [isForceRevealing, setIsForceRevealing] = useState(false);
-  const [gameHistory, setGameHistory] = useState<any>(null);
   const [gameRounds, setGameRounds] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [selectedRound, setSelectedRound] = useState<any>(null);
@@ -227,19 +226,31 @@ function RoomContent() {
     };
   }, [roomCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadGameHistory = useCallback(async (historyId: string) => {
-    setIsLoadingHistory(true);
-    try {
-      const { getGameHistoryDetails } = await import("@/lib/gameHistoryService");
-      const data = await getGameHistoryDetails(historyId);
+  // loadGameHistory関数は不要（gameHistoriesコレクション削除により）
+  // const loadGameHistory = useCallback(async (historyId: string) => {
+  //   ...
+  // }, []);
 
-      if (data.history) {
-        setGameHistory(data.history);
-        setGameRounds(data.rounds);
-      }
+  const loadGameRounds = useCallback(async (roomId: string) => {
+    try {
+      setIsLoadingHistory(true);
+      const { getGameRoundsByRoomId } = await import("@/lib/gameRoundService");
+      const roundsWithTopics = await getGameRoundsByRoomId(roomId);
+
+      // データを表示用に変換
+      const formattedRounds = roundsWithTopics.map(({ round, topic }) => ({
+        id: round.id,
+        roundNumber: round.roundNumber,
+        judgment: round.judgment,
+        topicContent: topic?.content || "お題不明",
+        topicId: topic?.id || "",
+      }));
+
+      setGameRounds(formattedRounds);
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error("履歴読み込みエラー:", err);
+      console.error("ゲームラウンド読み込みエラー:", err);
+      setGameRounds([]);
     } finally {
       setIsLoadingHistory(false);
     }
@@ -258,12 +269,12 @@ function RoomContent() {
     }
   }, []);
 
-  // ゲーム終了時に履歴を読み込む
+  // ゲーム終了時の履歴読み込み
   useEffect(() => {
-    if (room && room.status === RoomStatus.ENDED && room.gameHistoryId && !gameHistory) {
-      loadGameHistory(room.gameHistoryId);
+    if (room && room.status === RoomStatus.ENDED && gameRounds.length === 0) {
+      loadGameRounds(room.id);
     }
-  }, [room, gameHistory, loadGameHistory]);
+  }, [room, gameRounds.length, loadGameRounds]);
 
   // 回答公開用のデータ読み込み
   const loadAnswersForRevealing = async (roomData: Room, topicId: string) => {
@@ -331,10 +342,7 @@ function RoomContent() {
       await endGame(room.id);
       // リアルタイム更新で状態が変更される
 
-      // ゲーム終了後に履歴を読み込み
-      if (room.gameHistoryId) {
-        loadGameHistory(room.gameHistoryId);
-      }
+      // ゲーム終了後の履歴読み込みは不要（gameHistoriesコレクション削除により）
     } catch (err) {
       setError(err instanceof Error ? err.message : "ゲーム終了に失敗しました");
     } finally {
@@ -776,16 +784,16 @@ function RoomContent() {
           <div className="space-y-6">
             {/* ゲーム履歴表示 */}
             <div className="bg-white rounded-lg shadow-lg p-6">
-              {isLoadingHistory ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">履歴を読み込み中...</p>
-                </div>
-              ) : gameHistory ? (
-                <div className="space-y-6">
-                  {/* ゲーム結果一覧 */}
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">ゲーム結果</h3>
+              <div className="space-y-6">
+                {/* ゲーム結果一覧 */}
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">ゲーム結果</h3>
+                  {isLoadingHistory ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-4"></div>
+                      <p className="text-gray-600">履歴を読み込んでいます...</p>
+                    </div>
+                  ) : gameRounds.length > 0 ? (
                     <div className="space-y-3">
                       {gameRounds.map((round) => (
                         <div
@@ -817,74 +825,57 @@ function RoomContent() {
                         </div>
                       ))}
                     </div>
-                  </div>
-
-                  {/* 選択したラウンドの回答詳細 */}
-                  {selectedRound && (
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-4">
-                        第{selectedRound.roundNumber}ラウンドの回答
-                      </h3>
-                      <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                        <div className="font-medium text-blue-900 mb-2">お題:</div>
-                        <div className="text-blue-800">{selectedRound.topicContent}</div>
-                      </div>
-                      
-                      {/* 判定結果表示 */}
-                      {selectedRound.judgment && (
-                        <div className="mb-6">
-                          {selectedRound.judgment === JudgmentResult.MATCH ? (
-                            <h3 className="text-2xl font-bold text-green-800 mb-2 text-center">
-                              🎉 全員一致
-                            </h3>
-                          ) : (
-                            <h3 className="text-2xl font-bold text-red-800 mb-2 text-center">
-                              ❌ 全員一致ならず
-                            </h3>
-                          )}
-                        </div>
-                      )}
-                      
-                      {roundAnswers.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {roundAnswers.map((answer) => {
-                            // 判定結果に基づく色設定
-                            let bgColor = "bg-gray-50 border-gray-200";
-                            let textColor = "text-gray-900";
-
-                            if (selectedRound.judgment === JudgmentResult.MATCH) {
-                              bgColor = "bg-green-100 border-green-300";
-                              textColor = "text-green-900";
-                            } else if (selectedRound.judgment === JudgmentResult.NO_MATCH) {
-                              bgColor = "bg-red-100 border-red-300";
-                              textColor = "text-red-900";
-                            }
-
-                            return (
-                              <div key={answer.id} className={`p-4 rounded-lg border ${bgColor}`}>
-                                <p className={`font-bold text-xl mb-2 ${textColor}`}>
-                                  {answer.content}
-                                </p>
-                                <p className="text-sm text-gray-600 text-right">
-                                  {answer.userName}
-                                </p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="text-center text-gray-500 py-8">
-                          <p>このラウンドには回答がありません</p>
-                        </div>
-                      )}
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600">ゲーム履歴がありません</p>
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-600">履歴の読み込みに失敗しました</p>
-                </div>
-              )}
+
+                {/* 選択したラウンドの回答詳細 */}
+                {selectedRound && (
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      第{selectedRound.roundNumber}ラウンドの回答
+                    </h3>
+                    <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                      <div className="font-medium text-blue-900 mb-2">お題:</div>
+                      <div className="text-blue-800 font-bold">{selectedRound.topicContent}</div>
+                    </div>
+
+                    {roundAnswers.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {roundAnswers.map((answer) => {
+                          // 判定結果に基づく色設定
+                          let bgColor = "bg-gray-50 border-gray-200";
+                          let textColor = "text-gray-900";
+
+                          if (selectedRound.judgment === JudgmentResult.MATCH) {
+                            bgColor = "bg-green-100 border-green-300";
+                            textColor = "text-green-900";
+                          } else if (selectedRound.judgment === JudgmentResult.NO_MATCH) {
+                            bgColor = "bg-red-100 border-red-300";
+                            textColor = "text-red-900";
+                          }
+
+                          return (
+                            <div key={answer.id} className={`p-4 rounded-lg border ${bgColor}`}>
+                              <p className={`font-bold text-xl mb-2 ${textColor}`}>
+                                {answer.content}
+                              </p>
+                              <p className="text-sm text-gray-600 text-right">{answer.userName}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-500 py-8">
+                        <p>このラウンドには回答がありません</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* ホームに戻るボタン */}

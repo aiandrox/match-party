@@ -11,10 +11,6 @@ export enum GameRoundStatus {
   COMPLETED = 'completed'
 }
 
-export enum GameHistoryStatus {
-  COMPLETED = 'completed',
-  ABANDONED = 'abandoned'
-}
 
 export enum JudgmentResult {
   MATCH = 'match',
@@ -28,7 +24,6 @@ export interface Room {
   hostId: string;
   status: RoomStatus;
   participants: User[];
-  gameHistoryId?: string;
   currentGameRoundId?: string;
   currentJudgment?: JudgmentResult;
   createdAt: Date;
@@ -112,37 +107,18 @@ export interface JoinRoomResponse {
 }
 
 // Game History types
-export interface GameHistory {
-  id: string;
-  roomCode: string;
-  hostName: string;
-  participantCount: number;
-  totalRounds: number;
-  status: GameHistoryStatus;
-  startedAt: Date;
-  endedAt: Date;
-  duration: number; // seconds
-  createdAt: Date;
-}
 
 export interface GameRound {
   id: string;
-  gameHistoryId: string;
   topicId: string;
   roundNumber: number;
   status: GameRoundStatus;
-  totalParticipants: number;
-  answeredCount: number;
   judgment?: JudgmentResult;
-  startedAt: Date;
-  completedAt?: Date;
-  judgmentAt?: Date;
   createdAt: Date;
 }
 
 export interface GameAnswer {
   id: string;
-  gameHistoryId: string;
   gameRoundId: string;
   userName: string;
   content: string;
@@ -150,13 +126,3 @@ export interface GameAnswer {
   createdAt: Date;
 }
 
-export interface GameParticipant {
-  id: string;
-  gameHistoryId: string;
-  userName: string;
-  isHost: boolean;
-  joinedAt: Date;
-  totalAnswers: number;
-  matchedRounds: number;
-  createdAt: Date;
-}
