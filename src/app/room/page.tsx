@@ -821,7 +821,7 @@ function RoomContent() {
                                 : "判定なし"}
                             </div>
                           </div>
-                          <div className="text-gray-700 mb-2">{round.topicContent}</div>
+                          <div className="text-gray-700 mb-2 font-bold">{round.topicContent}</div>
                         </div>
                       ))}
                     </div>
