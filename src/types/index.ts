@@ -1,13 +1,36 @@
+// Enum types
+export enum RoomStatus {
+  WAITING = 'waiting',
+  PLAYING = 'playing',
+  REVEALING = 'revealing',
+  ENDED = 'ended'
+}
+
+export enum GameRoundStatus {
+  ACTIVE = 'active',
+  COMPLETED = 'completed'
+}
+
+export enum GameHistoryStatus {
+  COMPLETED = 'completed',
+  ABANDONED = 'abandoned'
+}
+
+export enum JudgmentResult {
+  MATCH = 'match',
+  NO_MATCH = 'no-match'
+}
+
 // Game types
 export interface Room {
   id: string;
   code: string;
   hostId: string;
-  status: 'waiting' | 'playing' | 'revealing' | 'ended';
+  status: RoomStatus;
   participants: User[];
   gameHistoryId?: string;
   currentGameRoundId?: string;
-  currentJudgment?: 'match' | 'no-match';
+  currentJudgment?: JudgmentResult;
   createdAt: Date;
   expiresAt: Date;
 }
@@ -95,7 +118,7 @@ export interface GameHistory {
   hostName: string;
   participantCount: number;
   totalRounds: number;
-  status: 'completed' | 'abandoned';
+  status: GameHistoryStatus;
   startedAt: Date;
   endedAt: Date;
   duration: number; // seconds
@@ -107,10 +130,10 @@ export interface GameRound {
   gameHistoryId: string;
   topicId: string;
   roundNumber: number;
-  status: 'active' | 'completed';
+  status: GameRoundStatus;
   totalParticipants: number;
   answeredCount: number;
-  judgment?: 'match' | 'no-match';
+  judgment?: JudgmentResult;
   startedAt: Date;
   completedAt?: Date;
   judgmentAt?: Date;

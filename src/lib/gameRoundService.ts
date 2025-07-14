@@ -12,7 +12,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { GameRound, Topic } from '@/types';
+import { GameRound, Topic, GameRoundStatus, JudgmentResult } from '@/types';
 
 // アクティブなゲームラウンドを作成
 export async function createGameRound(
@@ -26,7 +26,7 @@ export async function createGameRound(
       gameHistoryId,
       topicId,
       roundNumber,
-      status: 'active',
+      status: GameRoundStatus.ACTIVE,
       totalParticipants,
       answeredCount: 0,
       startedAt: new Date(),
@@ -50,12 +50,12 @@ export async function createGameRound(
 export async function completeGameRound(
   gameRoundId: string,
   answeredCount: number,
-  judgment?: 'match' | 'no-match'
+  judgment?: JudgmentResult
 ): Promise<void> {
   try {
     const gameRoundRef = doc(db, 'gameRounds', gameRoundId);
     const updateData: any = {
-      status: 'completed',
+      status: GameRoundStatus.COMPLETED,
       answeredCount,
       completedAt: serverTimestamp(),
       judgmentAt: judgment ? serverTimestamp() : null
@@ -92,7 +92,7 @@ export async function updateGameRoundAnsweredCount(
 // ゲームラウンドの判定を更新
 export async function updateGameRoundJudgment(
   gameRoundId: string,
-  judgment: 'match' | 'no-match'
+  judgment: JudgmentResult
 ): Promise<void> {
   try {
     const gameRoundRef = doc(db, 'gameRounds', gameRoundId);
@@ -203,7 +203,7 @@ export async function getActiveGameRound(gameHistoryId: string): Promise<GameRou
     const gameRoundsQuery = query(
       collection(db, 'gameRounds'),
       where('gameHistoryId', '==', gameHistoryId),
-      where('status', '==', 'active'),
+      where('status', '==', GameRoundStatus.ACTIVE),
       orderBy('roundNumber', 'desc')
     );
     const gameRoundsSnapshot = await getDocs(gameRoundsQuery);

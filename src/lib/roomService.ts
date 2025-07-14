@@ -13,7 +13,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Room, User, CreateRoomResponse, JoinRoomResponse } from '@/types';
+import { Room, User, CreateRoomResponse, JoinRoomResponse, RoomStatus, JudgmentResult, GameHistoryStatus } from '@/types';
 import { generateRoomCode, generateUserId, createExpirationTime } from './utils';
 import { getRandomTopic } from './topicService';
 
@@ -51,7 +51,7 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
     const roomData: Omit<Room, 'id'> = {
       code: roomCode,
       hostId: hostId,
-      status: 'waiting',
+      status: RoomStatus.WAITING,
       participants: [],
       createdAt: new Date(),
       expiresAt: createExpirationTime()
@@ -158,7 +158,7 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
     }
     
     // 新規参加の場合のみゲーム状態をチェック
-    if (roomData.status !== 'waiting') {
+    if (roomData.status !== RoomStatus.WAITING) {
       throw new Error('このルームは既にゲームが開始されています');
     }
     
@@ -290,7 +290,7 @@ export async function startGame(roomId: string): Promise<void> {
     const roomData = roomDoc.data() as Room;
     
     // ゲーム開始可能かチェック
-    if (roomData.status !== 'waiting') {
+    if (roomData.status !== RoomStatus.WAITING) {
       throw new Error('ゲームは既に開始されています');
     }
     
@@ -327,7 +327,7 @@ export async function startGame(roomId: string): Promise<void> {
     
     // ルーム状態を更新
     await updateDoc(roomRef, {
-      status: 'playing',
+      status: RoomStatus.PLAYING,
       gameHistoryId: gameHistoryId,
       currentGameRoundId: gameRoundId,
       // 全参加者の回答状態をリセット
@@ -451,7 +451,7 @@ export async function submitAnswer(roomId: string, userId: string, topicId: stri
     if (allAnswered) {
       // 自動的にrevealingステータスに移行
       await updateDoc(roomRef, {
-        status: 'revealing'
+        status: RoomStatus.REVEALING
       });
     }
     
@@ -504,7 +504,7 @@ export async function getAnswersByTopicId(topicId: string): Promise<Array<{ user
 }
 
 // 主催者による一致判定を保存
-export async function saveHostJudgment(roomId: string, _topicId: string, judgment: 'match' | 'no-match'): Promise<void> {
+export async function saveHostJudgment(roomId: string, _topicId: string, judgment: JudgmentResult): Promise<void> {
   try {
     // ルーム情報を取得
     const roomRef = doc(db, 'rooms', roomId);
@@ -609,7 +609,7 @@ export async function startNextRound(roomId: string): Promise<void> {
       const answeredCount = roomData.participants.filter(p => p.hasAnswered).length;
       
       // 現在のゲームラウンドから判定を取得
-      let judgment: 'match' | 'no-match' | undefined;
+      let judgment: JudgmentResult | undefined;
       if (roomData.currentGameRoundId) {
         const { getGameRoundWithTopic } = await import('@/lib/gameRoundService');
         const { round } = await getGameRoundWithTopic(roomData.currentGameRoundId);
@@ -633,7 +633,7 @@ export async function startNextRound(roomId: string): Promise<void> {
     
     // ルーム状態を更新（playingに戻す）
     await updateDoc(roomRef, {
-      status: 'playing',
+      status: RoomStatus.PLAYING,
       currentGameRoundId: newGameRoundId,
       currentJudgment: null, // 新しいラウンドでは判定をクリア
       // 全参加者の回答状態をリセット
@@ -676,12 +676,12 @@ export async function endGame(roomId: string): Promise<void> {
         roomData.gameHistoryId,
         totalRounds,
         roomData.createdAt,
-        'completed'
+        GameHistoryStatus.COMPLETED
       );
     }
     
     await updateDoc(roomRef, {
-      status: 'ended'
+      status: RoomStatus.ENDED
     });
   } catch (error) {
     // eslint-disable-next-line no-console

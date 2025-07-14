@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Room } from "@/types";
+import { Room, RoomStatus, JudgmentResult } from "@/types";
 
 function RoomContent() {
   const router = useRouter();
@@ -135,7 +135,7 @@ function RoomContent() {
 
               // ゲーム中または回答公開中になった場合はお題を取得
               if (
-                (updatedRoom.status === "playing" || updatedRoom.status === "revealing") &&
+                (updatedRoom.status === RoomStatus.PLAYING || updatedRoom.status === RoomStatus.REVEALING) &&
                 !currentTopic
               ) {
                 const { getTopicByRoomId } = await import("@/lib/roomService");
@@ -145,7 +145,7 @@ function RoomContent() {
                   setCurrentTopicId(topic.id);
 
                   // 回答公開中の場合は回答データも取得
-                  if (updatedRoom.status === "revealing") {
+                  if (updatedRoom.status === RoomStatus.REVEALING) {
                     loadAnswersForRevealing(updatedRoom, topic.id);
 
                     // 現在の判定結果を取得
@@ -155,7 +155,7 @@ function RoomContent() {
               }
 
               // 新しいお題に切り替わった場合は状態をリセット
-              if (updatedRoom.status === "playing" && currentTopicId) {
+              if (updatedRoom.status === RoomStatus.PLAYING && currentTopicId) {
                 const { getTopicByRoomId } = await import("@/lib/roomService");
                 const newTopic = await getTopicByRoomId(updatedRoom.id);
                 if (newTopic && newTopic.id !== currentTopicId) {
@@ -177,7 +177,7 @@ function RoomContent() {
 
               // 新しいラウンドで回答状態がリセットされた場合の処理
               if (
-                updatedRoom.status === "playing" &&
+                updatedRoom.status === RoomStatus.PLAYING &&
                 currentUser &&
                 !currentUser.hasAnswered &&
                 hasSubmittedAnswer
@@ -188,7 +188,7 @@ function RoomContent() {
               }
 
               // revealingステータスになった場合は回答データを取得
-              if (updatedRoom.status === "revealing" && currentTopicId) {
+              if (updatedRoom.status === RoomStatus.REVEALING && currentTopicId) {
                 loadAnswersForRevealing(updatedRoom, currentTopicId);
 
                 // 現在の判定結果を取得
@@ -196,7 +196,7 @@ function RoomContent() {
               }
 
               // 判定結果の更新を監視（revealingステータス中のみ）
-              if (updatedRoom.status === "revealing") {
+              if (updatedRoom.status === RoomStatus.REVEALING) {
                 // roomの現在の判定結果を反映
                 setHostJudgment(updatedRoom.currentJudgment || null);
               }
@@ -224,7 +224,7 @@ function RoomContent() {
         unsubscribe();
       }
     };
-  }, [roomCode]);
+  }, [roomCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadGameHistory = useCallback(async (historyId: string) => {
     setIsLoadingHistory(true);
@@ -259,10 +259,10 @@ function RoomContent() {
 
   // ゲーム終了時に履歴を読み込む
   useEffect(() => {
-    if (room && room.status === "ended" && room.gameHistoryId && !gameHistory) {
+    if (room && room.status === RoomStatus.ENDED && room.gameHistoryId && !gameHistory) {
       loadGameHistory(room.gameHistoryId);
     }
-  }, [room?.status, room?.gameHistoryId, gameHistory, loadGameHistory]);
+  }, [room, gameHistory, loadGameHistory]);
 
   // 回答公開用のデータ読み込み
   const loadAnswersForRevealing = async (roomData: Room, topicId: string) => {
@@ -286,21 +286,9 @@ function RoomContent() {
     }
   };
 
-  // ゲームラウンドから判定結果を読み込み
-  const loadHostJudgmentFromGameRound = async (gameRoundId: string) => {
-    try {
-      const { getGameRoundWithTopic } = await import("@/lib/gameRoundService");
-      const { round } = await getGameRoundWithTopic(gameRoundId);
-      setHostJudgment(round?.judgment || null);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to load host judgment:", err);
-      setHostJudgment(null);
-    }
-  };
 
   // 主催者による一致判定
-  const handleHostJudgment = async (judgment: "match" | "no-match") => {
+  const handleHostJudgment = async (judgment: JudgmentResult) => {
     if (!room || !currentTopicId) return;
 
     try {
@@ -437,30 +425,30 @@ function RoomContent() {
     }
   };
 
-  const getStatusText = (status: Room["status"]) => {
+  const getStatusText = (status: RoomStatus) => {
     switch (status) {
-      case "waiting":
+      case RoomStatus.WAITING:
         return "参加者募集中";
-      case "playing":
+      case RoomStatus.PLAYING:
         return "ゲーム進行中";
-      case "revealing":
+      case RoomStatus.REVEALING:
         return "回答公開中";
-      case "ended":
+      case RoomStatus.ENDED:
         return "ゲーム終了";
       default:
         return "不明";
     }
   };
 
-  const getStatusColor = (status: Room["status"]) => {
+  const getStatusColor = (status: RoomStatus) => {
     switch (status) {
-      case "waiting":
+      case RoomStatus.WAITING:
         return "bg-blue-100 text-blue-800";
-      case "playing":
+      case RoomStatus.PLAYING:
         return "bg-green-100 text-green-800";
-      case "revealing":
+      case RoomStatus.REVEALING:
         return "bg-yellow-100 text-yellow-800";
-      case "ended":
+      case RoomStatus.ENDED:
         return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -636,7 +624,7 @@ function RoomContent() {
           </div>
         </div>
 
-        {room.status === "waiting" && (
+        {room.status === RoomStatus.WAITING && (
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">ゲーム開始前</h2>
             <p className="text-gray-600 mb-4">参加者がそろったらホストがゲームを開始できます。</p>
@@ -669,7 +657,7 @@ function RoomContent() {
           </div>
         )}
 
-        {room.status === "playing" && (
+        {room.status === RoomStatus.PLAYING && (
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">ゲーム進行中</h2>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
@@ -784,7 +772,7 @@ function RoomContent() {
           </div>
         )}
 
-        {room.status === "ended" && (
+        {room.status === RoomStatus.ENDED && (
           <div className="space-y-6">
             {/* ゲーム履歴表示 */}
             <div className="bg-white rounded-lg shadow-lg p-6">
@@ -880,7 +868,7 @@ function RoomContent() {
           </div>
         )}
 
-        {room.status === "revealing" && (
+        {room.status === RoomStatus.REVEALING && (
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">回答発表</h2>
 
@@ -896,7 +884,7 @@ function RoomContent() {
             {/* 判定結果表示 */}
             {hostJudgment && (
               <div className="mb-6">
-                {hostJudgment === "match" ? (
+                {hostJudgment === JudgmentResult.MATCH ? (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
                     <h3 className="text-2xl font-bold text-green-800 mb-2">🎉 全員一致！</h3>
                     <p className="text-green-700">
@@ -922,10 +910,10 @@ function RoomContent() {
                   let bgColor = "bg-gray-50 border-gray-200";
                   let textColor = "text-gray-900";
 
-                  if (hostJudgment === "match") {
+                  if (hostJudgment === JudgmentResult.MATCH) {
                     bgColor = "bg-green-100 border-green-300";
                     textColor = "text-green-900";
-                  } else if (hostJudgment === "no-match") {
+                  } else if (hostJudgment === JudgmentResult.NO_MATCH) {
                     bgColor = "bg-red-100 border-red-300";
                     textColor = "text-red-900";
                   }
@@ -949,13 +937,13 @@ function RoomContent() {
                 <p className="text-gray-700 font-medium mb-4">回答の一致を判定してください</p>
                 <div className="space-x-4">
                   <button
-                    onClick={() => handleHostJudgment("match")}
+                    onClick={() => handleHostJudgment(JudgmentResult.MATCH)}
                     className="bg-green-600 text-white py-3 px-8 rounded-lg hover:bg-green-700 transition-colors font-medium"
                   >
                     全員一致
                   </button>
                   <button
-                    onClick={() => handleHostJudgment("no-match")}
+                    onClick={() => handleHostJudgment(JudgmentResult.NO_MATCH)}
                     className="bg-red-600 text-white py-3 px-8 rounded-lg hover:bg-red-700 transition-colors font-medium"
                   >
                     全員一致ならず
