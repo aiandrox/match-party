@@ -331,7 +331,7 @@ export async function startGame(roomId: string): Promise<void> {
 }
 
 // お題情報を取得
-export async function getTopicByRoomId(roomId: string): Promise<{ content: string; round: number } | null> {
+export async function getTopicByRoomId(roomId: string): Promise<{ id: string; content: string; round: number } | null> {
   try {
     const topicsQuery = query(
       collection(db, 'topics'),
@@ -356,6 +356,7 @@ export async function getTopicByRoomId(roomId: string): Promise<{ content: strin
     const latestTopic = topics.sort((a, b) => b.round - a.round)[0];
     
     return {
+      id: latestTopic.id,
       content: latestTopic.content,
       round: latestTopic.round
     };
@@ -363,5 +364,45 @@ export async function getTopicByRoomId(roomId: string): Promise<{ content: strin
     // eslint-disable-next-line no-console
     console.error('getTopicByRoomId error:', error);
     return null;
+  }
+}
+
+// 回答を送信
+export async function submitAnswer(roomId: string, userId: string, topicId: string, answer: string): Promise<void> {
+  try {
+    // 回答をFirestoreに保存
+    await addDoc(collection(db, 'answers'), {
+      userId: userId,
+      topicId: topicId,
+      content: answer.trim(),
+      submittedAt: serverTimestamp()
+    });
+
+    // ルーム情報を取得して参加者の回答状態を更新
+    const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) {
+      throw new Error('ルームが見つかりません');
+    }
+    
+    const roomData = roomDoc.data() as Room;
+    
+    // 参加者の回答状態を更新
+    const updatedParticipants = roomData.participants.map(p => 
+      p.id === userId ? { ...p, hasAnswered: true } : p
+    );
+    
+    await updateDoc(roomRef, {
+      participants: updatedParticipants
+    });
+    
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('submitAnswer error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('回答の送信に失敗しました');
   }
 }

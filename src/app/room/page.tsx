@@ -16,6 +16,10 @@ function RoomContent() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isStartingGame, setIsStartingGame] = useState(false);
   const [currentTopic, setCurrentTopic] = useState<{ content: string; round: number } | null>(null);
+  const [currentTopicId, setCurrentTopicId] = useState<string | null>(null);
+  const [answer, setAnswer] = useState('');
+  const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
+  const [hasSubmittedAnswer, setHasSubmittedAnswer] = useState(false);
 
   useEffect(() => {
     if (!roomCode) {
@@ -75,7 +79,16 @@ function RoomContent() {
         if (roomData.status === 'playing') {
           const { getTopicByRoomId } = await import('@/lib/roomService');
           const topic = await getTopicByRoomId(roomData.id);
-          setCurrentTopic(topic);
+          if (topic) {
+            setCurrentTopic(topic);
+            setCurrentTopicId(topic.id);
+          }
+        }
+
+        // 現在のユーザーの回答状態を確認
+        const currentUser = roomData.participants.find(p => p.id === userId);
+        if (currentUser) {
+          setHasSubmittedAnswer(currentUser.hasAnswered);
         }
 
         // リアルタイム更新の監視を開始
@@ -103,7 +116,16 @@ function RoomContent() {
               if (updatedRoom.status === 'playing' && !currentTopic) {
                 const { getTopicByRoomId } = await import('@/lib/roomService');
                 const topic = await getTopicByRoomId(updatedRoom.id);
-                setCurrentTopic(topic);
+                if (topic) {
+                  setCurrentTopic(topic);
+                  setCurrentTopicId(topic.id);
+                }
+              }
+              
+              // 現在のユーザーの回答状態を更新
+              const currentUser = updatedRoom.participants.find(p => p.id === userId);
+              if (currentUser) {
+                setHasSubmittedAnswer(currentUser.hasAnswered);
               }
             } else {
               // 参加者から削除された場合はエラー表示
@@ -177,6 +199,22 @@ function RoomContent() {
       setError(err instanceof Error ? err.message : 'ゲーム開始に失敗しました');
     } finally {
       setIsStartingGame(false);
+    }
+  };
+
+  const handleSubmitAnswer = async () => {
+    if (!room || !currentUserId || !currentTopicId || !answer.trim()) return;
+    
+    setIsSubmittingAnswer(true);
+    try {
+      const { submitAnswer } = await import('@/lib/roomService');
+      await submitAnswer(room.id, currentUserId, currentTopicId, answer);
+      // リアルタイム更新で回答状態が変更される
+      setAnswer(''); // 回答フィールドをクリア
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '回答送信に失敗しました');
+    } finally {
+      setIsSubmittingAnswer(false);
     }
   };
 
@@ -410,27 +448,43 @@ function RoomContent() {
               </p>
             </div>
             
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="answer" className="block text-sm font-medium text-gray-700 mb-2">
-                  あなたの回答
-                </label>
-                <input
-                  type="text"
-                  id="answer"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="回答を入力してください"
-                  maxLength={50}
-                />
-                <p className="mt-1 text-sm text-gray-500">50文字以内で入力してください</p>
+            {!hasSubmittedAnswer ? (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="answer" className="block text-sm font-medium text-gray-700 mb-2">
+                    あなたの回答
+                  </label>
+                  <input
+                    type="text"
+                    id="answer"
+                    value={answer}
+                    onChange={(e) => setAnswer(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="回答を入力してください"
+                    maxLength={50}
+                    disabled={isSubmittingAnswer}
+                  />
+                  <p className="mt-1 text-sm text-gray-500">50文字以内で入力してください</p>
+                </div>
+                
+                <button
+                  onClick={handleSubmitAnswer}
+                  disabled={!answer.trim() || isSubmittingAnswer}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                    !answer.trim() || isSubmittingAnswer
+                      ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+                  }`}
+                >
+                  {isSubmittingAnswer ? '送信中...' : '回答を送信'}
+                </button>
               </div>
-              
-              <button
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-              >
-                回答を送信
-              </button>
-            </div>
+            ) : (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-green-800 font-medium">✓ 回答を送信しました</p>
+                <p className="text-green-600 text-sm mt-1">他の参加者の回答をお待ちください</p>
+              </div>
+            )}
             
             <div className="mt-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">回答状況</h3>
