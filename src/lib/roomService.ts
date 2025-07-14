@@ -488,11 +488,6 @@ export async function saveHostJudgment(roomId: string, judgment: JudgmentResult)
       await updateGameRoundJudgment(roomData.currentGameRoundId, judgment);
     }
     
-    // リアルタイム更新のためにroomの現在の判定も更新
-    await updateDoc(roomRef, {
-      currentJudgment: judgment
-    });
-    
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('saveHostJudgment error:', error);
@@ -591,7 +586,6 @@ export async function startNextRound(roomId: string): Promise<void> {
     await updateDoc(roomRef, {
       status: RoomStatus.PLAYING,
       currentGameRoundId: newGameRoundId,
-      currentJudgment: null, // 新しいラウンドでは判定をクリア
       // 全参加者の回答状態をリセット
       participants: roomData.participants.map(p => ({
         ...p,
@@ -606,6 +600,48 @@ export async function startNextRound(roomId: string): Promise<void> {
       throw error;
     }
     throw new Error('次のラウンドの開始に失敗しました');
+  }
+}
+
+// お題変更（誰も回答していない場合のみ）
+export async function changeTopicIfNoAnswers(roomId: string): Promise<void> {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) {
+      throw new Error('ルームが見つかりません');
+    }
+    
+    const roomData = roomDoc.data() as Room;
+    
+    // ゲーム中でない場合はエラー
+    if (roomData.status !== RoomStatus.PLAYING) {
+      throw new Error('ゲーム中のみお題を変更できます');
+    }
+    
+    // 回答済みの参加者がいる場合はエラー
+    const hasAnsweredParticipants = roomData.participants.some(p => p.hasAnswered);
+    if (hasAnsweredParticipants) {
+      throw new Error('既に回答している参加者がいるため、お題を変更できません');
+    }
+    
+    // 新しいお題を取得
+    const topicData = getRandomTopic();
+    
+    // 現在のゲームラウンドを更新
+    if (roomData.currentGameRoundId) {
+      const { updateGameRoundTopic } = await import('@/lib/gameRoundService');
+      await updateGameRoundTopic(roomData.currentGameRoundId, topicData.content);
+    }
+    
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('changeTopicIfNoAnswers error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('お題の変更に失敗しました');
   }
 }
 

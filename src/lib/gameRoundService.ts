@@ -9,6 +9,7 @@ import {
   updateDoc,
   serverTimestamp,
   Timestamp,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { GameRound, GameRoundStatus, JudgmentResult } from "@/types";
@@ -75,6 +76,22 @@ export async function updateGameRoundJudgment(
   }
 }
 
+// ゲームラウンドのお題を更新
+export async function updateGameRoundTopic(
+  gameRoundId: string,
+  newTopicContent: string
+): Promise<void> {
+  try {
+    const gameRoundRef = doc(db, "gameRounds", gameRoundId);
+    await updateDoc(gameRoundRef, {
+      topicContent: newTopicContent,
+    });
+  } catch (error) {
+    console.error("updateGameRoundTopic error:", error);
+    throw new Error("お題の更新に失敗しました");
+  }
+}
+
 // roomIdから全ラウンドを取得
 export async function getGameRoundsByRoomId(roomId: string): Promise<Array<GameRound>> {
   try {
@@ -131,4 +148,28 @@ export async function getGameRoundAnswers(
     console.error("getGameRoundAnswers error:", error);
     return [];
   }
+}
+
+// ゲームラウンドをリアルタイムで監視
+export function subscribeToGameRound(gameRoundId: string, callback: (gameRound: GameRound | null) => void) {
+  const gameRoundRef = doc(db, 'gameRounds', gameRoundId);
+  
+  return onSnapshot(gameRoundRef, (doc) => {
+    if (doc.exists()) {
+      const data = doc.data();
+      const gameRound: GameRound = {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt instanceof Timestamp 
+          ? data.createdAt.toDate() 
+          : data.createdAt
+      } as GameRound;
+      callback(gameRound);
+    } else {
+      callback(null);
+    }
+  }, (error) => {
+    console.error('GameRound subscription error:', error);
+    callback(null);
+  });
 }

@@ -15,8 +15,8 @@ function RoomContent() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isStartingGame, setIsStartingGame] = useState(false);
-  const [currentTopic, setCurrentTopic] = useState<{ content: string; round: number } | null>(null);
-  const [currentTopicId, setCurrentTopicId] = useState<string | null>(null);
+  const [currentTopicContent, setCurrentTopicContent] = useState<{ content: string; round: number } | null>(null);
+  const [currentGameRoundId, setCurrentGameRoundId] = useState<string | null>(null);
   const [answer, setAnswer] = useState("");
   const [submittedAnswer, setSubmittedAnswer] = useState("");
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
@@ -32,6 +32,7 @@ function RoomContent() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [selectedRound, setSelectedRound] = useState<any>(null);
   const [roundAnswers, setRoundAnswers] = useState<any[]>([]);
+  const [isChangingTopic, setIsChangingTopic] = useState(false);
 
   useEffect(() => {
     if (!roomCode) {
@@ -45,6 +46,7 @@ function RoomContent() {
     setCurrentUserId(userId);
 
     let unsubscribe: (() => void) | undefined;
+    let gameRoundUnsubscribe: (() => void) | undefined;
 
     const loadRoom = async () => {
       try {
@@ -91,15 +93,26 @@ function RoomContent() {
           const { getTopicByRoomId } = await import("@/lib/roomService");
           const topic = await getTopicByRoomId(roomData.id);
           if (topic) {
-            setCurrentTopic(topic);
-            setCurrentTopicId(topic.id);
+            setCurrentTopicContent(topic);
+            setCurrentGameRoundId(topic.id);
 
-            // 回答公開中の場合は回答データも取得
+            // 回答公開中の場合は回答データと判定結果も取得
             if (roomData.status === "revealing") {
               loadAnswersForRevealing(roomData);
-
-              // 現在の判定結果を取得
-              setHostJudgment(roomData.currentJudgment || null);
+              
+              // 既存の判定結果を取得
+              if (roomData.currentGameRoundId) {
+                const { getDoc, doc } = await import("firebase/firestore");
+                const { db } = await import("@/lib/firebase");
+                const gameRoundDoc = await getDoc(doc(db, "gameRounds", roomData.currentGameRoundId));
+                if (gameRoundDoc.exists()) {
+                  const gameRoundData = gameRoundDoc.data();
+                  if (gameRoundData.judgment) {
+                    console.log("Initial judgment loaded on room load:", gameRoundData.judgment);
+                    setHostJudgment(gameRoundData.judgment);
+                  }
+                }
+              }
             }
           }
         }
@@ -112,6 +125,7 @@ function RoomContent() {
 
         // リアルタイム更新の監視を開始
         const { subscribeToRoom } = await import("@/lib/roomService");
+        
         unsubscribe = subscribeToRoom(roomData.id, async (updatedRoom) => {
           if (updatedRoom) {
             // ルームの有効期限をチェック
@@ -136,32 +150,57 @@ function RoomContent() {
               if (
                 (updatedRoom.status === RoomStatus.PLAYING ||
                   updatedRoom.status === RoomStatus.REVEALING) &&
-                !currentTopic
+                !currentTopicContent
               ) {
                 const { getTopicByRoomId } = await import("@/lib/roomService");
                 const topic = await getTopicByRoomId(updatedRoom.id);
                 if (topic) {
-                  setCurrentTopic(topic);
-                  setCurrentTopicId(topic.id);
+                  setCurrentTopicContent(topic);
+                  setCurrentGameRoundId(topic.id);
 
                   // 回答公開中の場合は回答データも取得
                   if (updatedRoom.status === RoomStatus.REVEALING) {
                     loadAnswersForRevealing(updatedRoom);
-
-                    // 現在の判定結果を取得
-                    setHostJudgment(updatedRoom.currentJudgment || null);
                   }
                 }
               }
 
+              // gameRoundの監視を開始（お題変更検知・判定結果同期のため）
+              if (updatedRoom.currentGameRoundId) {
+                // 既存の監視があり、異なるGameRoundIdの場合は停止
+                if (gameRoundUnsubscribe && currentGameRoundId !== updatedRoom.currentGameRoundId) {
+                  gameRoundUnsubscribe();
+                  gameRoundUnsubscribe = undefined;
+                }
+                
+                // 監視が未開始の場合は開始
+                if (!gameRoundUnsubscribe) {
+                  const { subscribeToGameRound } = await import("@/lib/gameRoundService");
+                  gameRoundUnsubscribe = subscribeToGameRound(updatedRoom.currentGameRoundId, (gameRound) => {
+                    if (gameRound) {
+                      // お題内容が変更された場合は更新
+                      setCurrentTopicContent({
+                        content: gameRound.topicContent,
+                        round: gameRound.roundNumber
+                      });
+                      setCurrentGameRoundId(gameRound.id);
+                      
+                      // 判定結果も更新（重要：リアルタイム同期）
+                      console.log("GameRound judgment updated:", gameRound.judgment);
+                      setHostJudgment(gameRound.judgment || null);
+                    }
+                  });
+                }
+              }
+
               // 新しいお題に切り替わった場合は状態をリセット
-              if (updatedRoom.status === RoomStatus.PLAYING && currentTopicId) {
+              if (updatedRoom.status === RoomStatus.PLAYING && currentGameRoundId) {
                 const { getTopicByRoomId } = await import("@/lib/roomService");
                 const newTopic = await getTopicByRoomId(updatedRoom.id);
-                if (newTopic && newTopic.id !== currentTopicId) {
+                if (newTopic && newTopic.id !== currentGameRoundId) {
                   // 新しいラウンドが開始された
-                  setCurrentTopic(newTopic);
-                  setCurrentTopicId(newTopic.id);
+                  setCurrentTopicContent(newTopic);
+                  setCurrentGameRoundId(newTopic.id);
                   setHostJudgment(null);
                   setAllAnswers([]);
                   setSubmittedAnswer("");
@@ -190,15 +229,6 @@ function RoomContent() {
               // revealingステータスになった場合は回答データを取得
               if (updatedRoom.status === RoomStatus.REVEALING) {
                 loadAnswersForRevealing(updatedRoom);
-
-                // 現在の判定結果を取得
-                setHostJudgment(updatedRoom.currentJudgment || null);
-              }
-
-              // 判定結果の更新を監視（revealingステータス中のみ）
-              if (updatedRoom.status === RoomStatus.REVEALING) {
-                // roomの現在の判定結果を反映
-                setHostJudgment(updatedRoom.currentJudgment || null);
               }
             } else {
               // 参加者から削除された場合はエラー表示
@@ -222,6 +252,9 @@ function RoomContent() {
     return () => {
       if (unsubscribe) {
         unsubscribe();
+      }
+      if (gameRoundUnsubscribe) {
+        gameRoundUnsubscribe();
       }
     };
   }, [roomCode]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -281,6 +314,18 @@ function RoomContent() {
       const answers = await getAnswersByGameRoundId(roomData.currentGameRoundId);
 
       setAllAnswers(answers);
+      
+      // 判定結果も取得
+      const { getDoc, doc } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+      const gameRoundDoc = await getDoc(doc(db, "gameRounds", roomData.currentGameRoundId));
+      if (gameRoundDoc.exists()) {
+        const gameRoundData = gameRoundDoc.data();
+        if (gameRoundData.judgment) {
+          console.log("Initial judgment loaded:", gameRoundData.judgment);
+          setHostJudgment(gameRoundData.judgment);
+        }
+      }
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Failed to load answers:", err);
@@ -289,13 +334,16 @@ function RoomContent() {
 
   // 主催者による一致判定
   const handleHostJudgment = async (judgment: JudgmentResult) => {
-    if (!room || !currentTopicId) return;
+    if (!room || !currentGameRoundId) return;
 
     try {
+      console.log("Host judgment started:", judgment);
       const { saveHostJudgment } = await import("@/lib/roomService");
       await saveHostJudgment(room.id, judgment);
+      console.log("Host judgment saved:", judgment);
       setHostJudgment(judgment);
     } catch (err) {
+      console.error("Host judgment failed:", err);
       setError(err instanceof Error ? err.message : "判定の保存に失敗しました");
     }
   };
@@ -313,7 +361,7 @@ function RoomContent() {
       setAllAnswers([]);
       setSubmittedAnswer(""); // 次ラウンドで送信済み回答をクリア
       setHasSubmittedAnswer(false); // 回答状態もリセット
-      // currentTopicとcurrentTopicIdはリアルタイム更新で設定されるのでここではリセットしない
+      // currentTopicContentとcurrentGameRoundIdはリアルタイム更新で設定されるのでここではリセットしない
     } catch (err) {
       setError(err instanceof Error ? err.message : "次のラウンドの開始に失敗しました");
     } finally {
@@ -350,6 +398,21 @@ function RoomContent() {
       setError(err instanceof Error ? err.message : "回答公開に失敗しました");
     } finally {
       setIsForceRevealing(false);
+    }
+  };
+
+  const handleChangeTopic = async () => {
+    if (!room) return;
+
+    setIsChangingTopic(true);
+    try {
+      const { changeTopicIfNoAnswers } = await import("@/lib/roomService");
+      await changeTopicIfNoAnswers(room.id);
+      // リアルタイム更新で新しいお題が反映される
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "お題の変更に失敗しました");
+    } finally {
+      setIsChangingTopic(false);
     }
   };
 
@@ -403,7 +466,7 @@ function RoomContent() {
   };
 
   const handleSubmitAnswer = async () => {
-    if (!room || !currentUserId || !currentTopicId || !answer.trim()) return;
+    if (!room || !currentUserId || !currentGameRoundId || !answer.trim()) return;
 
     setIsSubmittingAnswer(true);
     try {
@@ -656,11 +719,28 @@ function RoomContent() {
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">ゲーム進行中</h2>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <h3 className="text-lg font-medium text-blue-900 mb-2">
-                お題 {currentTopic && `(第${currentTopic.round}ラウンド)`}
-              </h3>
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-lg font-medium text-blue-900">
+                  お題 {currentTopicContent && `(第${currentTopicContent.round}ラウンド)`}
+                </h3>
+                {/* 主催者のみ、誰も回答していない場合にお題変更ボタンを表示 */}
+                {room.participants.some((p) => p.id === currentUserId && p.isHost) && 
+                 !room.participants.some((p) => p.hasAnswered) && (
+                  <button
+                    onClick={handleChangeTopic}
+                    disabled={isChangingTopic}
+                    className={`py-1 px-3 rounded-lg text-sm font-medium transition-colors ${
+                      isChangingTopic
+                        ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                        : "bg-gray-600 text-white hover:bg-gray-700"
+                    }`}
+                  >
+                    {isChangingTopic ? "変更中..." : "お題変更"}
+                  </button>
+                )}
+              </div>
               <p className="text-blue-800 text-xl font-semibold">
-                {currentTopic ? currentTopic.content : "お題を読み込み中..."}
+                {currentTopicContent ? currentTopicContent.content : "お題を読み込み中..."}
               </p>
             </div>
 
@@ -781,36 +861,38 @@ function RoomContent() {
                       <p className="text-gray-600">履歴を読み込んでいます...</p>
                     </div>
                   ) : gameRounds.length > 0 ? (
-                    <div className="space-y-3">
-                      {gameRounds.map((round) => (
-                        <div
-                          key={round.id}
-                          className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                          onClick={() => loadRoundAnswers(round)}
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="font-medium text-gray-900">
-                              第{round.roundNumber}ラウンド
-                            </div>
-                            <div
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                round.judgment === "match"
-                                  ? "bg-green-100 text-green-800"
+                    <div className="max-h-96 overflow-y-auto border rounded-lg p-4">
+                      <div className="space-y-3">
+                        {gameRounds.map((round) => (
+                          <div
+                            key={round.id}
+                            className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                            onClick={() => loadRoundAnswers(round)}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="font-medium text-gray-900">
+                                第{round.roundNumber}ラウンド
+                              </div>
+                              <div
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  round.judgment === "match"
+                                    ? "bg-green-100 text-green-800"
+                                    : round.judgment === "no-match"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {round.judgment === "match"
+                                  ? "一致"
                                   : round.judgment === "no-match"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }`}
-                            >
-                              {round.judgment === "match"
-                                ? "一致"
-                                : round.judgment === "no-match"
-                                ? "不一致"
-                                : "判定なし"}
+                                  ? "不一致"
+                                  : "判定なし"}
+                              </div>
                             </div>
+                            <div className="text-gray-700 mb-2 font-bold">{round.topicContent}</div>
                           </div>
-                          <div className="text-gray-700 mb-2 font-bold">{round.topicContent}</div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center py-8">
@@ -883,10 +965,10 @@ function RoomContent() {
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <h3 className="text-lg font-medium text-blue-900 mb-2">
-                お題 {currentTopic && `(第${currentTopic.round}ラウンド)`}
+                お題 {currentTopicContent && `(第${currentTopicContent.round}ラウンド)`}
               </h3>
               <p className="text-blue-800 text-xl font-semibold">
-                {currentTopic ? currentTopic.content : "お題を読み込み中..."}
+                {currentTopicContent ? currentTopicContent.content : "お題を読み込み中..."}
               </p>
             </div>
 

@@ -25,7 +25,6 @@ export interface Room {
   status: RoomStatus;
   participants: User[];
   currentGameRoundId?: string;
-  currentJudgment?: JudgmentResult;
   createdAt: Date;
   expiresAt: Date;
 }
