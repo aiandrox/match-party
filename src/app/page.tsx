@@ -44,10 +44,19 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="mt-8 text-sm text-gray-500">
-            <p>最大20人まで参加可能</p>
-            <p>ルームは30分間有効</p>
-            <p>スマホ・タブレット対応</p>
+          <div className="mt-8">
+            <button 
+              onClick={() => router.push('/game-history')}
+              className="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700 transition-colors mb-4"
+            >
+              📊 ゲーム履歴を見る
+            </button>
+            
+            <div className="text-sm text-gray-500">
+              <p>最大20人まで参加可能</p>
+              <p>ルームは30分間有効</p>
+              <p>スマホ・タブレット対応</p>
+            </div>
           </div>
         </div>
       </div>

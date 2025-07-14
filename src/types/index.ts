@@ -5,10 +5,11 @@ export interface Room {
   hostId: string;
   status: 'waiting' | 'playing' | 'revealing' | 'ended';
   participants: User[];
-  currentTopicId?: string;
+  gameHistoryId?: string;
+  currentGameRoundId?: string;
   createdAt: Date;
   expiresAt: Date;
-  judgments?: { [topicId: string]: 'match' | 'no-match' };
+  judgments?: { [topicId: string]: 'match' | 'no-match' }; // 後方互換性のため残す
 }
 
 export interface User {
@@ -85,4 +86,54 @@ export interface JoinRoomRequest {
 export interface JoinRoomResponse {
   roomId: string;
   userId: string;
+}
+
+// Game History types
+export interface GameHistory {
+  id: string;
+  roomCode: string;
+  hostName: string;
+  participantCount: number;
+  totalRounds: number;
+  status: 'completed' | 'abandoned';
+  startedAt: Date;
+  endedAt: Date;
+  duration: number; // seconds
+  createdAt: Date;
+}
+
+export interface GameRound {
+  id: string;
+  gameHistoryId: string;
+  topicId: string;
+  roundNumber: number;
+  status: 'active' | 'completed';
+  totalParticipants: number;
+  answeredCount: number;
+  judgment?: 'match' | 'no-match';
+  startedAt: Date;
+  completedAt?: Date;
+  judgmentAt?: Date;
+  createdAt: Date;
+}
+
+export interface GameAnswer {
+  id: string;
+  gameHistoryId: string;
+  gameRoundId: string;
+  userName: string;
+  content: string;
+  submittedAt: Date;
+  createdAt: Date;
+}
+
+export interface GameParticipant {
+  id: string;
+  gameHistoryId: string;
+  userName: string;
+  isHost: boolean;
+  joinedAt: Date;
+  totalAnswers: number;
+  matchedRounds: number;
+  createdAt: Date;
 }

@@ -309,10 +309,27 @@ export async function startGame(roomId: string): Promise<void> {
       createdAt: serverTimestamp()
     });
     
+    // ゲーム履歴を作成
+    const { createGameHistory } = await import('@/lib/gameHistoryService');
+    const gameHistoryId = await createGameHistory({
+      ...roomData,
+      id: roomId
+    });
+    
+    // ゲームラウンドを作成
+    const { createGameRound } = await import('@/lib/gameRoundService');
+    const gameRoundId = await createGameRound(
+      gameHistoryId,
+      topicRef.id,
+      1,
+      roomData.participants.length
+    );
+    
     // ルーム状態を更新
     await updateDoc(roomRef, {
       status: 'playing',
-      currentTopicId: topicRef.id,
+      gameHistoryId: gameHistoryId,
+      currentGameRoundId: gameRoundId,
       // 全参加者の回答状態をリセット
       participants: roomData.participants.map(p => ({
         ...p,
@@ -330,41 +347,58 @@ export async function startGame(roomId: string): Promise<void> {
   }
 }
 
-// お題情報を取得
-export async function getTopicByRoomId(roomId: string): Promise<{ id: string; content: string; round: number } | null> {
+// 現在のゲームラウンドとお題情報を取得
+export async function getCurrentGameRoundWithTopic(roomId: string): Promise<{
+  gameRound: any;
+  topic: any;
+  round: number;
+} | null> {
   try {
-    const topicsQuery = query(
-      collection(db, 'topics'),
-      where('roomId', '==', roomId)
-    );
-    const topicsSnapshot = await getDocs(topicsQuery);
+    // ルーム情報を取得
+    const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
     
-    if (topicsSnapshot.empty) {
+    if (!roomDoc.exists()) {
       return null;
     }
     
-    // 最新のお題を取得（round順でソート）
-    const topics = topicsSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        content: data.content || '',
-        round: data.round || 1
-      };
-    });
+    const roomData = roomDoc.data();
+    if (!roomData.currentGameRoundId) {
+      return null;
+    }
     
-    const latestTopic = topics.sort((a, b) => b.round - a.round)[0];
+    // ゲームラウンドとお題情報を取得
+    const { getGameRoundWithTopic } = await import('@/lib/gameRoundService');
+    const { round: gameRound, topic } = await getGameRoundWithTopic(roomData.currentGameRoundId);
+    
+    if (!gameRound || !topic) {
+      return null;
+    }
     
     return {
-      id: latestTopic.id,
-      content: latestTopic.content,
-      round: latestTopic.round
+      gameRound,
+      topic,
+      round: gameRound.roundNumber
     };
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('getTopicByRoomId error:', error);
+    console.error('getCurrentGameRoundWithTopic error:', error);
     return null;
   }
+}
+
+// 後方互換性のための関数
+export async function getTopicByRoomId(roomId: string): Promise<{ id: string; content: string; round: number } | null> {
+  const result = await getCurrentGameRoundWithTopic(roomId);
+  if (!result) {
+    return null;
+  }
+  
+  return {
+    id: result.topic.id,
+    content: result.topic.content,
+    round: result.round
+  };
 }
 
 // 回答を送信
@@ -397,6 +431,21 @@ export async function submitAnswer(roomId: string, userId: string, topicId: stri
       participants: updatedParticipants
     });
     
+    // ゲーム履歴に回答を保存
+    if (roomData.gameHistoryId && roomData.currentGameRoundId) {
+      const { createGameAnswer } = await import('@/lib/gameHistoryService');
+      const user = roomData.participants.find(p => p.id === userId);
+      if (user) {
+        await createGameAnswer(
+          roomData.gameHistoryId,
+          roomData.currentGameRoundId,
+          user.name,
+          answer.trim(),
+          new Date()
+        );
+      }
+    }
+    
     // 全員回答したかチェック
     const allAnswered = updatedParticipants.every(p => p.hasAnswered);
     if (allAnswered) {
@@ -416,7 +465,19 @@ export async function submitAnswer(roomId: string, userId: string, topicId: stri
   }
 }
 
-// 特定のお題の全回答を取得
+// 特定のゲームラウンドの全回答を取得
+export async function getAnswersByGameRoundId(gameRoundId: string): Promise<Array<{ userId: string; content: string; userName: string; submittedAt: Date }>> {
+  try {
+    const { getGameRoundAnswers } = await import('@/lib/gameRoundService');
+    return await getGameRoundAnswers(gameRoundId);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('getAnswersByGameRoundId error:', error);
+    return [];
+  }
+}
+
+// 後方互換性のための関数
 export async function getAnswersByTopicId(topicId: string): Promise<Array<{ userId: string; content: string; submittedAt: Date }>> {
   try {
     const answersQuery = query(
@@ -445,10 +506,27 @@ export async function getAnswersByTopicId(topicId: string): Promise<Array<{ user
 // 主催者による一致判定を保存
 export async function saveHostJudgment(roomId: string, topicId: string, judgment: 'match' | 'no-match'): Promise<void> {
   try {
+    // ルーム情報を取得
     const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) {
+      throw new Error('ルームが見つかりません');
+    }
+    
+    const roomData = roomDoc.data() as Room;
+    
+    // ゲームラウンドの判定を更新
+    if (roomData.currentGameRoundId) {
+      const { updateGameRoundJudgment } = await import('@/lib/gameRoundService');
+      await updateGameRoundJudgment(roomData.currentGameRoundId, judgment);
+    }
+    
+    // 後方互換性のため、旧形式の判定情報も保存
     await updateDoc(roomRef, {
       [`judgments.${topicId}`]: judgment
     });
+    
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('saveHostJudgment error:', error);
@@ -487,24 +565,40 @@ export async function startNextRound(roomId: string): Promise<void> {
       createdAt: serverTimestamp()
     });
     
-    // 前回のお題のjudgmentデータを削除（必要に応じて）
-    const updates: any = {
+    // 前回のゲームラウンドを完了状態に更新
+    if (roomData.currentGameRoundId) {
+      const { completeGameRound } = await import('@/lib/gameRoundService');
+      const answeredCount = roomData.participants.filter(p => p.hasAnswered).length;
+      
+      // 現在のトピックの判定を取得
+      const currentTopic = await getTopicByRoomId(roomId);
+      const judgment = currentTopic && roomData.judgments ? roomData.judgments[currentTopic.id] : undefined;
+      
+      await completeGameRound(roomData.currentGameRoundId, answeredCount, judgment);
+    }
+    
+    // 新しいゲームラウンドを作成
+    let newGameRoundId: string | undefined;
+    if (roomData.gameHistoryId) {
+      const { createGameRound } = await import('@/lib/gameRoundService');
+      newGameRoundId = await createGameRound(
+        roomData.gameHistoryId,
+        topicRef.id,
+        nextRound,
+        roomData.participants.length
+      );
+    }
+    
+    // ルーム状態を更新（playingに戻す）
+    await updateDoc(roomRef, {
       status: 'playing',
-      currentTopicId: topicRef.id,
+      currentGameRoundId: newGameRoundId,
       // 全参加者の回答状態をリセット
       participants: roomData.participants.map(p => ({
         ...p,
         hasAnswered: false
       }))
-    };
-
-    // 前回のお題の判定データを削除（オプション: 履歴を残したい場合はコメントアウト）
-    if (roomData.currentTopicId && roomData.judgments && roomData.judgments[roomData.currentTopicId]) {
-      updates[`judgments.${roomData.currentTopicId}`] = null;
-    }
-
-    // ルーム状態を更新（playingに戻す）
-    await updateDoc(roomRef, updates);
+    });
     
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -520,6 +614,29 @@ export async function startNextRound(roomId: string): Promise<void> {
 export async function endGame(roomId: string): Promise<void> {
   try {
     const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) {
+      throw new Error('ルームが見つかりません');
+    }
+    
+    const roomData = roomDoc.data() as Room;
+    
+    // ゲーム履歴を完了状態に更新
+    if (roomData.gameHistoryId) {
+      const { updateGameHistoryOnComplete } = await import('@/lib/gameHistoryService');
+      const { getTopicByRoomId } = await import('@/lib/roomService');
+      const currentTopic = await getTopicByRoomId(roomId);
+      const totalRounds = currentTopic ? currentTopic.round : 1;
+      
+      await updateGameHistoryOnComplete(
+        roomData.gameHistoryId,
+        totalRounds,
+        roomData.createdAt,
+        'completed'
+      );
+    }
+    
     await updateDoc(roomRef, {
       status: 'ended'
     });
