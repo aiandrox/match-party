@@ -1,6 +1,9 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+// ルーム有効期限の定数（分）
+export const ROOM_EXPIRY_MINUTES = 3000 as const;
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -49,5 +52,5 @@ export function formatTimeRemaining(expiresAt: Date): string {
 
 export function createExpirationTime(): Date {
   const now = new Date();
-  return new Date(now.getTime() + 30 * 60 * 1000); // 30分後
+  return new Date(now.getTime() + ROOM_EXPIRY_MINUTES * 60 * 1000);
 }

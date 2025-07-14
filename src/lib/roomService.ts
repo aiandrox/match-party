@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Room, User, CreateRoomResponse, JoinRoomResponse } from '@/types';
-import { generateRoomCode, generateUserId } from './utils';
+import { generateRoomCode, generateUserId, createExpirationTime } from './utils';
 import { getRandomTopic } from './topicService';
 
 // ルーム作成
@@ -54,7 +54,7 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
       status: 'waiting',
       participants: [],
       createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000) // 30分後
+      expiresAt: createExpirationTime()
     };
 
     // Firestoreにルーム作成
@@ -504,7 +504,7 @@ export async function getAnswersByTopicId(topicId: string): Promise<Array<{ user
 }
 
 // 主催者による一致判定を保存
-export async function saveHostJudgment(roomId: string, topicId: string, judgment: 'match' | 'no-match'): Promise<void> {
+export async function saveHostJudgment(roomId: string, _topicId: string, judgment: 'match' | 'no-match'): Promise<void> {
   try {
     // ルーム情報を取得
     const roomRef = doc(db, 'rooms', roomId);
