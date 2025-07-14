@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 // ルーム有効期限の定数（分）
-export const ROOM_EXPIRY_MINUTES = 3000 as const;
+export const ROOM_EXPIRY_MINUTES = 30 as const;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

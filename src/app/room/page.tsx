@@ -829,17 +829,48 @@ function RoomContent() {
                         <div className="font-medium text-blue-900 mb-2">お題:</div>
                         <div className="text-blue-800">{selectedRound.topicContent}</div>
                       </div>
-
+                      
+                      {/* 判定結果表示 */}
+                      {selectedRound.judgment && (
+                        <div className="mb-6">
+                          {selectedRound.judgment === JudgmentResult.MATCH ? (
+                            <h3 className="text-2xl font-bold text-green-800 mb-2 text-center">
+                              🎉 全員一致
+                            </h3>
+                          ) : (
+                            <h3 className="text-2xl font-bold text-red-800 mb-2 text-center">
+                              ❌ 全員一致ならず
+                            </h3>
+                          )}
+                        </div>
+                      )}
+                      
                       {roundAnswers.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {roundAnswers.map((answer) => (
-                            <div key={answer.id} className="p-4 border border-gray-200 rounded-lg">
-                              <div className="font-medium text-gray-900 mb-2">
-                                {answer.userName}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {roundAnswers.map((answer) => {
+                            // 判定結果に基づく色設定
+                            let bgColor = "bg-gray-50 border-gray-200";
+                            let textColor = "text-gray-900";
+
+                            if (selectedRound.judgment === JudgmentResult.MATCH) {
+                              bgColor = "bg-green-100 border-green-300";
+                              textColor = "text-green-900";
+                            } else if (selectedRound.judgment === JudgmentResult.NO_MATCH) {
+                              bgColor = "bg-red-100 border-red-300";
+                              textColor = "text-red-900";
+                            }
+
+                            return (
+                              <div key={answer.id} className={`p-4 rounded-lg border ${bgColor}`}>
+                                <p className={`font-bold text-xl mb-2 ${textColor}`}>
+                                  {answer.content}
+                                </p>
+                                <p className="text-sm text-gray-600 text-right">
+                                  {answer.userName}
+                                </p>
                               </div>
-                              <div className="text-gray-700">{answer.content}</div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="text-center text-gray-500 py-8">
