@@ -31,7 +31,6 @@ export interface Topic {
 export interface TopicData {
   id: string;
   content: string;
-  category: string;
 }
 
 export interface Answer {

@@ -304,7 +304,6 @@ export async function startGame(roomId: string): Promise<void> {
     // お題をFirestoreに保存
     const topicRef = await addDoc(collection(db, 'topics'), {
       content: topicData.content,
-      category: topicData.category,
       roomId: roomId,
       round: 1,
       createdAt: serverTimestamp()
