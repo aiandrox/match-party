@@ -5,7 +5,7 @@ export interface Room {
   hostId: string;
   status: 'waiting' | 'playing' | 'revealing' | 'ended';
   participants: User[];
-  currentTopic?: Topic;
+  currentTopicId?: string;
   createdAt: Date;
   expiresAt: Date;
 }
@@ -26,6 +26,12 @@ export interface Topic {
   roomId: string;
   round: number;
   createdAt: Date;
+}
+
+export interface TopicData {
+  id: string;
+  content: string;
+  category: string;
 }
 
 export interface Answer {

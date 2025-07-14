@@ -1,0 +1,102 @@
+[
+  {
+    "id": "topic_001",
+    "content": "好きな色",
+    "category": "好み"
+  },
+  {
+    "id": "topic_002", 
+    "content": "よく行くコンビニ",
+    "category": "生活"
+  },
+  {
+    "id": "topic_003",
+    "content": "好きな季節",
+    "category": "好み"
+  },
+  {
+    "id": "topic_004",
+    "content": "朝食で食べるもの",
+    "category": "食べ物"
+  },
+  {
+    "id": "topic_005",
+    "content": "休日にしたいこと",
+    "category": "生活"
+  },
+  {
+    "id": "topic_006",
+    "content": "好きな動物",
+    "category": "好み"
+  },
+  {
+    "id": "topic_007",
+    "content": "よく使うSNS",
+    "category": "デジタル"
+  },
+  {
+    "id": "topic_008",
+    "content": "好きな映画のジャンル",
+    "category": "エンターテイメント"
+  },
+  {
+    "id": "topic_009",
+    "content": "普段飲む飲み物",
+    "category": "食べ物"
+  },
+  {
+    "id": "topic_010",
+    "content": "理想の旅行先",
+    "category": "旅行"
+  },
+  {
+    "id": "topic_011",
+    "content": "好きなスポーツ",
+    "category": "スポーツ"
+  },
+  {
+    "id": "topic_012",
+    "content": "よく聞く音楽のジャンル",
+    "category": "エンターテイメント"
+  },
+  {
+    "id": "topic_013",
+    "content": "ストレス発散方法",
+    "category": "生活"
+  },
+  {
+    "id": "topic_014",
+    "content": "好きな本のジャンル",
+    "category": "エンターテイメント"
+  },
+  {
+    "id": "topic_015",
+    "content": "よく使う交通手段",
+    "category": "生活"
+  },
+  {
+    "id": "topic_016",
+    "content": "好きなお菓子",
+    "category": "食べ物"
+  },
+  {
+    "id": "topic_017",
+    "content": "起きる時間",
+    "category": "生活"
+  },
+  {
+    "id": "topic_018",
+    "content": "好きな天気",
+    "category": "好み"
+  },
+  {
+    "id": "topic_019",
+    "content": "よく見るテレビ番組のジャンル",
+    "category": "エンターテイメント"
+  },
+  {
+    "id": "topic_020",
+    "content": "好きな曜日",
+    "category": "好み"
+  }
+]

@@ -14,6 +14,7 @@ function RoomContent() {
   const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isStartingGame, setIsStartingGame] = useState(false);
 
   useEffect(() => {
     if (!roomCode) {
@@ -146,6 +147,21 @@ function RoomContent() {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Copy failed:', err);
+    }
+  };
+
+  const handleStartGame = async () => {
+    if (!room) return;
+    
+    setIsStartingGame(true);
+    try {
+      const { startGame } = await import('@/lib/roomService');
+      await startGame(room.id);
+      // リアルタイム更新でステータスが変更される
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ゲーム開始に失敗しました');
+    } finally {
+      setIsStartingGame(false);
     }
   };
 
@@ -338,14 +354,15 @@ function RoomContent() {
             {room.participants.some(p => p.id === currentUserId && p.isHost) ? (
               <div className="space-y-3">
                 <button
+                  onClick={handleStartGame}
                   className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                    room.participants.length < 2
+                    room.participants.length < 2 || isStartingGame
                       ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
                       : 'bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
                   }`}
-                  disabled={room.participants.length < 2}
+                  disabled={room.participants.length < 2 || isStartingGame}
                 >
-                  ゲーム開始
+                  {isStartingGame ? 'ゲーム開始中...' : 'ゲーム開始'}
                 </button>
                 {room.participants.length < 2 && (
                   <p className="text-sm text-gray-500 text-center">
@@ -361,6 +378,62 @@ function RoomContent() {
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {room.status === 'playing' && (
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              ゲーム進行中
+            </h2>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <h3 className="text-lg font-medium text-blue-900 mb-2">お題</h3>
+              <p className="text-blue-800">お題を読み込み中...</p>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="answer" className="block text-sm font-medium text-gray-700 mb-2">
+                  あなたの回答
+                </label>
+                <input
+                  type="text"
+                  id="answer"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="回答を入力してください"
+                  maxLength={50}
+                />
+                <p className="mt-1 text-sm text-gray-500">50文字以内で入力してください</p>
+              </div>
+              
+              <button
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              >
+                回答を送信
+              </button>
+            </div>
+            
+            <div className="mt-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">回答状況</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {room.participants.map((participant) => (
+                  <div
+                    key={participant.id}
+                    className={`flex items-center space-x-2 p-2 rounded ${
+                      participant.hasAnswered ? 'bg-green-100' : 'bg-gray-100'
+                    }`}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${
+                      participant.hasAnswered ? 'bg-green-500' : 'bg-gray-400'
+                    }`} />
+                    <span className="text-sm text-gray-700 truncate">
+                      {participant.name}
+                      {participant.id === currentUserId && ' (あなた)'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>

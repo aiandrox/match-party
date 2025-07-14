@@ -9,11 +9,13 @@ import {
   updateDoc,
   arrayUnion,
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Room, User, CreateRoomResponse, JoinRoomResponse } from '@/types';
 import { generateRoomCode, generateUserId } from './utils';
+import { getRandomTopic } from './topicService';
 
 // ルーム作成
 export async function createRoom(hostName: string): Promise<CreateRoomResponse> {
@@ -272,4 +274,59 @@ export function subscribeToRoom(roomId: string, callback: (roomData: Room | null
     console.error('Firestore subscription error:', error);
     callback(null);
   });
+}
+
+// ゲーム開始
+export async function startGame(roomId: string): Promise<void> {
+  try {
+    // ルーム情報を取得
+    const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) {
+      throw new Error('ルームが見つかりません');
+    }
+    
+    const roomData = roomDoc.data() as Room;
+    
+    // ゲーム開始可能かチェック
+    if (roomData.status !== 'waiting') {
+      throw new Error('ゲームは既に開始されています');
+    }
+    
+    if (roomData.participants.length < 2) {
+      throw new Error('ゲーム開始には2人以上の参加者が必要です');
+    }
+    
+    // ランダムなお題を取得
+    const topicData = getRandomTopic();
+    
+    // お題をFirestoreに保存
+    const topicRef = await addDoc(collection(db, 'topics'), {
+      content: topicData.content,
+      category: topicData.category,
+      roomId: roomId,
+      round: 1,
+      createdAt: serverTimestamp()
+    });
+    
+    // ルーム状態を更新
+    await updateDoc(roomRef, {
+      status: 'playing',
+      currentTopicId: topicRef.id,
+      // 全参加者の回答状態をリセット
+      participants: roomData.participants.map(p => ({
+        ...p,
+        hasAnswered: false
+      }))
+    });
+    
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('startGame error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('ゲームの開始に失敗しました');
+  }
 }
