@@ -143,7 +143,29 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
       throw new Error('このルームは満員です');
     }
     
-    // 同じ名前の参加者が既にいるかチェック
+    // localStorageから既存のuserIdを確認
+    const existingUserId = localStorage.getItem(`userId_${roomCode}`);
+    
+    if (existingUserId) {
+      // 既存のユーザーIDで参加者リストに存在するかチェック
+      const existingUser = roomData.participants.find(p => p.id === existingUserId);
+      
+      if (existingUser) {
+        // 名前が一致する場合は再参加として処理
+        if (existingUser.name === userName) {
+          return {
+            roomId: roomDoc.id,
+            userId: existingUserId
+          };
+        } else {
+          throw new Error('この名前では再参加できません。以前使用した名前を入力してください');
+        }
+      }
+      // 既存のuserIdが参加者リストにない場合は、localStorageをクリア
+      localStorage.removeItem(`userId_${roomCode}`);
+    }
+    
+    // 同じ名前の参加者が既にいるかチェック（新規参加の場合）
     const existingParticipant = roomData.participants.find(
       p => p.name === userName
     );
