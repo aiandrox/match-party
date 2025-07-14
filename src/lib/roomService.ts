@@ -125,11 +125,6 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
     const roomDoc = roomSnapshot.docs[0];
     const roomData = roomDoc.data() as Room;
     
-    // ルームの状態確認
-    if (roomData.status !== 'waiting') {
-      throw new Error('このルームは既にゲームが開始されています');
-    }
-    
     // 有効期限確認
     const now = new Date();
     const expiresAt = roomData.expiresAt instanceof Timestamp 
@@ -140,11 +135,6 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
       throw new Error('このルームは有効期限が切れています');
     }
     
-    // 参加者数確認
-    if (roomData.participants.length >= 20) {
-      throw new Error('このルームは満員です');
-    }
-    
     // localStorageから既存のuserIdを確認
     const existingUserId = localStorage.getItem(`userId_${roomCode}`);
     
@@ -153,7 +143,7 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
       const existingUser = roomData.participants.find(p => p.id === existingUserId);
       
       if (existingUser) {
-        // 名前が一致する場合は再参加として処理
+        // 名前が一致する場合は再参加として処理（ゲーム中でも可能）
         if (existingUser.name === userName) {
           return {
             roomId: roomDoc.id,
@@ -165,6 +155,16 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
       }
       // 既存のuserIdが参加者リストにない場合は、localStorageをクリア
       localStorage.removeItem(`userId_${roomCode}`);
+    }
+    
+    // 新規参加の場合のみゲーム状態をチェック
+    if (roomData.status !== 'waiting') {
+      throw new Error('このルームは既にゲームが開始されています');
+    }
+    
+    // 参加者数確認
+    if (roomData.participants.length >= 20) {
+      throw new Error('このルームは満員です');
     }
     
     // 同じ名前の参加者が既にいるかチェック（新規参加の場合）

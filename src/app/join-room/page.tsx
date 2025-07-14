@@ -71,7 +71,7 @@ export default function JoinRoomPage() {
             </p>
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-700">
-                💡 <strong>再参加について:</strong> 以前参加したルームには、同じ名前を入力することで再度参加できます
+                💡 <strong>再参加について:</strong> 以前参加したルームには、ゲーム中でも同じ名前を入力することで再度参加できます
               </p>
             </div>
           </div>
