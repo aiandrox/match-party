@@ -458,3 +458,77 @@ export async function saveHostJudgment(roomId: string, topicId: string, judgment
     throw new Error('判定の保存に失敗しました');
   }
 }
+
+// 次のラウンドを開始
+export async function startNextRound(roomId: string): Promise<void> {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) {
+      throw new Error('ルームが見つかりません');
+    }
+    
+    const roomData = roomDoc.data() as Room;
+    
+    // 新しいお題を取得
+    const topicData = getRandomTopic();
+    
+    // 現在のラウンド数を取得
+    const { getTopicByRoomId } = await import('@/lib/roomService');
+    const currentTopic = await getTopicByRoomId(roomId);
+    const nextRound = currentTopic ? currentTopic.round + 1 : 2;
+    
+    // 新しいお題をFirestoreに保存
+    const topicRef = await addDoc(collection(db, 'topics'), {
+      content: topicData.content,
+      roomId: roomId,
+      round: nextRound,
+      createdAt: serverTimestamp()
+    });
+    
+    // 前回のお題のjudgmentデータを削除（必要に応じて）
+    const updates: any = {
+      status: 'playing',
+      currentTopicId: topicRef.id,
+      // 全参加者の回答状態をリセット
+      participants: roomData.participants.map(p => ({
+        ...p,
+        hasAnswered: false
+      }))
+    };
+
+    // 前回のお題の判定データを削除（オプション: 履歴を残したい場合はコメントアウト）
+    if (roomData.currentTopicId && roomData.judgments && roomData.judgments[roomData.currentTopicId]) {
+      updates[`judgments.${roomData.currentTopicId}`] = null;
+    }
+
+    // ルーム状態を更新（playingに戻す）
+    await updateDoc(roomRef, updates);
+    
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('startNextRound error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('次のラウンドの開始に失敗しました');
+  }
+}
+
+// ゲームを終了
+export async function endGame(roomId: string): Promise<void> {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    await updateDoc(roomRef, {
+      status: 'ended'
+    });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('endGame error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('ゲーム終了に失敗しました');
+  }
+}

@@ -18,10 +18,13 @@ function RoomContent() {
   const [currentTopic, setCurrentTopic] = useState<{ content: string; round: number } | null>(null);
   const [currentTopicId, setCurrentTopicId] = useState<string | null>(null);
   const [answer, setAnswer] = useState('');
+  const [submittedAnswer, setSubmittedAnswer] = useState('');
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [hasSubmittedAnswer, setHasSubmittedAnswer] = useState(false);
   const [allAnswers, setAllAnswers] = useState<Array<{ userId: string; content: string; userName: string }>>([]);
   const [hostJudgment, setHostJudgment] = useState<'match' | 'no-match' | null>(null);
+  const [isStartingNextRound, setIsStartingNextRound] = useState(false);
+  const [isEndingGame, setIsEndingGame] = useState(false);
 
   useEffect(() => {
     if (!roomCode) {
@@ -89,9 +92,12 @@ function RoomContent() {
             if (roomData.status === 'revealing') {
               loadAnswersForRevealing(roomData, topic.id);
               
-              // 既存の判定があるかチェック
+              // 既存の判定があるかチェック（但し、初回公開時は判定結果をクリア）
               if (roomData.judgments && roomData.judgments[topic.id]) {
                 setHostJudgment(roomData.judgments[topic.id]);
+              } else {
+                // 初回の回答公開時は判定結果をクリア
+                setHostJudgment(null);
               }
             }
           }
@@ -144,19 +150,44 @@ function RoomContent() {
                 }
               }
               
+              // 新しいお題に切り替わった場合は状態をリセット
+              if (updatedRoom.status === 'playing' && currentTopicId) {
+                const { getTopicByRoomId } = await import('@/lib/roomService');
+                const newTopic = await getTopicByRoomId(updatedRoom.id);
+                if (newTopic && newTopic.id !== currentTopicId) {
+                  // 新しいラウンドが開始された
+                  setCurrentTopic(newTopic);
+                  setCurrentTopicId(newTopic.id);
+                  setHostJudgment(null);
+                  setAllAnswers([]);
+                  setSubmittedAnswer('');
+                  setHasSubmittedAnswer(false);
+                }
+              }
+              
               // 現在のユーザーの回答状態を更新
               const currentUser = updatedRoom.participants.find(p => p.id === userId);
               if (currentUser) {
                 setHasSubmittedAnswer(currentUser.hasAnswered);
               }
               
+              // 新しいラウンドで回答状態がリセットされた場合の処理
+              if (updatedRoom.status === 'playing' && currentUser && !currentUser.hasAnswered && hasSubmittedAnswer) {
+                // 新しいラウンドで回答状態がリセットされた
+                setSubmittedAnswer('');
+                setHasSubmittedAnswer(false);
+              }
+              
               // revealingステータスになった場合は回答データを取得
               if (updatedRoom.status === 'revealing' && currentTopicId) {
                 loadAnswersForRevealing(updatedRoom, currentTopicId);
                 
-                // 判定結果があるかチェック
+                // 判定結果があるかチェック（但し、まだ判定が行われていない場合はクリア）
                 if (updatedRoom.judgments && updatedRoom.judgments[currentTopicId]) {
                   setHostJudgment(updatedRoom.judgments[currentTopicId]);
+                } else {
+                  // 回答公開時は判定結果をクリア（主催者が改めて判定するまで）
+                  setHostJudgment(null);
                 }
               }
             } else {
@@ -220,6 +251,43 @@ function RoomContent() {
     }
   };
 
+  // 次のラウンドを開始
+  const handleStartNextRound = async () => {
+    if (!room) return;
+    
+    setIsStartingNextRound(true);
+    try {
+      const { startNextRound } = await import('@/lib/roomService');
+      await startNextRound(room.id);
+      // 状態をリセット（リアルタイム更新で新しいお題が設定される）
+      setHostJudgment(null);
+      setAllAnswers([]);
+      setSubmittedAnswer(''); // 次ラウンドで送信済み回答をクリア
+      setHasSubmittedAnswer(false); // 回答状態もリセット
+      // currentTopicとcurrentTopicIdはリアルタイム更新で設定されるのでここではリセットしない
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '次のラウンドの開始に失敗しました');
+    } finally {
+      setIsStartingNextRound(false);
+    }
+  };
+
+  // ゲームを終了
+  const handleEndGame = async () => {
+    if (!room) return;
+    
+    setIsEndingGame(true);
+    try {
+      const { endGame } = await import('@/lib/roomService');
+      await endGame(room.id);
+      // リアルタイム更新で状態が変更される
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ゲーム終了に失敗しました');
+    } finally {
+      setIsEndingGame(false);
+    }
+  };
+
   const copyRoomCode = async () => {
     try {
       if (navigator.clipboard && window.isSecureContext) {
@@ -276,6 +344,8 @@ function RoomContent() {
     try {
       const { submitAnswer } = await import('@/lib/roomService');
       await submitAnswer(room.id, currentUserId, currentTopicId, answer);
+      // 送信した回答を保存
+      setSubmittedAnswer(answer);
       // リアルタイム更新で回答状態が変更される
       setAnswer(''); // 回答フィールドをクリア
     } catch (err) {
@@ -549,7 +619,11 @@ function RoomContent() {
             ) : (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <p className="text-green-800 font-medium">✓ 回答を送信しました</p>
-                <p className="text-green-600 text-sm mt-1">他の参加者の回答をお待ちください</p>
+                <div className="mt-3 p-3 bg-white border border-green-300 rounded-lg">
+                  <p className="text-sm text-green-700 mb-1">あなたの回答:</p>
+                  <p className="text-green-900 font-semibold text-lg">{submittedAnswer}</p>
+                </div>
+                <p className="text-green-600 text-sm mt-2">他の参加者の回答をお待ちください</p>
               </div>
             )}
             
@@ -572,6 +646,33 @@ function RoomContent() {
                     </span>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {room.status === 'ended' && (
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                🎉 ゲーム終了
+              </h2>
+              <p className="text-gray-600 mb-6">
+                お疲れさまでした！ゲームが終了しました。
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => router.push('/create-room')}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  新しいゲームを開始
+                </button>
+                <button
+                  onClick={() => router.push('/')}
+                  className="w-full bg-slate-600 text-white py-3 px-4 rounded-lg hover:bg-slate-700 transition-colors font-medium"
+                >
+                  ホームに戻る
+                </button>
               </div>
             </div>
           </div>
@@ -673,11 +774,27 @@ function RoomContent() {
                   次のラウンドを開始するか、ゲームを終了してください
                 </p>
                 <div className="space-x-3">
-                  <button className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors">
-                    次のラウンド
+                  <button 
+                    onClick={handleStartNextRound}
+                    disabled={isStartingNextRound}
+                    className={`py-2 px-6 rounded-lg transition-colors font-medium ${
+                      isStartingNextRound
+                        ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {isStartingNextRound ? '開始中...' : '次のラウンド'}
                   </button>
-                  <button className="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700 transition-colors">
-                    ゲーム終了
+                  <button 
+                    onClick={handleEndGame}
+                    disabled={isEndingGame}
+                    className={`py-2 px-6 rounded-lg transition-colors font-medium ${
+                      isEndingGame
+                        ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                        : 'bg-gray-600 text-white hover:bg-gray-700'
+                    }`}
+                  >
+                    {isEndingGame ? '終了中...' : 'ゲーム終了'}
                   </button>
                 </div>
               </div>
