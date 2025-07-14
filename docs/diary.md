@@ -933,6 +933,187 @@ Phase 3の実装を通じて、単なる技術的な実装を超えて「楽し�
 
 ---
 
+## 2025-07-14 - コンポーネントリファクタリング後の改善とバグ修正
+
+### セッション概要
+
+前回のセッションで実装したコンポーネント分離とPresenter Hooks実装の課題を解決し、さらにUI/UXを向上させるための改善を行った。
+
+### 主な作業内容
+
+#### 1. お題変更リアルタイム同期の実装
+**問題**: お題変更がリアルタイムで同期されていない
+**解決**: 
+- usePlayingGamePresenterでGameRoundのリアルタイム監視を実装
+- subscribeToGameRoundを使用してお題変更の即座反映
+- 新しいラウンドに進んだ場合の適切な状態リセット
+
+```typescript
+// usePlayingGamePresenterでの実装
+useEffect(() => {
+  const subscribeToNewRound = async () => {
+    const { subscribeToGameRound } = await import("@/lib/gameRoundService");
+    unsubscribe = subscribeToGameRound(room.currentGameRoundId!, (updatedGameRound) => {
+      if (updatedGameRound) {
+        setCurrentTopicContent({
+          content: updatedGameRound.topicContent,
+          round: updatedGameRound.roundNumber
+        });
+      }
+    });
+  };
+}, [room.currentGameRoundId]);
+```
+
+#### 2. レイアウトの元デザイン復旧
+**問題**: コンポーネント分離後、元のデザインが失われた
+**改善**:
+- グラデーション背景の復旧: `bg-gradient-to-br from-slate-50 to-gray-100`
+- 各コンポーネントにステータスバッジを追加（参加者募集中、ゲーム進行中、判定中、終了）
+- 2列グリッドレイアウトの復旧（ルームコード・参加者数）
+- 参加者カードの3列グリッド表示
+- 統一されたヘッダーサイズ（text-2xl）
+
+#### 3. 回答永続化問題の解決
+**問題**: 回答後にリロードすると自分の回答が消えてしまう
+**解決**:
+- `getAnswerByUserAndRound`関数をgameRoundServiceに追加
+- 回答済みの場合、リロード時にDBから実際の回答を取得
+- 新ラウンド時の適切な状態リセット
+
+```typescript
+// getAnswerByUserAndRound実装
+export async function getAnswerByUserAndRound(
+  gameRoundId: string,
+  userId: string
+): Promise<{ id: string; content: string; userName: string; submittedAt: Date } | null>
+```
+
+#### 4. UI/UXの改善
+**お題変更ボタンの最適化**:
+- お題エリアの右上にコンパクトなボタン配置
+- 「回答者がいる場合は〜」の説明文削除
+- より直感的なUI構成
+
+**ルームコード表示の改良**:
+- コピーボタンをルームコードの右側に配置
+- flexboxによる効率的なレイアウト
+- 使いやすさの向上
+
+**ゲーム統計表示の追加**:
+- 総ラウンド数、一致回数、一致率を表示
+- 3列カード形式での視覚的な統計情報
+- 色分けされた背景で見やすさ向上
+
+#### 5. バグ修正
+**React key prop警告の解決**:
+- GameEndedViewでのroundAnswers.mapのkey属性修正
+- `answer.id`（存在しない）→ `${answer.userName}-${index}`
+
+### 技術的詳細
+
+#### 実装したサービス関数
+```typescript
+// gameRoundService.ts
+export async function getAnswerByUserAndRound(
+  gameRoundId: string,
+  userId: string
+): Promise<{ id: string; content: string; userName: string; submittedAt: Date } | null>
+```
+
+#### リアルタイム同期の改善
+- GameRoundの変更監視強化
+- 新ラウンド時の適切な状態管理
+- お題変更の即座反映
+
+#### UI/UXの統一
+- 全コンポーネントで一貫したヘッダースタイル
+- 状態バッジの統一
+- グリッドレイアウトの最適化
+
+### 成果と効果
+
+#### 機能面での改善
+- ✅ お題変更のリアルタイム同期
+- ✅ 回答の永続化（リロード対応）
+- ✅ より直感的なUI操作
+- ✅ 統計情報の可視化
+
+#### 技術面での改善
+- ✅ React警告の解消
+- ✅ 適切なエラーハンドリング
+- ✅ 効率的なFirestoreクエリ
+- ✅ 保守性の高いコード
+
+#### デザイン面での改善
+- ✅ 元のデザイン品質の復旧
+- ✅ 統一されたUI表現
+- ✅ レスポンシブデザインの維持
+- ✅ 使いやすさの向上
+
+### 現在の状況
+
+**完成度**: MVP Phase 1-3 + 改善パッチ完了
+**技術的品質**: TypeScriptエラーゼロ、警告ゼロ
+**デプロイ状況**: 完全に動作するゲームがFirebase Hostingで稼働中
+**コードベース**: 保守性が高く、拡張しやすい構造
+
+### 率直な感想
+
+**技術的な手応え**
+コンポーネント分離によって一時的に失われた品質を、着実に復旧・改善できた。特にリアルタイム同期とUI/UXの両面で大きな改善が見られ、実用性が格段に向上した。
+
+**品質への確信**
+今回の修正により、実際のユーザーが使用する際の体験が大幅に改善された。回答の永続化問題解決により、ユーザーの混乱要因を排除できた。
+
+**開発プロセスの成熟**
+問題の特定から解決までの流れが効率化され、適切な技術選択ができるようになった。特にFirestoreのリアルタイム機能を活用したシステム設計に習熟した。
+
+**今後への不安と期待**
+基本機能は完成したが、より高度な機能（音声効果、アニメーション、詳細な統計など）への期待が高まる可能性がある。現在のシンプルな設計を維持しながら、どこまで拡張できるかが課題。
+
+### 次のステップ
+
+**Phase 4候補機能**
+- 次ラウンド機能の実装
+- 複数ラウンドでの得点システム
+- 音声・視覚効果の追加
+- より詳細な統計情報
+
+**技術的改善**
+- Firebase使用量監視
+- パフォーマンス最適化
+- セキュリティ強化
+- エラーレポーティング
+
+### プロジェクトの現状
+
+**MVP Phase 1-3 + 改善パッチ完了**
+- 🎉 **プロジェクト基盤**: Next.js 15 + Firebase環境構築完了
+- 🎉 **ルーム管理**: 作成・参加・権限管理完了
+- 🎉 **ゲーム機能**: 完全なゲームサイクル実装完了
+- 🎉 **リアルタイム同期**: 判定結果・お題変更の即座反映完了
+- 🎉 **UI/UX**: 統一されたデザイン・使いやすいインターフェース完了
+- 🎉 **永続化**: 回答データの適切な保存・復旧完了
+
+**技術的品質**
+- TypeScriptエラーゼロ
+- React警告ゼロ
+- 適切なエラーハンドリング
+- 効率的なFirestoreクエリ
+- 保守性の高いコードベース
+
+### セッション終了時の状況
+
+- **完了**: お題変更リアルタイム同期、回答永続化、UI/UX改善、統計表示追加
+- **次のステップ**: Phase 4 - より高度な機能実装の検討
+- **ブランチ**: main（全機能完成・改善済み）
+- **デプロイ**: 完全に動作するゲームがFirebase Hostingで稼働中
+
+**現在のURL**: https://match-party-findy.web.app/
+
+---
+
 ## 2025年7月13日 - リアルタイム更新と有効期限管理の実装
 
 ### 追加作業内容
@@ -1080,6 +1261,187 @@ if (now > expiresAt) {
 - **機能範囲**: Phase 2完全完成（リアルタイム更新含む）
 - **技術負債**: なし（クリーンアップ完了）
 - **次回優先度**: Phase 3ゲーム機能実装開始
+
+**現在のURL**: https://match-party-findy.web.app/
+
+---
+
+## 2025-07-14 - コンポーネントリファクタリング後の改善とバグ修正
+
+### セッション概要
+
+前回のセッションで実装したコンポーネント分離とPresenter Hooks実装の課題を解決し、さらにUI/UXを向上させるための改善を行った。
+
+### 主な作業内容
+
+#### 1. お題変更リアルタイム同期の実装
+**問題**: お題変更がリアルタイムで同期されていない
+**解決**: 
+- usePlayingGamePresenterでGameRoundのリアルタイム監視を実装
+- subscribeToGameRoundを使用してお題変更の即座反映
+- 新しいラウンドに進んだ場合の適切な状態リセット
+
+```typescript
+// usePlayingGamePresenterでの実装
+useEffect(() => {
+  const subscribeToNewRound = async () => {
+    const { subscribeToGameRound } = await import("@/lib/gameRoundService");
+    unsubscribe = subscribeToGameRound(room.currentGameRoundId!, (updatedGameRound) => {
+      if (updatedGameRound) {
+        setCurrentTopicContent({
+          content: updatedGameRound.topicContent,
+          round: updatedGameRound.roundNumber
+        });
+      }
+    });
+  };
+}, [room.currentGameRoundId]);
+```
+
+#### 2. レイアウトの元デザイン復旧
+**問題**: コンポーネント分離後、元のデザインが失われた
+**改善**:
+- グラデーション背景の復旧: `bg-gradient-to-br from-slate-50 to-gray-100`
+- 各コンポーネントにステータスバッジを追加（参加者募集中、ゲーム進行中、判定中、終了）
+- 2列グリッドレイアウトの復旧（ルームコード・参加者数）
+- 参加者カードの3列グリッド表示
+- 統一されたヘッダーサイズ（text-2xl）
+
+#### 3. 回答永続化問題の解決
+**問題**: 回答後にリロードすると自分の回答が消えてしまう
+**解決**:
+- `getAnswerByUserAndRound`関数をgameRoundServiceに追加
+- 回答済みの場合、リロード時にDBから実際の回答を取得
+- 新ラウンド時の適切な状態リセット
+
+```typescript
+// getAnswerByUserAndRound実装
+export async function getAnswerByUserAndRound(
+  gameRoundId: string,
+  userId: string
+): Promise<{ id: string; content: string; userName: string; submittedAt: Date } | null>
+```
+
+#### 4. UI/UXの改善
+**お題変更ボタンの最適化**:
+- お題エリアの右上にコンパクトなボタン配置
+- 「回答者がいる場合は〜」の説明文削除
+- より直感的なUI構成
+
+**ルームコード表示の改良**:
+- コピーボタンをルームコードの右側に配置
+- flexboxによる効率的なレイアウト
+- 使いやすさの向上
+
+**ゲーム統計表示の追加**:
+- 総ラウンド数、一致回数、一致率を表示
+- 3列カード形式での視覚的な統計情報
+- 色分けされた背景で見やすさ向上
+
+#### 5. バグ修正
+**React key prop警告の解決**:
+- GameEndedViewでのroundAnswers.mapのkey属性修正
+- `answer.id`（存在しない）→ `${answer.userName}-${index}`
+
+### 技術的詳細
+
+#### 実装したサービス関数
+```typescript
+// gameRoundService.ts
+export async function getAnswerByUserAndRound(
+  gameRoundId: string,
+  userId: string
+): Promise<{ id: string; content: string; userName: string; submittedAt: Date } | null>
+```
+
+#### リアルタイム同期の改善
+- GameRoundの変更監視強化
+- 新ラウンド時の適切な状態管理
+- お題変更の即座反映
+
+#### UI/UXの統一
+- 全コンポーネントで一貫したヘッダースタイル
+- 状態バッジの統一
+- グリッドレイアウトの最適化
+
+### 成果と効果
+
+#### 機能面での改善
+- ✅ お題変更のリアルタイム同期
+- ✅ 回答の永続化（リロード対応）
+- ✅ より直感的なUI操作
+- ✅ 統計情報の可視化
+
+#### 技術面での改善
+- ✅ React警告の解消
+- ✅ 適切なエラーハンドリング
+- ✅ 効率的なFirestoreクエリ
+- ✅ 保守性の高いコード
+
+#### デザイン面での改善
+- ✅ 元のデザイン品質の復旧
+- ✅ 統一されたUI表現
+- ✅ レスポンシブデザインの維持
+- ✅ 使いやすさの向上
+
+### 現在の状況
+
+**完成度**: MVP Phase 1-3 + 改善パッチ完了
+**技術的品質**: TypeScriptエラーゼロ、警告ゼロ
+**デプロイ状況**: 完全に動作するゲームがFirebase Hostingで稼働中
+**コードベース**: 保守性が高く、拡張しやすい構造
+
+### 率直な感想
+
+**技術的な手応え**
+コンポーネント分離によって一時的に失われた品質を、着実に復旧・改善できた。特にリアルタイム同期とUI/UXの両面で大きな改善が見られ、実用性が格段に向上した。
+
+**品質への確信**
+今回の修正により、実際のユーザーが使用する際の体験が大幅に改善された。回答の永続化問題解決により、ユーザーの混乱要因を排除できた。
+
+**開発プロセスの成熟**
+問題の特定から解決までの流れが効率化され、適切な技術選択ができるようになった。特にFirestoreのリアルタイム機能を活用したシステム設計に習熟した。
+
+**今後への不安と期待**
+基本機能は完成したが、より高度な機能（音声効果、アニメーション、詳細な統計など）への期待が高まる可能性がある。現在のシンプルな設計を維持しながら、どこまで拡張できるかが課題。
+
+### 次のステップ
+
+**Phase 4候補機能**
+- 次ラウンド機能の実装
+- 複数ラウンドでの得点システム
+- 音声・視覚効果の追加
+- より詳細な統計情報
+
+**技術的改善**
+- Firebase使用量監視
+- パフォーマンス最適化
+- セキュリティ強化
+- エラーレポーティング
+
+### プロジェクトの現状
+
+**MVP Phase 1-3 + 改善パッチ完了**
+- 🎉 **プロジェクト基盤**: Next.js 15 + Firebase環境構築完了
+- 🎉 **ルーム管理**: 作成・参加・権限管理完了
+- 🎉 **ゲーム機能**: 完全なゲームサイクル実装完了
+- 🎉 **リアルタイム同期**: 判定結果・お題変更の即座反映完了
+- 🎉 **UI/UX**: 統一されたデザイン・使いやすいインターフェース完了
+- 🎉 **永続化**: 回答データの適切な保存・復旧完了
+
+**技術的品質**
+- TypeScriptエラーゼロ
+- React警告ゼロ
+- 適切なエラーハンドリング
+- 効率的なFirestoreクエリ
+- 保守性の高いコードベース
+
+### セッション終了時の状況
+
+- **完了**: お題変更リアルタイム同期、回答永続化、UI/UX改善、統計表示追加
+- **次のステップ**: Phase 4 - より高度な機能実装の検討
+- **ブランチ**: main（全機能完成・改善済み）
+- **デプロイ**: 完全に動作するゲームがFirebase Hostingで稼働中
 
 **現在のURL**: https://match-party-findy.web.app/
 
@@ -1306,6 +1668,187 @@ Phase 4では、もう少し**実験的な機能**に挑戦したい。今回の
 - **機能範囲**: Phase 3完全完成（フルゲーム体験可能）
 - **品質**: プロダクションレディ
 - **技術負債**: なし
+
+**現在のURL**: https://match-party-findy.web.app/
+
+---
+
+## 2025-07-14 - コンポーネントリファクタリング後の改善とバグ修正
+
+### セッション概要
+
+前回のセッションで実装したコンポーネント分離とPresenter Hooks実装の課題を解決し、さらにUI/UXを向上させるための改善を行った。
+
+### 主な作業内容
+
+#### 1. お題変更リアルタイム同期の実装
+**問題**: お題変更がリアルタイムで同期されていない
+**解決**: 
+- usePlayingGamePresenterでGameRoundのリアルタイム監視を実装
+- subscribeToGameRoundを使用してお題変更の即座反映
+- 新しいラウンドに進んだ場合の適切な状態リセット
+
+```typescript
+// usePlayingGamePresenterでの実装
+useEffect(() => {
+  const subscribeToNewRound = async () => {
+    const { subscribeToGameRound } = await import("@/lib/gameRoundService");
+    unsubscribe = subscribeToGameRound(room.currentGameRoundId!, (updatedGameRound) => {
+      if (updatedGameRound) {
+        setCurrentTopicContent({
+          content: updatedGameRound.topicContent,
+          round: updatedGameRound.roundNumber
+        });
+      }
+    });
+  };
+}, [room.currentGameRoundId]);
+```
+
+#### 2. レイアウトの元デザイン復旧
+**問題**: コンポーネント分離後、元のデザインが失われた
+**改善**:
+- グラデーション背景の復旧: `bg-gradient-to-br from-slate-50 to-gray-100`
+- 各コンポーネントにステータスバッジを追加（参加者募集中、ゲーム進行中、判定中、終了）
+- 2列グリッドレイアウトの復旧（ルームコード・参加者数）
+- 参加者カードの3列グリッド表示
+- 統一されたヘッダーサイズ（text-2xl）
+
+#### 3. 回答永続化問題の解決
+**問題**: 回答後にリロードすると自分の回答が消えてしまう
+**解決**:
+- `getAnswerByUserAndRound`関数をgameRoundServiceに追加
+- 回答済みの場合、リロード時にDBから実際の回答を取得
+- 新ラウンド時の適切な状態リセット
+
+```typescript
+// getAnswerByUserAndRound実装
+export async function getAnswerByUserAndRound(
+  gameRoundId: string,
+  userId: string
+): Promise<{ id: string; content: string; userName: string; submittedAt: Date } | null>
+```
+
+#### 4. UI/UXの改善
+**お題変更ボタンの最適化**:
+- お題エリアの右上にコンパクトなボタン配置
+- 「回答者がいる場合は〜」の説明文削除
+- より直感的なUI構成
+
+**ルームコード表示の改良**:
+- コピーボタンをルームコードの右側に配置
+- flexboxによる効率的なレイアウト
+- 使いやすさの向上
+
+**ゲーム統計表示の追加**:
+- 総ラウンド数、一致回数、一致率を表示
+- 3列カード形式での視覚的な統計情報
+- 色分けされた背景で見やすさ向上
+
+#### 5. バグ修正
+**React key prop警告の解決**:
+- GameEndedViewでのroundAnswers.mapのkey属性修正
+- `answer.id`（存在しない）→ `${answer.userName}-${index}`
+
+### 技術的詳細
+
+#### 実装したサービス関数
+```typescript
+// gameRoundService.ts
+export async function getAnswerByUserAndRound(
+  gameRoundId: string,
+  userId: string
+): Promise<{ id: string; content: string; userName: string; submittedAt: Date } | null>
+```
+
+#### リアルタイム同期の改善
+- GameRoundの変更監視強化
+- 新ラウンド時の適切な状態管理
+- お題変更の即座反映
+
+#### UI/UXの統一
+- 全コンポーネントで一貫したヘッダースタイル
+- 状態バッジの統一
+- グリッドレイアウトの最適化
+
+### 成果と効果
+
+#### 機能面での改善
+- ✅ お題変更のリアルタイム同期
+- ✅ 回答の永続化（リロード対応）
+- ✅ より直感的なUI操作
+- ✅ 統計情報の可視化
+
+#### 技術面での改善
+- ✅ React警告の解消
+- ✅ 適切なエラーハンドリング
+- ✅ 効率的なFirestoreクエリ
+- ✅ 保守性の高いコード
+
+#### デザイン面での改善
+- ✅ 元のデザイン品質の復旧
+- ✅ 統一されたUI表現
+- ✅ レスポンシブデザインの維持
+- ✅ 使いやすさの向上
+
+### 現在の状況
+
+**完成度**: MVP Phase 1-3 + 改善パッチ完了
+**技術的品質**: TypeScriptエラーゼロ、警告ゼロ
+**デプロイ状況**: 完全に動作するゲームがFirebase Hostingで稼働中
+**コードベース**: 保守性が高く、拡張しやすい構造
+
+### 率直な感想
+
+**技術的な手応え**
+コンポーネント分離によって一時的に失われた品質を、着実に復旧・改善できた。特にリアルタイム同期とUI/UXの両面で大きな改善が見られ、実用性が格段に向上した。
+
+**品質への確信**
+今回の修正により、実際のユーザーが使用する際の体験が大幅に改善された。回答の永続化問題解決により、ユーザーの混乱要因を排除できた。
+
+**開発プロセスの成熟**
+問題の特定から解決までの流れが効率化され、適切な技術選択ができるようになった。特にFirestoreのリアルタイム機能を活用したシステム設計に習熟した。
+
+**今後への不安と期待**
+基本機能は完成したが、より高度な機能（音声効果、アニメーション、詳細な統計など）への期待が高まる可能性がある。現在のシンプルな設計を維持しながら、どこまで拡張できるかが課題。
+
+### 次のステップ
+
+**Phase 4候補機能**
+- 次ラウンド機能の実装
+- 複数ラウンドでの得点システム
+- 音声・視覚効果の追加
+- より詳細な統計情報
+
+**技術的改善**
+- Firebase使用量監視
+- パフォーマンス最適化
+- セキュリティ強化
+- エラーレポーティング
+
+### プロジェクトの現状
+
+**MVP Phase 1-3 + 改善パッチ完了**
+- 🎉 **プロジェクト基盤**: Next.js 15 + Firebase環境構築完了
+- 🎉 **ルーム管理**: 作成・参加・権限管理完了
+- 🎉 **ゲーム機能**: 完全なゲームサイクル実装完了
+- 🎉 **リアルタイム同期**: 判定結果・お題変更の即座反映完了
+- 🎉 **UI/UX**: 統一されたデザイン・使いやすいインターフェース完了
+- 🎉 **永続化**: 回答データの適切な保存・復旧完了
+
+**技術的品質**
+- TypeScriptエラーゼロ
+- React警告ゼロ
+- 適切なエラーハンドリング
+- 効率的なFirestoreクエリ
+- 保守性の高いコードベース
+
+### セッション終了時の状況
+
+- **完了**: お題変更リアルタイム同期、回答永続化、UI/UX改善、統計表示追加
+- **次のステップ**: Phase 4 - より高度な機能実装の検討
+- **ブランチ**: main（全機能完成・改善済み）
+- **デプロイ**: 完全に動作するゲームがFirebase Hostingで稼働中
 
 **現在のURL**: https://match-party-findy.web.app/
 
@@ -1914,6 +2457,187 @@ Firebase Firestoreでのリアルタイム同期は想像以上に複雑で、�
 - **完了**: 判定結果同期問題解決、UI改善、データベース最終簡素化
 - **次のステップ**: Phase 4 - 拡張機能の実装（次ラウンド、得点システム等）
 - **ブランチ**: main（全機能完成）
+- **デプロイ**: 完全に動作するゲームがFirebase Hostingで稼働中
+
+**現在のURL**: https://match-party-findy.web.app/
+
+---
+
+## 2025-07-14 - コンポーネントリファクタリング後の改善とバグ修正
+
+### セッション概要
+
+前回のセッションで実装したコンポーネント分離とPresenter Hooks実装の課題を解決し、さらにUI/UXを向上させるための改善を行った。
+
+### 主な作業内容
+
+#### 1. お題変更リアルタイム同期の実装
+**問題**: お題変更がリアルタイムで同期されていない
+**解決**: 
+- usePlayingGamePresenterでGameRoundのリアルタイム監視を実装
+- subscribeToGameRoundを使用してお題変更の即座反映
+- 新しいラウンドに進んだ場合の適切な状態リセット
+
+```typescript
+// usePlayingGamePresenterでの実装
+useEffect(() => {
+  const subscribeToNewRound = async () => {
+    const { subscribeToGameRound } = await import("@/lib/gameRoundService");
+    unsubscribe = subscribeToGameRound(room.currentGameRoundId!, (updatedGameRound) => {
+      if (updatedGameRound) {
+        setCurrentTopicContent({
+          content: updatedGameRound.topicContent,
+          round: updatedGameRound.roundNumber
+        });
+      }
+    });
+  };
+}, [room.currentGameRoundId]);
+```
+
+#### 2. レイアウトの元デザイン復旧
+**問題**: コンポーネント分離後、元のデザインが失われた
+**改善**:
+- グラデーション背景の復旧: `bg-gradient-to-br from-slate-50 to-gray-100`
+- 各コンポーネントにステータスバッジを追加（参加者募集中、ゲーム進行中、判定中、終了）
+- 2列グリッドレイアウトの復旧（ルームコード・参加者数）
+- 参加者カードの3列グリッド表示
+- 統一されたヘッダーサイズ（text-2xl）
+
+#### 3. 回答永続化問題の解決
+**問題**: 回答後にリロードすると自分の回答が消えてしまう
+**解決**:
+- `getAnswerByUserAndRound`関数をgameRoundServiceに追加
+- 回答済みの場合、リロード時にDBから実際の回答を取得
+- 新ラウンド時の適切な状態リセット
+
+```typescript
+// getAnswerByUserAndRound実装
+export async function getAnswerByUserAndRound(
+  gameRoundId: string,
+  userId: string
+): Promise<{ id: string; content: string; userName: string; submittedAt: Date } | null>
+```
+
+#### 4. UI/UXの改善
+**お題変更ボタンの最適化**:
+- お題エリアの右上にコンパクトなボタン配置
+- 「回答者がいる場合は〜」の説明文削除
+- より直感的なUI構成
+
+**ルームコード表示の改良**:
+- コピーボタンをルームコードの右側に配置
+- flexboxによる効率的なレイアウト
+- 使いやすさの向上
+
+**ゲーム統計表示の追加**:
+- 総ラウンド数、一致回数、一致率を表示
+- 3列カード形式での視覚的な統計情報
+- 色分けされた背景で見やすさ向上
+
+#### 5. バグ修正
+**React key prop警告の解決**:
+- GameEndedViewでのroundAnswers.mapのkey属性修正
+- `answer.id`（存在しない）→ `${answer.userName}-${index}`
+
+### 技術的詳細
+
+#### 実装したサービス関数
+```typescript
+// gameRoundService.ts
+export async function getAnswerByUserAndRound(
+  gameRoundId: string,
+  userId: string
+): Promise<{ id: string; content: string; userName: string; submittedAt: Date } | null>
+```
+
+#### リアルタイム同期の改善
+- GameRoundの変更監視強化
+- 新ラウンド時の適切な状態管理
+- お題変更の即座反映
+
+#### UI/UXの統一
+- 全コンポーネントで一貫したヘッダースタイル
+- 状態バッジの統一
+- グリッドレイアウトの最適化
+
+### 成果と効果
+
+#### 機能面での改善
+- ✅ お題変更のリアルタイム同期
+- ✅ 回答の永続化（リロード対応）
+- ✅ より直感的なUI操作
+- ✅ 統計情報の可視化
+
+#### 技術面での改善
+- ✅ React警告の解消
+- ✅ 適切なエラーハンドリング
+- ✅ 効率的なFirestoreクエリ
+- ✅ 保守性の高いコード
+
+#### デザイン面での改善
+- ✅ 元のデザイン品質の復旧
+- ✅ 統一されたUI表現
+- ✅ レスポンシブデザインの維持
+- ✅ 使いやすさの向上
+
+### 現在の状況
+
+**完成度**: MVP Phase 1-3 + 改善パッチ完了
+**技術的品質**: TypeScriptエラーゼロ、警告ゼロ
+**デプロイ状況**: 完全に動作するゲームがFirebase Hostingで稼働中
+**コードベース**: 保守性が高く、拡張しやすい構造
+
+### 率直な感想
+
+**技術的な手応え**
+コンポーネント分離によって一時的に失われた品質を、着実に復旧・改善できた。特にリアルタイム同期とUI/UXの両面で大きな改善が見られ、実用性が格段に向上した。
+
+**品質への確信**
+今回の修正により、実際のユーザーが使用する際の体験が大幅に改善された。回答の永続化問題解決により、ユーザーの混乱要因を排除できた。
+
+**開発プロセスの成熟**
+問題の特定から解決までの流れが効率化され、適切な技術選択ができるようになった。特にFirestoreのリアルタイム機能を活用したシステム設計に習熟した。
+
+**今後への不安と期待**
+基本機能は完成したが、より高度な機能（音声効果、アニメーション、詳細な統計など）への期待が高まる可能性がある。現在のシンプルな設計を維持しながら、どこまで拡張できるかが課題。
+
+### 次のステップ
+
+**Phase 4候補機能**
+- 次ラウンド機能の実装
+- 複数ラウンドでの得点システム
+- 音声・視覚効果の追加
+- より詳細な統計情報
+
+**技術的改善**
+- Firebase使用量監視
+- パフォーマンス最適化
+- セキュリティ強化
+- エラーレポーティング
+
+### プロジェクトの現状
+
+**MVP Phase 1-3 + 改善パッチ完了**
+- 🎉 **プロジェクト基盤**: Next.js 15 + Firebase環境構築完了
+- 🎉 **ルーム管理**: 作成・参加・権限管理完了
+- 🎉 **ゲーム機能**: 完全なゲームサイクル実装完了
+- 🎉 **リアルタイム同期**: 判定結果・お題変更の即座反映完了
+- 🎉 **UI/UX**: 統一されたデザイン・使いやすいインターフェース完了
+- 🎉 **永続化**: 回答データの適切な保存・復旧完了
+
+**技術的品質**
+- TypeScriptエラーゼロ
+- React警告ゼロ
+- 適切なエラーハンドリング
+- 効率的なFirestoreクエリ
+- 保守性の高いコードベース
+
+### セッション終了時の状況
+
+- **完了**: お題変更リアルタイム同期、回答永続化、UI/UX改善、統計表示追加
+- **次のステップ**: Phase 4 - より高度な機能実装の検討
+- **ブランチ**: main（全機能完成・改善済み）
 - **デプロイ**: 完全に動作するゲームがFirebase Hostingで稼働中
 
 **現在のURL**: https://match-party-findy.web.app/
