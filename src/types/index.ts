@@ -7,9 +7,9 @@ export interface Room {
   participants: User[];
   gameHistoryId?: string;
   currentGameRoundId?: string;
+  currentJudgment?: 'match' | 'no-match';
   createdAt: Date;
   expiresAt: Date;
-  judgments?: { [topicId: string]: 'match' | 'no-match' }; // 後方互換性のため残す
 }
 
 export interface User {

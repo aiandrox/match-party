@@ -25,6 +25,7 @@ function RoomContent() {
   const [hostJudgment, setHostJudgment] = useState<'match' | 'no-match' | null>(null);
   const [isStartingNextRound, setIsStartingNextRound] = useState(false);
   const [isEndingGame, setIsEndingGame] = useState(false);
+  const [isForceRevealing, setIsForceRevealing] = useState(false);
 
   useEffect(() => {
     if (!roomCode) {
@@ -92,13 +93,8 @@ function RoomContent() {
             if (roomData.status === 'revealing') {
               loadAnswersForRevealing(roomData, topic.id);
               
-              // 既存の判定があるかチェック（但し、初回公開時は判定結果をクリア）
-              if (roomData.judgments && roomData.judgments[topic.id]) {
-                setHostJudgment(roomData.judgments[topic.id]);
-              } else {
-                // 初回の回答公開時は判定結果をクリア
-                setHostJudgment(null);
-              }
+              // 現在の判定結果を取得
+              setHostJudgment(roomData.currentJudgment || null);
             }
           }
         }
@@ -142,10 +138,8 @@ function RoomContent() {
                   if (updatedRoom.status === 'revealing') {
                     loadAnswersForRevealing(updatedRoom, topic.id);
                     
-                    // 既存の判定があるかチェック
-                    if (updatedRoom.judgments && updatedRoom.judgments[topic.id]) {
-                      setHostJudgment(updatedRoom.judgments[topic.id]);
-                    }
+                    // 現在の判定結果を取得
+                    setHostJudgment(updatedRoom.currentJudgment || null);
                   }
                 }
               }
@@ -182,13 +176,14 @@ function RoomContent() {
               if (updatedRoom.status === 'revealing' && currentTopicId) {
                 loadAnswersForRevealing(updatedRoom, currentTopicId);
                 
-                // 判定結果があるかチェック（但し、まだ判定が行われていない場合はクリア）
-                if (updatedRoom.judgments && updatedRoom.judgments[currentTopicId]) {
-                  setHostJudgment(updatedRoom.judgments[currentTopicId]);
-                } else {
-                  // 回答公開時は判定結果をクリア（主催者が改めて判定するまで）
-                  setHostJudgment(null);
-                }
+                // 現在の判定結果を取得
+                setHostJudgment(updatedRoom.currentJudgment || null);
+              }
+              
+              // 判定結果の更新を監視（revealingステータス中のみ）
+              if (updatedRoom.status === 'revealing') {
+                // roomの現在の判定結果を反映
+                setHostJudgment(updatedRoom.currentJudgment || null);
               }
             } else {
               // 参加者から削除された場合はエラー表示
@@ -235,6 +230,19 @@ function RoomContent() {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Failed to load answers:', err);
+    }
+  };
+
+  // ゲームラウンドから判定結果を読み込み
+  const loadHostJudgmentFromGameRound = async (gameRoundId: string) => {
+    try {
+      const { getGameRoundWithTopic } = await import('@/lib/gameRoundService');
+      const { round } = await getGameRoundWithTopic(gameRoundId);
+      setHostJudgment(round?.judgment || null);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to load host judgment:', err);
+      setHostJudgment(null);
     }
   };
 
@@ -285,6 +293,22 @@ function RoomContent() {
       setError(err instanceof Error ? err.message : 'ゲーム終了に失敗しました');
     } finally {
       setIsEndingGame(false);
+    }
+  };
+
+  const handleForceRevealAnswers = async () => {
+    if (!room) return;
+    
+    setIsForceRevealing(true);
+    try {
+      // roomServiceに強制公開関数を追加する必要があります
+      const { forceRevealAnswers } = await import('@/lib/roomService');
+      await forceRevealAnswers(room.id);
+      // リアルタイム更新で状態が変更される
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '回答公開に失敗しました');
+    } finally {
+      setIsForceRevealing(false);
     }
   };
 
@@ -647,6 +671,41 @@ function RoomContent() {
                   </div>
                 ))}
               </div>
+              
+              {/* 主催者による強制回答オープン */}
+              {room.participants.some(p => p.id === currentUserId && p.isHost) && (
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-600 mb-3">
+                    回答済み: {room.participants.filter(p => p.hasAnswered).length} / {room.participants.length}
+                  </p>
+                  {(() => {
+                    const answeredCount = room.participants.filter(p => p.hasAnswered).length;
+                    const canForceReveal = answeredCount >= 2;
+                    
+                    return (
+                      <>
+                        <button
+                          onClick={handleForceRevealAnswers}
+                          disabled={isForceRevealing || !canForceReveal}
+                          className={`py-2 px-6 rounded-lg transition-colors font-medium ${
+                            isForceRevealing || !canForceReveal
+                              ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                              : 'bg-orange-600 text-white hover:bg-orange-700'
+                          }`}
+                        >
+                          {isForceRevealing ? '公開中...' : '回答を公開する'}
+                        </button>
+                        <p className="text-xs text-gray-500 mt-2">
+                          {canForceReveal 
+                            ? '全員の回答を待たずに強制的に回答を公開します'
+                            : '回答公開には2人以上の回答が必要です'
+                          }
+                        </p>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           </div>
         )}

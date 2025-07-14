@@ -522,9 +522,9 @@ export async function saveHostJudgment(roomId: string, topicId: string, judgment
       await updateGameRoundJudgment(roomData.currentGameRoundId, judgment);
     }
     
-    // 後方互換性のため、旧形式の判定情報も保存
+    // リアルタイム更新のためにroomの現在の判定も更新
     await updateDoc(roomRef, {
-      [`judgments.${topicId}`]: judgment
+      currentJudgment: judgment
     });
     
   } catch (error) {
@@ -534,6 +534,44 @@ export async function saveHostJudgment(roomId: string, topicId: string, judgment
       throw error;
     }
     throw new Error('判定の保存に失敗しました');
+  }
+}
+
+// 主催者による強制回答公開
+export async function forceRevealAnswers(roomId: string): Promise<void> {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) {
+      throw new Error('ルームが見つかりません');
+    }
+    
+    const roomData = roomDoc.data() as Room;
+    
+    // ゲーム中でない場合はエラー
+    if (roomData.status !== 'playing') {
+      throw new Error('ゲーム中のみ回答を公開できます');
+    }
+    
+    // 回答済みの参加者数をチェック
+    const answeredCount = roomData.participants.filter(p => p.hasAnswered).length;
+    if (answeredCount < 2) {
+      throw new Error('回答公開には2人以上の回答が必要です');
+    }
+    
+    // 強制的にrevealingステータスに変更
+    await updateDoc(roomRef, {
+      status: 'revealing'
+    });
+    
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('forceRevealAnswers error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('回答公開に失敗しました');
   }
 }
 
@@ -570,9 +608,13 @@ export async function startNextRound(roomId: string): Promise<void> {
       const { completeGameRound } = await import('@/lib/gameRoundService');
       const answeredCount = roomData.participants.filter(p => p.hasAnswered).length;
       
-      // 現在のトピックの判定を取得
-      const currentTopic = await getTopicByRoomId(roomId);
-      const judgment = currentTopic && roomData.judgments ? roomData.judgments[currentTopic.id] : undefined;
+      // 現在のゲームラウンドから判定を取得
+      let judgment: 'match' | 'no-match' | undefined;
+      if (roomData.currentGameRoundId) {
+        const { getGameRoundWithTopic } = await import('@/lib/gameRoundService');
+        const { round } = await getGameRoundWithTopic(roomData.currentGameRoundId);
+        judgment = round?.judgment;
+      }
       
       await completeGameRound(roomData.currentGameRoundId, answeredCount, judgment);
     }
@@ -593,6 +635,7 @@ export async function startNextRound(roomId: string): Promise<void> {
     await updateDoc(roomRef, {
       status: 'playing',
       currentGameRoundId: newGameRoundId,
+      currentJudgment: null, // 新しいラウンドでは判定をクリア
       // 全参加者の回答状態をリセット
       participants: roomData.participants.map(p => ({
         ...p,
