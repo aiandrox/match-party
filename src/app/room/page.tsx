@@ -20,6 +20,8 @@ function RoomContent() {
   const [answer, setAnswer] = useState('');
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [hasSubmittedAnswer, setHasSubmittedAnswer] = useState(false);
+  const [allAnswers, setAllAnswers] = useState<Array<{ userId: string; content: string; userName: string }>>([]);
+  const [hostJudgment, setHostJudgment] = useState<'match' | 'no-match' | null>(null);
 
   useEffect(() => {
     if (!roomCode) {
@@ -75,13 +77,23 @@ function RoomContent() {
         setRoom(roomData);
         setIsLoading(false);
 
-        // ゲーム中の場合はお題を取得
-        if (roomData.status === 'playing') {
+        // ゲーム中または回答公開中の場合はお題を取得
+        if (roomData.status === 'playing' || roomData.status === 'revealing') {
           const { getTopicByRoomId } = await import('@/lib/roomService');
           const topic = await getTopicByRoomId(roomData.id);
           if (topic) {
             setCurrentTopic(topic);
             setCurrentTopicId(topic.id);
+            
+            // 回答公開中の場合は回答データも取得
+            if (roomData.status === 'revealing') {
+              loadAnswersForRevealing(roomData, topic.id);
+              
+              // 既存の判定があるかチェック
+              if (roomData.judgments && roomData.judgments[topic.id]) {
+                setHostJudgment(roomData.judgments[topic.id]);
+              }
+            }
           }
         }
 
@@ -112,13 +124,23 @@ function RoomContent() {
             if (isStillParticipant) {
               setRoom(updatedRoom);
               
-              // ゲーム中になった場合はお題を取得
-              if (updatedRoom.status === 'playing' && !currentTopic) {
+              // ゲーム中または回答公開中になった場合はお題を取得
+              if ((updatedRoom.status === 'playing' || updatedRoom.status === 'revealing') && !currentTopic) {
                 const { getTopicByRoomId } = await import('@/lib/roomService');
                 const topic = await getTopicByRoomId(updatedRoom.id);
                 if (topic) {
                   setCurrentTopic(topic);
                   setCurrentTopicId(topic.id);
+                  
+                  // 回答公開中の場合は回答データも取得
+                  if (updatedRoom.status === 'revealing') {
+                    loadAnswersForRevealing(updatedRoom, topic.id);
+                    
+                    // 既存の判定があるかチェック
+                    if (updatedRoom.judgments && updatedRoom.judgments[topic.id]) {
+                      setHostJudgment(updatedRoom.judgments[topic.id]);
+                    }
+                  }
                 }
               }
               
@@ -126,6 +148,16 @@ function RoomContent() {
               const currentUser = updatedRoom.participants.find(p => p.id === userId);
               if (currentUser) {
                 setHasSubmittedAnswer(currentUser.hasAnswered);
+              }
+              
+              // revealingステータスになった場合は回答データを取得
+              if (updatedRoom.status === 'revealing' && currentTopicId) {
+                loadAnswersForRevealing(updatedRoom, currentTopicId);
+                
+                // 判定結果があるかチェック
+                if (updatedRoom.judgments && updatedRoom.judgments[currentTopicId]) {
+                  setHostJudgment(updatedRoom.judgments[currentTopicId]);
+                }
               }
             } else {
               // 参加者から削除された場合はエラー表示
@@ -152,6 +184,41 @@ function RoomContent() {
       }
     };
   }, [roomCode]);
+
+  // 回答公開用のデータ読み込み
+  const loadAnswersForRevealing = async (roomData: Room, topicId: string) => {
+    try {
+      const { getAnswersByTopicId } = await import('@/lib/roomService');
+      const answers = await getAnswersByTopicId(topicId);
+      
+      // 回答にユーザー名を付加
+      const answersWithNames = answers.map(answer => {
+        const participant = roomData.participants.find(p => p.id === answer.userId);
+        return {
+          ...answer,
+          userName: participant?.name || '不明なユーザー'
+        };
+      });
+      
+      setAllAnswers(answersWithNames);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to load answers:', err);
+    }
+  };
+
+  // 主催者による一致判定
+  const handleHostJudgment = async (judgment: 'match' | 'no-match') => {
+    if (!room || !currentTopicId) return;
+    
+    try {
+      const { saveHostJudgment } = await import('@/lib/roomService');
+      await saveHostJudgment(room.id, currentTopicId, judgment);
+      setHostJudgment(judgment);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '判定の保存に失敗しました');
+    }
+  };
 
   const copyRoomCode = async () => {
     try {
@@ -507,6 +574,114 @@ function RoomContent() {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {room.status === 'revealing' && (
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              回答発表
+            </h2>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h3 className="text-lg font-medium text-blue-900 mb-2">
+                お題 {currentTopic && `(第${currentTopic.round}ラウンド)`}
+              </h3>
+              <p className="text-blue-800 text-xl font-semibold">
+                {currentTopic ? currentTopic.content : 'お題を読み込み中...'}
+              </p>
+            </div>
+
+            {/* 判定結果表示 */}
+            {hostJudgment && (
+              <div className="mb-6">
+                {hostJudgment === 'match' ? (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                    <h3 className="text-2xl font-bold text-green-800 mb-2">🎉 全員一致！</h3>
+                    <p className="text-green-700">おめでとうございます！みんなで同じ答えを考えました！</p>
+                  </div>
+                ) : (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                    <h3 className="text-2xl font-bold text-red-800 mb-2">❌ 全員一致ならず</h3>
+                    <p className="text-red-700">残念！今回は一致しませんでした。次のラウンドで頑張りましょう！</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">全ての回答</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {allAnswers.map((answer, index) => {
+                  // 判定後の色設定
+                  let bgColor = "bg-gray-50 border-gray-200";
+                  let textColor = "text-gray-900";
+                  
+                  if (hostJudgment === 'match') {
+                    bgColor = "bg-green-100 border-green-300";
+                    textColor = "text-green-900";
+                  } else if (hostJudgment === 'no-match') {
+                    bgColor = "bg-red-100 border-red-300";
+                    textColor = "text-red-900";
+                  }
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`p-4 rounded-lg border ${bgColor}`}
+                    >
+                      <p className={`font-bold text-xl mb-2 ${textColor}`}>
+                        {answer.content}
+                      </p>
+                      <p className="text-sm text-gray-600 text-right">
+                        {answer.userName}
+                        {answer.userId === currentUserId && ' (あなた)'}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ホストのみに一致判定ボタンを表示 */}
+            {room.participants.some(p => p.id === currentUserId && p.isHost) && !hostJudgment && (
+              <div className="text-center mb-6">
+                <p className="text-gray-700 font-medium mb-4">
+                  回答の一致を判定してください
+                </p>
+                <div className="space-x-4">
+                  <button 
+                    onClick={() => handleHostJudgment('match')}
+                    className="bg-green-600 text-white py-3 px-8 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  >
+                    全員一致
+                  </button>
+                  <button 
+                    onClick={() => handleHostJudgment('no-match')}
+                    className="bg-red-600 text-white py-3 px-8 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                  >
+                    全員一致ならず
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ホストのみに次のラウンドまたは終了ボタンを表示 */}
+            {room.participants.some(p => p.id === currentUserId && p.isHost) && hostJudgment && (
+              <div className="text-center">
+                <p className="text-gray-600 mb-4">
+                  次のラウンドを開始するか、ゲームを終了してください
+                </p>
+                <div className="space-x-3">
+                  <button className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors">
+                    次のラウンド
+                  </button>
+                  <button className="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700 transition-colors">
+                    ゲーム終了
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

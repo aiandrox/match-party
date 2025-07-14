@@ -8,6 +8,7 @@ export interface Room {
   currentTopicId?: string;
   createdAt: Date;
   expiresAt: Date;
+  judgments?: { [topicId: string]: 'match' | 'no-match' };
 }
 
 export interface User {

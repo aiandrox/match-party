@@ -397,6 +397,15 @@ export async function submitAnswer(roomId: string, userId: string, topicId: stri
       participants: updatedParticipants
     });
     
+    // 全員回答したかチェック
+    const allAnswered = updatedParticipants.every(p => p.hasAnswered);
+    if (allAnswered) {
+      // 自動的にrevealingステータスに移行
+      await updateDoc(roomRef, {
+        status: 'revealing'
+      });
+    }
+    
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('submitAnswer error:', error);
@@ -404,5 +413,48 @@ export async function submitAnswer(roomId: string, userId: string, topicId: stri
       throw error;
     }
     throw new Error('回答の送信に失敗しました');
+  }
+}
+
+// 特定のお題の全回答を取得
+export async function getAnswersByTopicId(topicId: string): Promise<Array<{ userId: string; content: string; submittedAt: Date }>> {
+  try {
+    const answersQuery = query(
+      collection(db, 'answers'),
+      where('topicId', '==', topicId)
+    );
+    const answersSnapshot = await getDocs(answersQuery);
+    
+    return answersSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        userId: data.userId,
+        content: data.content,
+        submittedAt: data.submittedAt instanceof Timestamp 
+          ? data.submittedAt.toDate() 
+          : data.submittedAt
+      };
+    });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('getAnswersByTopicId error:', error);
+    return [];
+  }
+}
+
+// 主催者による一致判定を保存
+export async function saveHostJudgment(roomId: string, topicId: string, judgment: 'match' | 'no-match'): Promise<void> {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    await updateDoc(roomRef, {
+      [`judgments.${topicId}`]: judgment
+    });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('saveHostJudgment error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('判定の保存に失敗しました');
   }
 }
