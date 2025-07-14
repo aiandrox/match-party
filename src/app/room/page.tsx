@@ -46,6 +46,18 @@ function RoomContent() {
           return;
         }
 
+        // ルームの有効期限をチェック
+        const now = new Date();
+        const expiresAt = roomData.expiresAt instanceof Date 
+          ? roomData.expiresAt 
+          : new Date(roomData.expiresAt);
+        
+        if (now > expiresAt) {
+          setError('このルームは有効期限が切れています');
+          setIsLoading(false);
+          return;
+        }
+
         // ユーザーがルームの参加者として存在するかチェック
         const isParticipant = roomData.participants.some(p => p.id === userId);
         if (!isParticipant) {
@@ -61,6 +73,18 @@ function RoomContent() {
         const { subscribeToRoom } = await import('@/lib/roomService');
         unsubscribe = subscribeToRoom(roomData.id, (updatedRoom) => {
           if (updatedRoom) {
+            // ルームの有効期限をチェック
+            const now = new Date();
+            const expiresAt = updatedRoom.expiresAt instanceof Date 
+              ? updatedRoom.expiresAt 
+              : new Date(updatedRoom.expiresAt);
+            
+            if (now > expiresAt) {
+              setError('このルームは有効期限が切れました');
+              setRoom(null);
+              return;
+            }
+
             // ユーザーがまだ参加者として存在するかチェック
             const isStillParticipant = updatedRoom.participants.some(p => p.id === userId);
             if (isStillParticipant) {
@@ -179,12 +203,20 @@ function RoomContent() {
             <h2 className="text-xl font-bold text-gray-900 mb-2">エラー</h2>
             <p className="text-gray-600 mb-6">{error}</p>
             <div className="space-x-2">
-              {error.includes('参加権限') && (
+              {(error.includes('参加権限') && !error.includes('有効期限')) && (
                 <button
                   onClick={() => router.push('/join-room')}
                   className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   ルームに参加
+                </button>
+              )}
+              {error.includes('有効期限') && (
+                <button
+                  onClick={() => router.push('/create-room')}
+                  className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  新しいルームを作成
                 </button>
               )}
               <button
