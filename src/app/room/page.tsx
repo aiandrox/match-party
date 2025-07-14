@@ -15,6 +15,7 @@ function RoomContent() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isStartingGame, setIsStartingGame] = useState(false);
+  const [currentTopic, setCurrentTopic] = useState<{ content: string; round: number } | null>(null);
 
   useEffect(() => {
     if (!roomCode) {
@@ -70,9 +71,16 @@ function RoomContent() {
         setRoom(roomData);
         setIsLoading(false);
 
+        // ゲーム中の場合はお題を取得
+        if (roomData.status === 'playing') {
+          const { getTopicByRoomId } = await import('@/lib/roomService');
+          const topic = await getTopicByRoomId(roomData.id);
+          setCurrentTopic(topic);
+        }
+
         // リアルタイム更新の監視を開始
         const { subscribeToRoom } = await import('@/lib/roomService');
-        unsubscribe = subscribeToRoom(roomData.id, (updatedRoom) => {
+        unsubscribe = subscribeToRoom(roomData.id, async (updatedRoom) => {
           if (updatedRoom) {
             // ルームの有効期限をチェック
             const now = new Date();
@@ -90,6 +98,13 @@ function RoomContent() {
             const isStillParticipant = updatedRoom.participants.some(p => p.id === userId);
             if (isStillParticipant) {
               setRoom(updatedRoom);
+              
+              // ゲーム中になった場合はお題を取得
+              if (updatedRoom.status === 'playing' && !currentTopic) {
+                const { getTopicByRoomId } = await import('@/lib/roomService');
+                const topic = await getTopicByRoomId(updatedRoom.id);
+                setCurrentTopic(topic);
+              }
             } else {
               // 参加者から削除された場合はエラー表示
               setError('ルームから退出されました');
@@ -387,8 +402,12 @@ function RoomContent() {
               ゲーム進行中
             </h2>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <h3 className="text-lg font-medium text-blue-900 mb-2">お題</h3>
-              <p className="text-blue-800">お題を読み込み中...</p>
+              <h3 className="text-lg font-medium text-blue-900 mb-2">
+                お題 {currentTopic && `(第${currentTopic.round}ラウンド)`}
+              </h3>
+              <p className="text-blue-800 text-xl font-semibold">
+                {currentTopic ? currentTopic.content : 'お題を読み込み中...'}
+              </p>
             </div>
             
             <div className="space-y-4">

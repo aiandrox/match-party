@@ -329,3 +329,39 @@ export async function startGame(roomId: string): Promise<void> {
     throw new Error('ゲームの開始に失敗しました');
   }
 }
+
+// お題情報を取得
+export async function getTopicByRoomId(roomId: string): Promise<{ content: string; round: number } | null> {
+  try {
+    const topicsQuery = query(
+      collection(db, 'topics'),
+      where('roomId', '==', roomId)
+    );
+    const topicsSnapshot = await getDocs(topicsQuery);
+    
+    if (topicsSnapshot.empty) {
+      return null;
+    }
+    
+    // 最新のお題を取得（round順でソート）
+    const topics = topicsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        content: data.content || '',
+        round: data.round || 1
+      };
+    });
+    
+    const latestTopic = topics.sort((a, b) => b.round - a.round)[0];
+    
+    return {
+      content: latestTopic.content,
+      round: latestTopic.round
+    };
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('getTopicByRoomId error:', error);
+    return null;
+  }
+}
