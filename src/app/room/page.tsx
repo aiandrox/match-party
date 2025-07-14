@@ -22,7 +22,7 @@ function RoomContent() {
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [hasSubmittedAnswer, setHasSubmittedAnswer] = useState(false);
   const [allAnswers, setAllAnswers] = useState<
-    Array<{ userId: string; content: string; userName: string }>
+    Array<{ content: string; userName: string; submittedAt: Date }>
   >([]);
   const [hostJudgment, setHostJudgment] = useState<"match" | "no-match" | null>(null);
   const [isStartingNextRound, setIsStartingNextRound] = useState(false);
@@ -96,7 +96,7 @@ function RoomContent() {
 
             // 回答公開中の場合は回答データも取得
             if (roomData.status === "revealing") {
-              loadAnswersForRevealing(roomData, topic.id);
+              loadAnswersForRevealing(roomData);
 
               // 現在の判定結果を取得
               setHostJudgment(roomData.currentJudgment || null);
@@ -146,7 +146,7 @@ function RoomContent() {
 
                   // 回答公開中の場合は回答データも取得
                   if (updatedRoom.status === RoomStatus.REVEALING) {
-                    loadAnswersForRevealing(updatedRoom, topic.id);
+                    loadAnswersForRevealing(updatedRoom);
 
                     // 現在の判定結果を取得
                     setHostJudgment(updatedRoom.currentJudgment || null);
@@ -188,8 +188,8 @@ function RoomContent() {
               }
 
               // revealingステータスになった場合は回答データを取得
-              if (updatedRoom.status === RoomStatus.REVEALING && currentTopicId) {
-                loadAnswersForRevealing(updatedRoom, currentTopicId);
+              if (updatedRoom.status === RoomStatus.REVEALING) {
+                loadAnswersForRevealing(updatedRoom);
 
                 // 現在の判定結果を取得
                 setHostJudgment(updatedRoom.currentJudgment || null);
@@ -226,24 +226,19 @@ function RoomContent() {
     };
   }, [roomCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // loadGameHistory関数は不要（gameHistoriesコレクション削除により）
-  // const loadGameHistory = useCallback(async (historyId: string) => {
-  //   ...
-  // }, []);
-
   const loadGameRounds = useCallback(async (roomId: string) => {
     try {
       setIsLoadingHistory(true);
       const { getGameRoundsByRoomId } = await import("@/lib/gameRoundService");
-      const roundsWithTopics = await getGameRoundsByRoomId(roomId);
+      const gameRounds = await getGameRoundsByRoomId(roomId);
 
       // データを表示用に変換
-      const formattedRounds = roundsWithTopics.map(({ round, topic }) => ({
+      const formattedRounds = gameRounds.map((round) => ({
         id: round.id,
         roundNumber: round.roundNumber,
         judgment: round.judgment,
-        topicContent: topic?.content || "お題不明",
-        topicId: topic?.id || "",
+        topicContent: round.topicContent,
+        gameRoundId: round.id, // GameRoundのIDを使用
       }));
 
       setGameRounds(formattedRounds);
@@ -277,21 +272,15 @@ function RoomContent() {
   }, [room, gameRounds.length, loadGameRounds]);
 
   // 回答公開用のデータ読み込み
-  const loadAnswersForRevealing = async (roomData: Room, topicId: string) => {
+  const loadAnswersForRevealing = async (roomData: Room) => {
     try {
-      const { getAnswersByTopicId } = await import("@/lib/roomService");
-      const answers = await getAnswersByTopicId(topicId);
+      if (!roomData.currentGameRoundId) {
+        return;
+      }
+      const { getAnswersByGameRoundId } = await import("@/lib/roomService");
+      const answers = await getAnswersByGameRoundId(roomData.currentGameRoundId);
 
-      // 回答にユーザー名を付加
-      const answersWithNames = answers.map((answer) => {
-        const participant = roomData.participants.find((p) => p.id === answer.userId);
-        return {
-          ...answer,
-          userName: participant?.name || "不明なユーザー",
-        };
-      });
-
-      setAllAnswers(answersWithNames);
+      setAllAnswers(answers);
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Failed to load answers:", err);
@@ -304,7 +293,7 @@ function RoomContent() {
 
     try {
       const { saveHostJudgment } = await import("@/lib/roomService");
-      await saveHostJudgment(room.id, currentTopicId, judgment);
+      await saveHostJudgment(room.id, judgment);
       setHostJudgment(judgment);
     } catch (err) {
       setError(err instanceof Error ? err.message : "判定の保存に失敗しました");
@@ -341,8 +330,6 @@ function RoomContent() {
       const { endGame } = await import("@/lib/roomService");
       await endGame(room.id);
       // リアルタイム更新で状態が変更される
-
-      // ゲーム終了後の履歴読み込みは不要（gameHistoriesコレクション削除により）
     } catch (err) {
       setError(err instanceof Error ? err.message : "ゲーム終了に失敗しました");
     } finally {
@@ -421,7 +408,7 @@ function RoomContent() {
     setIsSubmittingAnswer(true);
     try {
       const { submitAnswer } = await import("@/lib/roomService");
-      await submitAnswer(room.id, currentUserId, currentTopicId, answer);
+      await submitAnswer(room.id, currentUserId, answer);
       // 送信した回答を保存
       setSubmittedAnswer(answer);
       // リアルタイム更新で回答状態が変更される
@@ -938,7 +925,6 @@ function RoomContent() {
                       <p className={`font-bold text-xl mb-2 ${textColor}`}>{answer.content}</p>
                       <p className="text-sm text-gray-600 text-right">
                         {answer.userName}
-                        {answer.userId === currentUserId && " (あなた)"}
                       </p>
                     </div>
                   );

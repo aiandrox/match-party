@@ -1,6 +1,3 @@
-// gameHistories コレクションは削除されました
-// このファイルの関数は使用されていません
-
 // 回答履歴を作成（gameAnswers コレクションに直接保存）
 export async function createGameAnswer(
   gameRoundId: string,

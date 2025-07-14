@@ -40,31 +40,15 @@ export interface User {
   hasAnswered: boolean;
 }
 
-export interface Topic {
-  id: string;
-  content: string;
-  roomId: string;
-  round: number;
-  createdAt: Date;
-}
-
 export interface TopicData {
   id: string;
   content: string;
 }
 
-export interface Answer {
-  id: string;
-  userId: string;
-  topicId: string;
-  content: string;
-  submittedAt: Date;
-}
 
 export interface GameState {
   room: Room | null;
   currentUser: User | null;
-  answers: Answer[];
   isLoading: boolean;
   error: string | null;
 }
@@ -110,7 +94,8 @@ export interface JoinRoomResponse {
 
 export interface GameRound {
   id: string;
-  topicId: string;
+  roomId: string;
+  topicContent: string;
   roundNumber: number;
   status: GameRoundStatus;
   judgment?: JudgmentResult;

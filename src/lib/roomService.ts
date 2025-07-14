@@ -13,7 +13,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Room, User, CreateRoomResponse, JoinRoomResponse, RoomStatus, JudgmentResult } from '@/types';
+import { Room, User, CreateRoomResponse, JoinRoomResponse, RoomStatus, JudgmentResult, GameRound } from '@/types';
 import { generateRoomCode, generateUserId, createExpirationTime } from './utils';
 import { getRandomTopic } from './topicService';
 
@@ -301,18 +301,12 @@ export async function startGame(roomId: string): Promise<void> {
     // ランダムなお題を取得
     const topicData = getRandomTopic();
     
-    // お題をFirestoreに保存
-    const topicRef = await addDoc(collection(db, 'topics'), {
-      content: topicData.content,
-      roomId: roomId,
-      round: 1,
-      createdAt: serverTimestamp()
-    });
     
     // ゲームラウンドを作成
     const { createGameRound } = await import('@/lib/gameRoundService');
     const gameRoundId = await createGameRound(
-      topicRef.id,
+      roomId,
+      topicData.content,
       1
     );
     
@@ -357,13 +351,28 @@ export async function getCurrentGameRoundWithTopic(roomId: string): Promise<{
       return null;
     }
     
-    // ゲームラウンドとお題情報を取得
-    const { getGameRoundWithTopic } = await import('@/lib/gameRoundService');
-    const { round: gameRound, topic } = await getGameRoundWithTopic(roomData.currentGameRoundId);
+    // ゲームラウンド情報を取得
+    const gameRoundDoc = await getDoc(doc(db, 'gameRounds', roomData.currentGameRoundId));
     
-    if (!gameRound || !topic) {
+    if (!gameRoundDoc.exists()) {
       return null;
     }
+    
+    const gameRoundData = gameRoundDoc.data();
+    const gameRound = {
+      id: gameRoundDoc.id,
+      ...gameRoundData,
+      createdAt: gameRoundData.createdAt instanceof Timestamp ? gameRoundData.createdAt.toDate() : gameRoundData.createdAt
+    } as GameRound;
+    
+    // topicContentはgameRoundに含まれているのでtopicオブジェクトを作成
+    const topic = {
+      id: gameRound.id,
+      content: gameRound.topicContent,
+      roomId: gameRound.roomId,
+      round: gameRound.roundNumber,
+      createdAt: gameRound.createdAt
+    };
     
     return {
       gameRound,
@@ -392,15 +401,8 @@ export async function getTopicByRoomId(roomId: string): Promise<{ id: string; co
 }
 
 // 回答を送信
-export async function submitAnswer(roomId: string, userId: string, topicId: string, answer: string): Promise<void> {
+export async function submitAnswer(roomId: string, userId: string, answer: string): Promise<void> {
   try {
-    // 回答をFirestoreに保存
-    await addDoc(collection(db, 'answers'), {
-      userId: userId,
-      topicId: topicId,
-      content: answer.trim(),
-      submittedAt: serverTimestamp()
-    });
 
     // ルーム情報を取得して参加者の回答状態を更新
     const roomRef = doc(db, 'rooms', roomId);
@@ -455,7 +457,7 @@ export async function submitAnswer(roomId: string, userId: string, topicId: stri
 }
 
 // 特定のゲームラウンドの全回答を取得
-export async function getAnswersByGameRoundId(gameRoundId: string): Promise<Array<{ userId: string; content: string; userName: string; submittedAt: Date }>> {
+export async function getAnswersByGameRoundId(gameRoundId: string): Promise<Array<{ content: string; userName: string; submittedAt: Date }>> {
   try {
     const { getGameRoundAnswers } = await import('@/lib/gameRoundService');
     return await getGameRoundAnswers(gameRoundId);
@@ -466,34 +468,9 @@ export async function getAnswersByGameRoundId(gameRoundId: string): Promise<Arra
   }
 }
 
-// 後方互換性のための関数
-export async function getAnswersByTopicId(topicId: string): Promise<Array<{ userId: string; content: string; submittedAt: Date }>> {
-  try {
-    const answersQuery = query(
-      collection(db, 'answers'),
-      where('topicId', '==', topicId)
-    );
-    const answersSnapshot = await getDocs(answersQuery);
-    
-    return answersSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        userId: data.userId,
-        content: data.content,
-        submittedAt: data.submittedAt instanceof Timestamp 
-          ? data.submittedAt.toDate() 
-          : data.submittedAt
-      };
-    });
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('getAnswersByTopicId error:', error);
-    return [];
-  }
-}
 
 // 主催者による一致判定を保存
-export async function saveHostJudgment(roomId: string, _topicId: string, judgment: JudgmentResult): Promise<void> {
+export async function saveHostJudgment(roomId: string, judgment: JudgmentResult): Promise<void> {
   try {
     // ルーム情報を取得
     const roomRef = doc(db, 'rooms', roomId);
@@ -584,13 +561,6 @@ export async function startNextRound(roomId: string): Promise<void> {
     const currentTopic = await getTopicByRoomId(roomId);
     const nextRound = currentTopic ? currentTopic.round + 1 : 2;
     
-    // 新しいお題をFirestoreに保存
-    const topicRef = await addDoc(collection(db, 'topics'), {
-      content: topicData.content,
-      roomId: roomId,
-      round: nextRound,
-      createdAt: serverTimestamp()
-    });
     
     // 前回のゲームラウンドを完了状態に更新
     if (roomData.currentGameRoundId) {
@@ -599,9 +569,11 @@ export async function startNextRound(roomId: string): Promise<void> {
       // 現在のゲームラウンドから判定を取得
       let judgment: JudgmentResult | undefined;
       if (roomData.currentGameRoundId) {
-        const { getGameRoundWithTopic } = await import('@/lib/gameRoundService');
-        const { round } = await getGameRoundWithTopic(roomData.currentGameRoundId);
-        judgment = round?.judgment;
+        const gameRoundDoc = await getDoc(doc(db, 'gameRounds', roomData.currentGameRoundId));
+        if (gameRoundDoc.exists()) {
+          const gameRoundData = gameRoundDoc.data();
+          judgment = gameRoundData.judgment;
+        }
       }
       
       await completeGameRound(roomData.currentGameRoundId, judgment);
@@ -610,7 +582,8 @@ export async function startNextRound(roomId: string): Promise<void> {
     // 新しいゲームラウンドを作成
     const { createGameRound } = await import('@/lib/gameRoundService');
     const newGameRoundId = await createGameRound(
-      topicRef.id,
+      roomId,
+      topicData.content,
       nextRound
     );
     
@@ -645,8 +618,6 @@ export async function endGame(roomId: string): Promise<void> {
     if (!roomDoc.exists()) {
       throw new Error('ルームが見つかりません');
     }
-    
-    // ゲーム履歴関連の処理は不要（gameHistoriesコレクション削除により）
     
     await updateDoc(roomRef, {
       status: RoomStatus.ENDED
