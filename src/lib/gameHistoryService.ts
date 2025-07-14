@@ -59,6 +59,8 @@ export async function createGameHistory(room: Room): Promise<string> {
         userName: participant.name,
         isHost: participant.isHost,
         joinedAt: participant.joinedAt,
+        totalAnswers: 0, // 後で更新
+        matchedRounds: 0, // 後で更新
         createdAt: new Date(),
       };
 

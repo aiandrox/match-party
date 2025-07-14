@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { validateUserName, validateRoomCode } from '@/lib/utils';
 
 export default function JoinRoomPage() {
   const [roomCode, setRoomCode] = useState('');
@@ -23,18 +24,13 @@ export default function JoinRoomPage() {
       return;
     }
 
-    if (userName.length < 2 || userName.length > 20) {
-      setError('名前は2文字以上20文字以内で入力してください');
+    if (!validateUserName(userName)) {
+      setError('名前は2文字以上20文字以内で、日本語・英数字のみ使用できます');
       return;
     }
 
-    if (!/^[a-zA-Z0-9ひらがなカタカナ漢字]+$/.test(userName)) {
-      setError('名前は日本語、英数字のみ使用できます');
-      return;
-    }
-
-    if (roomCode.length !== 20) {
-      setError('ルームコードは20文字で入力してください');
+    if (!validateRoomCode(roomCode)) {
+      setError('ルームコードは20文字の英数字で入力してください');
       return;
     }
 

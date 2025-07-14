@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { validateUserName } from '@/lib/utils';
 
 export default function CreateRoomPage() {
   const [hostName, setHostName] = useState('');
@@ -17,13 +18,8 @@ export default function CreateRoomPage() {
       return;
     }
 
-    if (hostName.length < 2 || hostName.length > 20) {
-      setError('名前は2文字以上20文字以内で入力してください');
-      return;
-    }
-
-    if (!/^[a-zA-Z0-9ひらがなカタカナ漢字]+$/.test(hostName)) {
-      setError('名前は日本語、英数字のみ使用できます');
+    if (!validateUserName(hostName)) {
+      setError('名前は2文字以上20文字以内で、日本語・英数字のみ使用できます');
       return;
     }
 

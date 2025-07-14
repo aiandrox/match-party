@@ -135,7 +135,8 @@ function RoomContent() {
 
               // ゲーム中または回答公開中になった場合はお題を取得
               if (
-                (updatedRoom.status === RoomStatus.PLAYING || updatedRoom.status === RoomStatus.REVEALING) &&
+                (updatedRoom.status === RoomStatus.PLAYING ||
+                  updatedRoom.status === RoomStatus.REVEALING) &&
                 !currentTopic
               ) {
                 const { getTopicByRoomId } = await import("@/lib/roomService");
@@ -285,7 +286,6 @@ function RoomContent() {
       console.error("Failed to load answers:", err);
     }
   };
-
 
   // 主催者による一致判定
   const handleHostJudgment = async (judgment: JudgmentResult) => {
@@ -885,25 +885,18 @@ function RoomContent() {
             {hostJudgment && (
               <div className="mb-6">
                 {hostJudgment === JudgmentResult.MATCH ? (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-                    <h3 className="text-2xl font-bold text-green-800 mb-2">🎉 全員一致！</h3>
-                    <p className="text-green-700">
-                      おめでとうございます！みんなで同じ答えを考えました！
-                    </p>
-                  </div>
+                  <h3 className="text-2xl font-bold text-green-800 mb-2 text-center">
+                    🎉 全員一致
+                  </h3>
                 ) : (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                    <h3 className="text-2xl font-bold text-red-800 mb-2">❌ 全員一致ならず</h3>
-                    <p className="text-red-700">
-                      残念！今回は一致しませんでした。次のラウンドで頑張りましょう！
-                    </p>
-                  </div>
+                  <h3 className="text-2xl font-bold text-red-800 mb-2 text-center">
+                    ❌ 全員一致ならず
+                  </h3>
                 )}
               </div>
             )}
 
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">全ての回答</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {allAnswers.map((answer, index) => {
                   // 判定後の色設定
