@@ -3454,9 +3454,9 @@ export const cleanupExpiredRooms = onSchedule({
 
 **運用準備**
 - 本番環境: https://match-party-findy.web.app/
-- 自動クリーンアップ: デプロイ待ち
+- 自動クリーンアップ: 本番稼働中
 - 長期運用: 基盤整備完了
 
 ---
 
-*次回更新: Cloud Functions デプロイ・検証完了時*
+*次回更新: 新機能実装または運用改善時*

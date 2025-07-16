@@ -121,11 +121,11 @@ firebase deploy
 5. **docs/diary.md** - 開発日記（前回の思考・感情）
 6. **docs/user-todos.md** - ユーザーのTODOリスト
 
-## 現在の状況（2025-07-14更新）
+## 現在の状況（2025-07-16更新）
 
-### 完成状況 - MVP Phase 1-3 完全完了 🎉
-- **プロジェクト状態**: プロダクションレディ
-- **技術スタック確定**: Next.js 15 + TypeScript + Tailwind CSS + Firebase Hosting + Firestore + localStorage
+### 完成状況 - MVP Phase 1-4 完全完了 🎉
+- **プロジェクト状態**: プロダクションレディ（長期運用対応）
+- **技術スタック確定**: Next.js 15 + TypeScript + Tailwind CSS + Firebase Hosting + Firestore + Cloud Functions + localStorage
 - **デプロイ状況**: Firebase Hosting本番稼働（https://match-party-findy.web.app/）
 
 ### 実装完了機能
@@ -154,11 +154,10 @@ firebase deploy
 - ✅ ゲーム状態管理（waiting → playing → revealing）
 - ✅ UI/UX改善（回答表示、色分け、レイアウト）
 
-### 次のステップ（Phase 4検討中）
-- 次ラウンド機能（新しいお題での継続）
-- ゲーム終了機能（最終結果表示）
-- 複数ラウンドでの得点システム
-- 音声・視覚効果の追加
+**Phase 4（データ管理・運用）**
+- ✅ 自動クリーンアップ機能（Cloud Functions）
+- ✅ 期限切れルーム削除（毎日午前0時実行）
+- ✅ 長期運用基盤整備
 
 ### URL構造
 - ホーム: `/`
@@ -172,6 +171,7 @@ firebase deploy
 - **localStorage管理**: ユーザーIDをルーム固有キーで保存
 - **セキュリティ**: 参加権限チェック、Firestore参加者リスト照合
 - **リアルタイム**: Firestore onSnapshotで実現
+- **自動クリーンアップ**: Cloud Functions v2で期限切れルーム削除
 - **開発環境分離**: Firebase Emulatorで本番データを保護
 
 ### 開発環境の設定

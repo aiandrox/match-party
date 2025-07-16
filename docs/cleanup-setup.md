@@ -2,7 +2,7 @@
 
 ## 概要
 
-Firebase Cloud Functionsを使用して、期限切れのルーム（30分経過）とそれに関連するデータを1時間おきに自動的に削除する機能です。
+Firebase Cloud Functionsを使用して、期限切れのルーム（30分経過）とそれに関連するデータを毎日午前0時に自動削除する機能です。
 
 ## 前提条件
 
@@ -10,12 +10,7 @@ Firebase Cloud Functionsを使用して、期限切れのルーム（30分経過
 
 Cloud Functionsを使用するには、Firebase プロジェクトを **Blaze Plan（従量課金プラン）** に移行する必要があります。
 
-**無料枠（月間）:**
-- 実行回数: 2,000,000回
-- 計算時間: 400,000 GB-sec
-- CPU時間: 200,000 CPU-sec
-
-**このプロジェクトでの使用量見積もり:**
+**使用量見積もり:**
 - 実行回数: 30回/月（1日1回）
 - 無料枠の0.0015%の使用量で実質無料
 
@@ -66,9 +61,6 @@ firebase emulators:start --only functions
 ```bash
 # Functions のみデプロイ
 firebase deploy --only functions
-
-# 全体をデプロイ
-firebase deploy
 ```
 
 ## 実装されている機能
@@ -95,9 +87,17 @@ firebase deploy
 firebase functions:log
 ```
 
-### 手動実行
+### 運用状況の確認
 
-デプロイ後は自動実行されるため、手動実行は通常不要です。テスト目的で手動実行する場合は、Firebase Console の Cloud Functions から直接実行できます。
+デプロイ後は毎日午前0時に自動実行されます。実行状況は Firebase Console で確認できます。
+
+```bash
+# ログを確認
+firebase functions:log --only cleanupExpiredRooms
+
+# リアルタイムログ監視
+firebase functions:log --follow
+```
 
 ## 削除対象データ
 
@@ -158,7 +158,7 @@ firebase login --reauth
 
 ## コスト見積もり
 
-現在の設定では、月間使用量は無料枠の1%未満です：
+月間使用量は無料枠の1%未満で実質無料：
 
 ```
 月間使用量見積もり:
