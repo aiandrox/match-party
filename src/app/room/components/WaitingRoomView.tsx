@@ -7,7 +7,7 @@ interface WaitingRoomViewProps {
 }
 
 export function WaitingRoomView({ room, currentUserId }: WaitingRoomViewProps) {
-  const { isStartingGame, copySuccess, isHost, canStartGame, startGame, copyRoomCode } =
+  const { isStartingGame, inviteUrlCopySuccess, isHost, canStartGame, startGame, copyInviteUrl } =
     useWaitingRoomPresenter({ room, currentUserId });
 
   return (
@@ -19,30 +19,32 @@ export function WaitingRoomView({ room, currentUserId }: WaitingRoomViewProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="text-gray-600 mb-2">ルームコード:</div>
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-mono bg-white px-3 py-2 rounded border font-bold text-slate-800 flex-1">
-              {room.code}
-            </span>
-            <button
-              onClick={copyRoomCode}
-              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors text-sm font-medium"
-            >
-              {copySuccess ? "✓" : "コピー"}
-            </button>
-          </div>
-        </div>
 
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="text-gray-600 mb-2">参加者数:</div>
-          <div className="text-3xl font-bold text-gray-900">{room.participants.length}/20</div>
+      <div className="bg-blue-50 rounded-lg p-4 mb-6">
+        <div className="text-blue-800 mb-2 font-medium">招待URL:</div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-mono bg-white px-3 py-2 rounded border text-slate-700 flex-1 break-all">
+            {typeof window !== 'undefined' ? `${window.location.origin}/join-room?code=${room.code}` : `招待URLを生成中...`}
+          </span>
+          <button
+            onClick={copyInviteUrl}
+            className="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors text-sm font-medium whitespace-nowrap"
+          >
+            {inviteUrlCopySuccess ? "✓" : "URLコピー"}
+          </button>
         </div>
+        <p className="text-xs text-blue-600 mt-2">
+          このURLを友達に送って、簡単にルームに招待できます
+        </p>
       </div>
 
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">参加者一覧</h3>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-lg font-semibold text-gray-900">参加者一覧</h3>
+          <div className="text-sm text-gray-600">
+            {room.participants.length}/20人
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {room.participants.map((participant) => {
             const isCurrentUser = participant.id === currentUserId;

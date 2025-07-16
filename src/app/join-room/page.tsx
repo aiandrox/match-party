@@ -1,15 +1,24 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { validateUserName, validateRoomCode } from '@/lib/utils';
 
-export default function JoinRoomPage() {
+function JoinRoomPageContent() {
   const [roomCode, setRoomCode] = useState('');
   const [userName, setUserName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // URLのクエリパラメータから部屋番号を取得
+  useEffect(() => {
+    const codeFromUrl = searchParams.get('code');
+    if (codeFromUrl) {
+      setRoomCode(codeFromUrl.toUpperCase());
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,5 +146,13 @@ export default function JoinRoomPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function JoinRoomPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <JoinRoomPageContent />
+    </Suspense>
   );
 }

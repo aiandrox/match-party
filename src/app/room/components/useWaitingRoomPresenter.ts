@@ -8,11 +8,11 @@ interface UseWaitingRoomPresenterProps {
 
 interface UseWaitingRoomPresenterReturn {
   isStartingGame: boolean;
-  copySuccess: boolean;
+  inviteUrlCopySuccess: boolean;
   isHost: boolean;
   canStartGame: boolean;
   startGame: () => Promise<void>;
-  copyRoomCode: () => Promise<void>;
+  copyInviteUrl: () => Promise<void>;
 }
 
 export function useWaitingRoomPresenter({
@@ -20,7 +20,7 @@ export function useWaitingRoomPresenter({
   currentUserId
 }: UseWaitingRoomPresenterProps): UseWaitingRoomPresenterReturn {
   const [isStartingGame, setIsStartingGame] = useState(false);
-  const [copySuccess, setCopySuccess] = useState(false);
+  const [inviteUrlCopySuccess, setInviteUrlCopySuccess] = useState(false);
 
   const isHost = room.participants.some((p) => p.id === currentUserId && p.isHost);
   const canStartGame = room.participants.length >= 2;
@@ -39,32 +39,35 @@ export function useWaitingRoomPresenter({
     }
   }, [room.id, isHost, canStartGame, isStartingGame]);
 
-  const copyRoomCode = useCallback(async () => {
+
+  const copyInviteUrl = useCallback(async () => {
     try {
+      const inviteUrl = `${window.location.origin}/join-room?code=${room.code}`;
+      
       if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(room.code);
+        await navigator.clipboard.writeText(inviteUrl);
       } else {
         // フォールバック：execCommandを使用
         const textArea = document.createElement("textarea");
-        textArea.value = room.code;
+        textArea.value = inviteUrl;
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand("copy");
         document.body.removeChild(textArea);
       }
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
+      setInviteUrlCopySuccess(true);
+      setTimeout(() => setInviteUrlCopySuccess(false), 2000);
     } catch (error) {
-      console.error("コピーに失敗しました:", error);
+      console.error("招待URLのコピーに失敗しました:", error);
     }
   }, [room.code]);
 
   return {
     isStartingGame,
-    copySuccess,
+    inviteUrlCopySuccess,
     isHost,
     canStartGame,
     startGame,
-    copyRoomCode
+    copyInviteUrl
   };
 }
