@@ -103,8 +103,44 @@ npm install
 ### 環境変数設定
 ```bash
 # .env.local (Gitignoreで除外済み)
-NEXT_PUBLIC_FIREBASE_CONFIG=...
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# 開発環境分離
+NEXT_PUBLIC_USE_EMULATOR=false  # 本番データベース使用
+NEXT_PUBLIC_USE_EMULATOR=true   # ローカルエミュレータ使用
 ```
+
+### 開発環境の選択
+
+#### 本番データベース使用（従来の方法）
+```bash
+# .env.localでNEXT_PUBLIC_USE_EMULATOR=false
+npm run dev
+```
+
+#### ローカルエミュレータ使用（推奨）
+```bash
+# 1. 環境変数設定
+cp .env.local.example .env.local
+# .env.local内でNEXT_PUBLIC_USE_EMULATOR=trueに設定
+
+# 2. エミュレータ起動
+npm run dev:with-emulator
+
+# 3. エミュレータUI確認
+# http://localhost:4000 でFirestoreデータを確認可能
+```
+
+#### エミュレータの利点
+- **本番データを汚さない**: 開発中のテストデータが本番に影響しない
+- **高速開発**: ローカルでの高速なDB操作
+- **オフライン開発**: インターネット接続不要
+- **データリセット**: 必要に応じて簡単にデータを削除可能
 
 ## テスト戦略
 

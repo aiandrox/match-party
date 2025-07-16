@@ -71,9 +71,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 git checkout develop
 git checkout -b feature/機能名
 
-# 開発環境起動
+# 開発環境起動（本番データベース使用）
 npm run dev
-firebase emulators:start
+
+# 開発環境起動（ローカルエミュレータ使用）
+npm run dev:with-emulator
+
+# エミュレータのみ起動
+npm run dev:emulator
 
 # テスト実行
 npm run test
@@ -166,4 +171,35 @@ firebase deploy
 - **クエリパラメータ**: 動的ルートの代替として採用
 - **localStorage管理**: ユーザーIDをルーム固有キーで保存
 - **セキュリティ**: 参加権限チェック、Firestore参加者リスト照合
-- **リアルタイム**: Firestore onSnapshotで実現予定
+- **リアルタイム**: Firestore onSnapshotで実現
+- **開発環境分離**: Firebase Emulatorで本番データを保護
+
+### 開発環境の設定
+
+#### Firebase Emulator使用（推奨）
+本番データベースを汚すことなく開発可能：
+
+```bash
+# 1. 環境変数設定
+cp .env.local.example .env.local
+# .env.local内でNEXT_PUBLIC_USE_EMULATOR=trueに設定
+
+# 2. エミュレータ起動
+npm run dev:with-emulator
+
+# 3. エミュレータUI確認
+# http://localhost:4000 でFirestoreデータを確認可能
+```
+
+#### 本番データベース使用
+```bash
+# 通常の開発（.env.localでNEXT_PUBLIC_USE_EMULATOR=false）
+npm run dev
+```
+
+#### 環境変数設定
+```
+# .env.local
+NEXT_PUBLIC_USE_EMULATOR=true  # ローカル開発時
+NEXT_PUBLIC_USE_EMULATOR=false # 本番データベース使用時
+```
