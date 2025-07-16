@@ -124,8 +124,12 @@ export function GameEndedView({ room, currentUserId }: GameEndedViewProps) {
                       key={`${answer.userName}-${index}`}
                       className={`p-4 rounded-lg border ${bgColor}`}
                     >
-                      <p className={`font-bold text-xl mb-2 ${textColor}`}>{answer.content}</p>
-                      <p className="text-sm text-gray-600 text-right">{answer.userName}</p>
+                      <p className={`font-bold text-xl mb-2 ${textColor}`}>
+                        {answer.hasAnswered ? answer.content : "（未回答）"}
+                      </p>
+                      <p className={`text-sm text-right ${answer.hasAnswered ? "text-gray-600" : "text-gray-400"}`}>
+                        {answer.userName}
+                      </p>
                     </div>
                   );
                 })}

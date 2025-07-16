@@ -42,14 +42,14 @@ export function useGameEndedPresenter({
   // 特定のラウンドの回答を読み込み
   const loadRoundAnswers = useCallback(async (gameRound: any) => {
     try {
-      const { getGameRoundAnswers } = await import("@/lib/gameRoundService");
-      const answers = await getGameRoundAnswers(gameRound.id);
+      const { getGameRoundAnswersWithParticipants } = await import("@/lib/gameRoundService");
+      const answers = await getGameRoundAnswersWithParticipants(gameRound.id, room.participants);
       setRoundAnswers(answers);
       setSelectedRound(gameRound);
     } catch (error) {
       console.error("ラウンド回答の読み込みに失敗しました:", error);
     }
-  }, []);
+  }, [room.id]);
 
   // ゲーム終了時に履歴を自動読み込み
   useEffect(() => {

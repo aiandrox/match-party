@@ -9,7 +9,7 @@ interface UseRevealingAnswersPresenterProps {
 interface UseRevealingAnswersPresenterReturn {
   currentTopicContent: { content: string; round: number } | null;
   currentGameRoundId: string | null;
-  allAnswers: Array<{ content: string; userName: string; submittedAt: Date }>;
+  allAnswers: Array<{ content: string; userName: string; submittedAt: Date | null; hasAnswered: boolean }>;
   hostJudgment: "match" | "no-match" | null;
   isHost: boolean;
   isStartingNextRound: boolean;
@@ -25,7 +25,7 @@ export function useRevealingAnswersPresenter({
 }: UseRevealingAnswersPresenterProps): UseRevealingAnswersPresenterReturn {
   const [currentTopicContent, setCurrentTopicContent] = useState<{ content: string; round: number } | null>(null);
   const [currentGameRoundId, setCurrentGameRoundId] = useState<string | null>(null);
-  const [allAnswers, setAllAnswers] = useState<Array<{ content: string; userName: string; submittedAt: Date }>>([]);
+  const [allAnswers, setAllAnswers] = useState<Array<{ content: string; userName: string; submittedAt: Date | null; hasAnswered: boolean }>>([]);
   const [hostJudgment, setHostJudgment] = useState<"match" | "no-match" | null>(null);
   const [isStartingNextRound, setIsStartingNextRound] = useState(false);
   const [isEndingGame, setIsEndingGame] = useState(false);
@@ -38,8 +38,8 @@ export function useRevealingAnswersPresenter({
       if (!roomData.currentGameRoundId) {
         return;
       }
-      const { getAnswersByGameRoundId } = await import("@/lib/roomService");
-      const answers = await getAnswersByGameRoundId(roomData.currentGameRoundId);
+      const { getAnswersByGameRoundIdWithParticipants } = await import("@/lib/roomService");
+      const answers = await getAnswersByGameRoundIdWithParticipants(roomData.currentGameRoundId, roomData.participants);
 
       setAllAnswers(answers);
       

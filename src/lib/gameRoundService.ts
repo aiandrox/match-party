@@ -150,15 +150,54 @@ export async function getGameRoundAnswers(
   }
 }
 
+// 特定のゲームラウンドの回答を取得（未回答者も含む）
+export async function getGameRoundAnswersWithParticipants(
+  gameRoundId: string,
+  participants: Array<{ name: string; [key: string]: any }>
+): Promise<Array<{ content: string; userName: string; submittedAt: Date | null; hasAnswered: boolean }>> {
+  try {
+    // 回答データを取得
+    const answersQuery = query(
+      collection(db, "gameAnswers"),
+      where("gameRoundId", "==", gameRoundId),
+      orderBy("submittedAt", "asc")
+    );
+    const answersSnapshot = await getDocs(answersQuery);
+
+    const answersMap = new Map<string, { content: string; submittedAt: Date }>();
+    answersSnapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      answersMap.set(data.userName, {
+        content: data.content,
+        submittedAt: data.submittedAt instanceof Timestamp ? data.submittedAt.toDate() : data.submittedAt,
+      });
+    });
+
+    // 参加者リストと回答データを組み合わせ
+    return participants.map((participant) => {
+      const answer = answersMap.get(participant.name);
+      return {
+        content: answer?.content || "",
+        userName: participant.name,
+        submittedAt: answer?.submittedAt || null,
+        hasAnswered: !!answer
+      };
+    });
+  } catch (error) {
+    console.error("getGameRoundAnswersWithParticipants error:", error);
+    return [];
+  }
+}
+
 // ゲームラウンドをリアルタイムで監視
 export function subscribeToGameRound(gameRoundId: string, callback: (gameRound: GameRound | null) => void) {
   const gameRoundRef = doc(db, 'gameRounds', gameRoundId);
   
-  return onSnapshot(gameRoundRef, (doc) => {
-    if (doc.exists()) {
-      const data = doc.data();
+  return onSnapshot(gameRoundRef, (docSnapshot) => {
+    if (docSnapshot.exists()) {
+      const data = docSnapshot.data();
       const gameRound: GameRound = {
-        id: doc.id,
+        id: docSnapshot.id,
         ...data,
         createdAt: data.createdAt instanceof Timestamp 
           ? data.createdAt.toDate() 
