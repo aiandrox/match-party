@@ -1,19 +1,19 @@
 // Enum types
 export enum RoomStatus {
-  WAITING = 'waiting',
-  PLAYING = 'playing',
-  REVEALING = 'revealing',
-  ENDED = 'ended'
+  WAITING = "waiting",
+  PLAYING = "playing",
+  REVEALING = "revealing",
+  ENDED = "ended",
 }
 
 export enum GameRoundStatus {
-  ACTIVE = 'active',
-  COMPLETED = 'completed'
+  ACTIVE = "active",
+  COMPLETED = "completed",
 }
 
 export enum JudgmentResult {
-  MATCH = 'match',
-  NO_MATCH = 'no-match'
+  MATCH = "match",
+  NO_MATCH = "no-match",
 }
 
 // Game types
@@ -38,11 +38,7 @@ export interface User {
   hasAnswered: boolean;
 }
 
-export interface TopicData {
-  id: string;
-  content: string;
-}
-
+export type Topic = string;
 
 export interface GameState {
   room: Room | null;
@@ -108,4 +104,3 @@ export interface GameAnswer {
   submittedAt: Date;
   createdAt: Date;
 }
-

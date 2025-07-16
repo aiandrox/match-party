@@ -306,7 +306,7 @@ export async function startGame(roomId: string): Promise<void> {
     const { createGameRound } = await import('@/lib/gameRoundService');
     const gameRoundId = await createGameRound(
       roomId,
-      topicData.content,
+      topicData,
       1
     );
     
@@ -591,7 +591,7 @@ export async function startNextRound(roomId: string): Promise<void> {
     const { createGameRound } = await import('@/lib/gameRoundService');
     const newGameRoundId = await createGameRound(
       roomId,
-      topicData.content,
+      topicData,
       nextRound
     );
     
@@ -645,7 +645,7 @@ export async function changeTopicIfNoAnswers(roomId: string): Promise<void> {
     // 現在のゲームラウンドを更新
     if (roomData.currentGameRoundId) {
       const { updateGameRoundTopic } = await import('@/lib/gameRoundService');
-      await updateGameRoundTopic(roomData.currentGameRoundId, topicData.content);
+      await updateGameRoundTopic(roomData.currentGameRoundId, topicData);
     }
     
   } catch (error) {
