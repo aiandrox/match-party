@@ -4,142 +4,53 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // ルームコレクションのルール
     match /rooms/{roomId} {
-      // 読み取り: 誰でも可能（参加時にルームコードで検証）
-      allow read: if isValidRoomAccess(roomId);
-      
-      // 作成: 基本的な検証のみ
-      allow create: if isValidRoomCreation();
-      
-      // 更新: 基本的な検証のみ
-      allow update: if isValidRoomUpdate();
-      
-      // 削除: 禁止（ルームは有効期限で自動削除）
+      allow read: if true;
+      allow create: if request.resource.data.code is string &&
+                       request.resource.data.hostId is string &&
+                       request.resource.data.status is string &&
+                       request.resource.data.participants is list &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.expiresAt is timestamp;
+      allow update: if request.resource.data.code == resource.data.code &&
+                       request.resource.data.hostId == resource.data.hostId &&
+                       request.resource.data.createdAt == resource.data.createdAt &&
+                       request.resource.data.expiresAt == resource.data.expiresAt;
       allow delete: if false;
     }
     
     // ゲームラウンドコレクションのルール
     match /gameRounds/{gameRoundId} {
-      // 読み取り: 誰でも可能（参加者のみがアクセスするため）
-      allow read: if isValidGameRoundAccess();
-      
-      // 作成: 基本的な検証のみ
-      allow create: if isValidGameRoundCreation();
-      
-      // 更新: 基本的な検証のみ
-      allow update: if isValidGameRoundUpdate();
-      
-      // 削除: 禁止
+      allow read: if true;
+      allow create: if request.resource.data.roomId is string &&
+                       request.resource.data.topicContent is string &&
+                       request.resource.data.roundNumber is number &&
+                       request.resource.data.status is string &&
+                       request.resource.data.createdAt is timestamp;
+      allow update: if request.resource.data.roomId == resource.data.roomId &&
+                       request.resource.data.roundNumber == resource.data.roundNumber &&
+                       request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if false;
     }
     
     // 回答コレクションのルール
     match /gameAnswers/{answerId} {
-      // 読み取り: 誰でも可能（参加者のみがアクセスするため）
-      allow read: if isValidAnswerAccess();
-      
-      // 作成: 基本的な検証のみ
-      allow create: if isValidAnswerCreation();
-      
-      // 更新: 禁止（回答は作成後変更不可）
+      allow read: if true;
+      allow create: if request.resource.data.gameRoundId is string &&
+                       request.resource.data.userName is string &&
+                       request.resource.data.content is string &&
+                       request.resource.data.submittedAt is timestamp;
       allow update: if false;
-      
-      // 削除: 禁止
       allow delete: if false;
+    }
+    
+    // ユーザーコレクションのルール
+    match /users/{userId} {
+      allow read, write: if true;
     }
     
     // その他のコレクションへのアクセス禁止
     match /{document=**} {
       allow read, write: if false;
     }
-  }
-  
-  // ヘルパー関数
-  function isValidRoomAccess(roomId) {
-    // ルームの有効期限チェック
-    let room = get(/databases/$(database)/documents/rooms/$(roomId));
-    return room.data.expiresAt > request.time;
-  }
-  
-  function isValidGameRoundAccess() {
-    // 基本的な時間チェック
-    return request.time < timestamp.date(2030, 1, 1);
-  }
-  
-  function isValidAnswerAccess() {
-    // 基本的な時間チェック
-    return request.time < timestamp.date(2030, 1, 1);
-  }
-  
-  function isValidRoomCreation() {
-    let data = resource.data;
-    return data.keys().hasAll(['code', 'hostId', 'status', 'participants', 'createdAt', 'expiresAt']) &&
-           data.code is string &&
-           data.code.size() == 20 &&
-           data.hostId is string &&
-           data.hostId.size() > 0 &&
-           data.status in ['waiting', 'playing', 'revealing', 'ended'] &&
-           data.participants is list &&
-           data.participants.size() <= 20 &&
-           data.createdAt is timestamp &&
-           data.expiresAt is timestamp &&
-           data.expiresAt > data.createdAt;
-  }
-  
-  function isValidRoomUpdate() {
-    let data = resource.data;
-    let existing = resource.data;
-    return data.keys().hasAll(['code', 'hostId', 'status', 'participants', 'createdAt', 'expiresAt']) &&
-           data.code == existing.code && // コードは変更不可
-           data.hostId == existing.hostId && // ホストは変更不可
-           data.createdAt == existing.createdAt && // 作成日時は変更不可
-           data.expiresAt == existing.expiresAt && // 有効期限は変更不可
-           data.status in ['waiting', 'playing', 'revealing', 'ended'] &&
-           data.participants is list &&
-           data.participants.size() <= 20;
-  }
-  
-  function isValidGameRoundCreation() {
-    let data = resource.data;
-    return data.keys().hasAll(['roomId', 'topicContent', 'roundNumber', 'status', 'createdAt']) &&
-           data.roomId is string &&
-           data.roomId.size() > 0 &&
-           data.topicContent is string &&
-           data.topicContent.size() >= 1 &&
-           data.topicContent.size() <= 100 &&
-           data.roundNumber is number &&
-           data.roundNumber > 0 &&
-           data.roundNumber <= 100 &&
-           data.status in ['active', 'completed'] &&
-           data.createdAt is timestamp;
-  }
-  
-  function isValidGameRoundUpdate() {
-    let data = resource.data;
-    let existing = resource.data;
-    return data.roomId == existing.roomId && // ルームIDは変更不可
-           data.roundNumber == existing.roundNumber && // ラウンド番号は変更不可
-           data.createdAt == existing.createdAt && // 作成日時は変更不可
-           data.status in ['active', 'completed'] &&
-           // お題の変更を許可（但し基本的な検証は行う）
-           (data.topicContent == existing.topicContent || 
-            (data.topicContent is string && 
-             data.topicContent.size() >= 1 && 
-             data.topicContent.size() <= 100));
-  }
-  
-  function isValidAnswerCreation() {
-    let data = resource.data;
-    return data.keys().hasAll(['gameRoundId', 'userId', 'userName', 'content', 'submittedAt']) &&
-           data.gameRoundId is string &&
-           data.gameRoundId.size() > 0 &&
-           data.userId is string &&
-           data.userId.size() > 0 &&
-           data.userName is string &&
-           data.userName.size() >= 2 &&
-           data.userName.size() <= 20 &&
-           data.content is string &&
-           data.content.size() >= 1 &&
-           data.content.size() <= 100 &&
-           data.submittedAt is timestamp;
   }
 }
