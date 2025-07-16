@@ -1,6 +1,7 @@
 // 回答履歴を作成（gameAnswers コレクションに直接保存）
 export async function createGameAnswer(
   gameRoundId: string,
+  userId: string,
   userName: string,
   content: string,
   submittedAt: Date
@@ -11,6 +12,7 @@ export async function createGameAnswer(
     
     const answerData = {
       gameRoundId,
+      userId,
       userName,
       content,
       submittedAt: Timestamp.fromDate(submittedAt),

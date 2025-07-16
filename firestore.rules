@@ -36,6 +36,7 @@ service cloud.firestore {
     match /gameAnswers/{answerId} {
       allow read: if true;
       allow create: if request.resource.data.gameRoundId is string &&
+                       request.resource.data.userId is string &&
                        request.resource.data.userName is string &&
                        request.resource.data.content is string &&
                        request.resource.data.submittedAt is timestamp;

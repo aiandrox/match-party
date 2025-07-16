@@ -430,6 +430,7 @@ export async function submitAnswer(roomId: string, userId: string, answer: strin
       if (user) {
         await createGameAnswer(
           roomData.currentGameRoundId,
+          userId,
           user.name,
           answer.trim(),
           new Date()
