@@ -3339,4 +3339,124 @@ export async function getAnswerByUserAndRound(
 
 ---
 
-*次回更新: Phase 4検討または運用改善時*
+## 2025-07-16: Cloud Functions自動クリーンアップ機能実装
+
+### 実装内容
+
+**背景**
+- 期限切れルーム（30分経過）が蓄積されるとFirestoreの使用量が増加
+- 手動削除は現実的でないため、自動クリーンアップ機能を実装
+
+**技術選定**
+- **Firebase Cloud Functions v2**: サーバーレス環境で定期実行
+- **Blaze Plan**: 無料枠内で十分な実行量（月30回実行で0.0015%使用）
+- **asia-northeast1**: Firestoreと同じリージョンで低レイテンシ
+
+**実装機能**
+```typescript
+// functions/src/index.ts
+export const cleanupExpiredRooms = onSchedule({
+  schedule: '0 0 * * *',  // 毎日午前0時実行
+  region: 'asia-northeast1'
+}, async () => {
+  // 期限切れルーム検索・削除
+  // カスケード削除: rooms → users → gameRounds → gameAnswers
+});
+```
+
+**削除対象データ**
+- 期限切れルーム（`expiresAt < 現在時刻`）
+- 関連ユーザー（`users` collection）
+- ゲームラウンド（`gameRounds` collection）
+- ゲーム回答（`gameAnswers` collection）
+
+**安全対策**
+- 一度に最大50件のルーム処理
+- 詳細なログ記録（削除件数・実行時間）
+- エラーハンドリング
+
+### 開発プロセス
+
+**要件変更**
+1. 初期: 1時間おきの実行を検討
+2. 最終: 1日1回（毎日午前0時）に変更
+3. リージョン: us-central1 → asia-northeast1に変更
+
+**実装ファイル**
+- `/functions/src/index.ts`: メインロジック
+- `/functions/package.json`: 依存関係定義
+- `/functions/tsconfig.json`: TypeScript設定
+- `/firebase.json`: エミュレーター設定追加
+- `/docs/cleanup-setup.md`: 設定・運用ガイド
+
+### 技術的成果
+
+**コスト効率**
+- 月間実行回数: 30回（無料枠の0.0015%）
+- 実質無料での長期運用が可能
+
+**運用改善**
+- 完全自動化によるメンテナンスフリー
+- データベース容量の適切な管理
+- 長期運用に向けた基盤整備
+
+**開発環境**
+- Firebase Emulatorでの検証環境構築
+- TypeScript + ES2017での実装
+- 適切なエラーハンドリング
+
+### 次のステップ
+
+**デプロイ準備完了**
+- ソースコード完成
+- TypeScriptビルド成功
+- エミュレーター設定完了
+
+**検証方法**
+1. エミュレーターでの動作確認
+2. 本番デプロイ
+3. Firebase Consoleでのログ監視
+
+**今後の改善候補**
+- 削除統計の詳細レポート
+- 削除前の通知機能
+- より高度な削除条件設定
+
+### 感想・学び
+
+**Firebase Cloud Functions v2**
+- onSchedule APIの使いやすさ
+- リージョン指定の重要性
+- 無料枠の十分な容量
+
+**運用設計**
+- 自動化の重要性
+- 適切なログ記録
+- エラー処理の徹底
+
+**コスト管理**
+- 無料枠内での運用可能性
+- 実行頻度の最適化
+- リソース使用量の見積もり
+
+### プロジェクト状況更新
+
+**完成機能**
+- ✅ MVP Phase 1-3: 完全完了
+- ✅ リアルタイム同期改善: 完了
+- ✅ UI/UX改善: 完了
+- ✅ **NEW**: 自動クリーンアップ機能: 実装完了
+
+**技術スタック**
+- Next.js 15 + TypeScript + Tailwind CSS
+- Firebase Hosting + Firestore + **Cloud Functions**
+- localStorage活用のユーザー管理
+
+**運用準備**
+- 本番環境: https://match-party-findy.web.app/
+- 自動クリーンアップ: デプロイ待ち
+- 長期運用: 基盤整備完了
+
+---
+
+*次回更新: Cloud Functions デプロイ・検証完了時*
