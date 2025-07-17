@@ -15,6 +15,12 @@ Claude Codeセッションが切れても継続してタスクを管理できる
   - [ ] パフォーマンス最適化
   - [ ] モバイル対応の細部調整
 
+### 完了済み（Phase 5 - 2025-07-17）
+- [x] Firebase Functions v2完全移行・型エラー解決
+- [x] CI/CD最適化（GitHub Actions + Functions自動ビルド）
+- [x] UI/UX統一（戻るボタン動作一貫性）
+- [x] お題データ拡張（30→72個）・TopicData型簡素化
+
 ### 完了済み（Phase 4 - 2025-07-16）
 - [x] 自動クリーンアップ機能実装（Cloud Functions）
 - [x] 期限切れルーム削除（毎日午前0時実行）

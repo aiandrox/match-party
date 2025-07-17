@@ -6,25 +6,28 @@
 
 ## 選択した技術スタック
 
-**Firebase + Next.js + Vercel**
+**Firebase + Next.js (完全Firebase統合)**
 
 ### 構成詳細
-- **Firebase**: バックエンド・リアルタイム・認証・データベース
-- **Next.js**: フロントエンド・SSR・TypeScript
-- **Vercel**: フロントエンドホスティング・デプロイ
+- **Firebase Firestore**: NoSQLデータベース・リアルタイム同期
+- **Firebase Cloud Functions v2**: サーバーレス・自動クリーンアップ
+- **Firebase Hosting**: 静的サイトホスティング・CDN
+- **Next.js 15**: フロントエンド・Static Export・TypeScript
+- **GitHub Actions**: CI/CD・自動デプロイ・Functions含む
 
 ## 選択理由
 
 ### Claude Codeでの開発効率
 1. **インフラのコード管理**: Firebase CLI + 設定ファイル（firebase.json, firestore.rules）で全設定を管理
-2. **デプロイ自動化**: `firebase deploy`一発でインフラ＋アプリを更新
+2. **デプロイ自動化**: GitHub Actions + Firebase CLIで完全自動化
 3. **バージョン管理**: 全設定がGitで追跡可能
-4. **環境管理**: dev/staging/prod環境の切り替えが簡単
+4. **環境管理**: Emulator活用でdev/prod環境の分離
 
 ### 実装・デバッグ・運用の観点
-- **実装**: NoSQL設計でも複雑性は低い、リアルタイム機能が標準搭載
-- **デバッグ**: Firebaseコンソールでの状態確認が容易
-- **運用**: サーバーレスでインフラ管理不要
+- **実装**: NoSQL設計、リアルタイム機能標準搭載、型安全性確保
+- **デバッグ**: Firebaseコンソール + TypeScript型チェックで効率的
+- **運用**: 完全サーバーレス、自動クリーンアップ、監視体制完備
+- **CI/CD**: Functions含む完全自動ビルド・デプロイ
 
 ## データ構造設計（NoSQL変更）
 
