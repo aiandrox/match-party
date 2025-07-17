@@ -137,7 +137,7 @@ function JoinRoomPageContent() {
 
           <div className="mt-6 text-center">
             <button
-              onClick={() => router.back()}
+              onClick={() => router.push("/")}
               className="text-slate-600 hover:text-slate-800 text-sm"
             >
               戻る
