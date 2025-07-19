@@ -47,14 +47,6 @@ export function playQuestionSound(): void {
   }
 }
 
-// アニメーション用のCSS クラス名を生成
-export function getMatchAnimationClass(): string {
-  return 'animate-match-celebration';
-}
-
-export function getNoMatchAnimationClass(): string {
-  return 'animate-no-match-shake';
-}
 
 // 紙吹雪エフェクト（一致時のみ）
 export function createConfettiEffect(): void {

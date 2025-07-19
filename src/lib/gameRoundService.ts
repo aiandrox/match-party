@@ -123,32 +123,6 @@ export async function getGameRoundsByRoomId(roomId: string): Promise<Array<GameR
   }
 }
 
-// 特定のゲームラウンドの回答を取得
-export async function getGameRoundAnswers(
-  gameRoundId: string
-): Promise<Array<{ content: string; userName: string; submittedAt: Date }>> {
-  try {
-    const answersQuery = query(
-      collection(db, "gameAnswers"),
-      where("gameRoundId", "==", gameRoundId),
-      orderBy("submittedAt", "asc")
-    );
-    const answersSnapshot = await getDocs(answersQuery);
-
-    return answersSnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        content: data.content,
-        userName: data.userName,
-        submittedAt:
-          data.submittedAt instanceof Timestamp ? data.submittedAt.toDate() : data.submittedAt,
-      };
-    });
-  } catch (error) {
-    console.error("getGameRoundAnswers error:", error);
-    return [];
-  }
-}
 
 // 特定のゲームラウンドの回答を取得（未回答者も含む）
 export async function getGameRoundAnswersWithParticipants(

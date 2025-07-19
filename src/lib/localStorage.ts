@@ -44,34 +44,3 @@ export function removeUserIdForRoom(roomCode: string): void {
   }
 }
 
-/**
- * 全てのユーザーIDをlocalStorageから削除（クリーンアップ用）
- */
-export function clearAllUserIds(): void {
-  try {
-    const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (key.startsWith(USER_ID_PREFIX)) {
-        localStorage.removeItem(key);
-      }
-    });
-  } catch (error) {
-    console.error('Failed to clear all userIds from localStorage:', error);
-  }
-}
-
-/**
- * localStorageに保存されている全てのルームコードを取得
- * @returns ルームコードの配列
- */
-export function getAllStoredRoomCodes(): string[] {
-  try {
-    const keys = Object.keys(localStorage);
-    return keys
-      .filter(key => key.startsWith(USER_ID_PREFIX))
-      .map(key => key.substring(USER_ID_PREFIX.length));
-  } catch (error) {
-    console.error('Failed to get stored room codes:', error);
-    return [];
-  }
-}
