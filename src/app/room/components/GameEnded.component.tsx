@@ -1,5 +1,5 @@
 import { Room } from "@/types";
-import { useGameEndedPresenter } from "./useGameEndedPresenter";
+import { useGameEndedPresenter } from "./GameEnded.presenter";
 
 interface GameEndedViewProps {
   room: Room;
@@ -127,7 +127,11 @@ export function GameEndedView({ room, currentUserId }: GameEndedViewProps) {
                       <p className={`font-bold text-xl mb-2 ${textColor}`}>
                         {answer.hasAnswered ? answer.content : ""}
                       </p>
-                      <p className={`text-sm text-right ${answer.hasAnswered ? "text-gray-600" : "text-gray-400"}`}>
+                      <p
+                        className={`text-sm text-right ${
+                          answer.hasAnswered ? "text-gray-600" : "text-gray-400"
+                        }`}
+                      >
                         {answer.userName}
                       </p>
                     </div>

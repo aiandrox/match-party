@@ -1,5 +1,5 @@
 import { Room } from "@/types";
-import { usePlayingGamePresenter } from "./usePlayingGamePresenter";
+import { usePlayingGamePresenter } from "./PlayingGame.presenter";
 import { useEffect, useRef } from "react";
 import { playQuestionSound } from "@/lib/gameEffects";
 

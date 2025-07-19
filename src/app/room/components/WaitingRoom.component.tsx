@@ -1,5 +1,5 @@
 import { Room } from "@/types";
-import { useWaitingRoomPresenter } from "./useWaitingRoomPresenter";
+import { useWaitingRoomPresenter } from "./WaitingRoom.presenter";
 import { MAX_PARTICIPANTS } from "@/lib/utils";
 
 interface WaitingRoomViewProps {
@@ -20,12 +20,13 @@ export function WaitingRoomView({ room, currentUserId }: WaitingRoomViewProps) {
         </div>
       </div>
 
-
       <div className="bg-blue-50 rounded-lg p-4 mb-6">
         <div className="text-blue-800 mb-2 font-medium">招待URL:</div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-mono bg-white px-3 py-2 rounded border text-slate-700 flex-1 break-all">
-            {typeof window !== 'undefined' ? `${window.location.origin}/join-room?code=${room.code}` : `招待URLを生成中...`}
+            {typeof window !== "undefined"
+              ? `${window.location.origin}/join-room?code=${room.code}`
+              : `招待URLを生成中...`}
           </span>
           <button
             onClick={copyInviteUrl}

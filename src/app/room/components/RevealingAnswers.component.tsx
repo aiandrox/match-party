@@ -1,5 +1,5 @@
 import { Room } from "@/types";
-import { useRevealingAnswersPresenter } from "./useRevealingAnswersPresenter";
+import { useRevealingAnswersPresenter } from "./RevealingAnswers.presenter";
 import { useEffect, useState } from "react";
 import {
   playMatchSound,
