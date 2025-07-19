@@ -4,9 +4,12 @@
 
 リアルタイムお題回答一致ゲームの技術スタック選定において、Claude Codeでの実装・デバッグ・運用を最適化するための技術選択を記録する。
 
+**最終更新**: 2025-07-19  
+**現在の状況**: Phase 6完了・全アプリケーション統一アーキテクチャ実現
+
 ## 選択した技術スタック
 
-**Firebase + Next.js (完全Firebase統合)**
+**Firebase + Next.js + MVP統一アーキテクチャ**
 
 ### 構成詳細
 - **Firebase Firestore**: NoSQLデータベース・リアルタイム同期
@@ -14,6 +17,7 @@
 - **Firebase Hosting**: 静的サイトホスティング・CDN
 - **Next.js 15**: フロントエンド・Static Export・TypeScript
 - **GitHub Actions**: CI/CD・自動デプロイ・Functions含む
+- **MVP + Facade + Container-Component**: 全ページ統一アーキテクチャパターン
 
 ## 選択理由
 

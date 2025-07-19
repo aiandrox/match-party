@@ -39,12 +39,12 @@ export function useGameEndedPresenter({
   }, [room]);
 
   // 特定のラウンドの回答を読み込み
-  const loadRoundAnswers = useCallback(async (gameRound: any) => {
+  const loadRoundAnswers = useCallback(async (_gameRound: any) => {
     try {
       const { getGameRoundAnswersWithParticipants } = await import("@/lib/gameRoundService");
-      const answers = await getGameRoundAnswersWithParticipants(gameRound.id, room.participants);
+      const answers = await getGameRoundAnswersWithParticipants(_gameRound.id, room.participants);
       setRoundAnswers(answers);
-      setSelectedRound(gameRound);
+      setSelectedRound(_gameRound);
     } catch (error) {
       console.error("ラウンド回答の読み込みに失敗しました:", error);
     }

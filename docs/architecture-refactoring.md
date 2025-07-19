@@ -1,28 +1,29 @@
 # アーキテクチャリファクタリング記録
 
 **実施日**: 2025-07-19  
-**対象**: `/src/app/room/` ディレクトリ完全リファクタリング  
-**目的**: モノリシック構造からモジュラー設計への変換
+**対象**: 全アプリケーション アーキテクチャリファクタリング  
+**目的**: モノリシック構造から統一MVP + Facade + Container-Componentパターンへの変換
 
 ## リファクタリング概要
 
 ### Before（リファクタリング前）
-- **単一ファイル**: `/src/app/room/page.tsx`（1,092行）
-- **モノリシック構造**: 全機能が1つの巨大コンポーネントに集約
-- **状態管理**: 20+個のuseStateフックが分散
-- **責務混在**: UI描画、ビジネスロジック、API呼び出しが同居
+- **app/room**: `/src/app/room/page.tsx`（1,092行）モノリシック構造
+- **app/create-room**: `/src/app/create-room/page.tsx`（106行）状態・API混在
+- **app/join-room**: `/src/app/join-room/page.tsx`（158行）複雑なSuspense構造
+- **共通問題**: UI描画、ビジネスロジック、API呼び出し、状態管理が同居
 
 ### After（リファクタリング後）
-- **8ファイル構成**: 機能別・状態別に分割
-- **MVP パターン**: Model-View-Presenter アーキテクチャ
-- **責務分離**: UI・ビジネスロジック・データ管理を完全分離
-- **モジュラー設計**: 各ゲーム状態が独立したコンポーネント
+- **統一MVP アーキテクチャ**: 全ページでModel-View-Presenter パターン適用
+- **Facade パターン**: グローバル状態（API・ナビゲーション）の集約管理
+- **Container-Component**: 完全な責務分離（Container → Facade + Props → View → Presenter）
+- **モジュラー設計**: 各ページが独立したコンポーネント群で構成
 
 ## 新ディレクトリ構造
 
+### app/room (最も複雑なリファクタリング)
 ```
 /src/app/room/
-├── page.tsx                           # Container component (154行)
+├── page.tsx                           # Container component (25行)
 ├── Room.facade.ts                     # Data management facade
 └── components/
     ├── index.ts                       # Clean exports
@@ -34,6 +35,28 @@
     ├── RevealingAnswers.presenter.ts  # 回答公開中ビジネスロジック
     ├── GameEnded.component.tsx        # 終了時UI
     └── GameEnded.presenter.ts         # 終了時ビジネスロジック
+```
+
+### app/create-room (MVP統一パターン)
+```
+/src/app/create-room/
+├── page.tsx                           # Container component (22行)
+├── CreateRoom.facade.ts               # Global state management
+└── components/
+    ├── index.ts                       # Clean exports
+    ├── CreateRoom.component.tsx       # UI presentation
+    └── CreateRoom.presenter.ts        # Form logic & validation
+```
+
+### app/join-room (MVP統一パターン)
+```
+/src/app/join-room/
+├── page.tsx                           # Container component (38行)
+├── JoinRoom.facade.ts                 # Global state & URL management
+└── components/
+    ├── index.ts                       # Clean exports
+    ├── JoinRoom.component.tsx         # UI presentation
+    └── JoinRoom.presenter.ts          # Form logic & validation
 ```
 
 ## 導入されたアーキテクチャパターン

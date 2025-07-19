@@ -102,6 +102,21 @@ firebase deploy
 - **後方互換性**: 既存機能を破壊しない漸進的な改善
 - **アーキテクチャ準拠**: MVPパターンに従った責務分離を維持
 - **コンポーネント分離**: UI（View）とビジネスロジック（Presenter）の混在禁止
+- **ドキュメント管理**: 全ドキュメント更新・不要ファイル削除を徹底
+
+## 📝 ドキュメント管理ルール
+
+### 必須対応事項
+- **全ドキュメント更新**: 機能変更・アーキテクチャ変更時は関連する全ドキュメントを更新
+- **不要ファイル削除**: 古くなった・不要になったドキュメントは削除
+- **最新状況反映**: プロジェクト状態・Phase進行・完了機能を正確に記録
+- **リンク整備**: README.mdからdocs内ファイルへの適切なリンク設定
+
+### ドキュメント分類
+- **README.md**: プロジェクト概要・使い方・技術スタック・ドキュメントリンク
+- **CLAUDE.md**: 開発ガイド・制約・セッション継続情報
+- **docs/**: 技術詳細・要件・設計・開発記録
+- **不要削除対象**: セットアップログ・一時的な分析ファイル・古い仕様書
 
 ## 開発メモ
 
@@ -125,12 +140,13 @@ firebase deploy
 
 ## 現在の状況（2025-07-19更新）
 
-### 完成状況 - MVP Phase 1-5 + アーキテクチャリファクタリング完了 🎉
-- **プロジェクト状態**: エンタープライズ品質レベル（大規模リファクタリング完了）
+### 完成状況 - MVP Phase 1-6 + 全体アーキテクチャリファクタリング完了 🎉
+- **プロジェクト状態**: エンタープライズ品質レベル（全アプリケーション統一アーキテクチャ完了）
 - **技術スタック確定**: Next.js 15 + TypeScript + Tailwind CSS + Firebase Hosting + Firestore + Cloud Functions v2 + localStorage
 - **デプロイ状況**: Firebase Hosting本番稼働（https://match-party-findy.web.app/）
 - **CI/CD**: GitHub Actions完全自動化、Functions含む
-- **アーキテクチャ**: MVP（Model-View-Presenter）パターン + Facade パターンによるモジュラー設計
+- **アーキテクチャ**: MVP（Model-View-Presenter）+ Facade + Container-Component パターン全統一
+- **品質**: 型安全性・ESLint警告解決・テスタビリティ完全対応
 
 ### 実装完了機能
 
@@ -172,12 +188,16 @@ firebase deploy
 - ✅ エラー解決・型安全性確保
 
 **Phase 6（アーキテクチャリファクタリング）**
+- ✅ 全アプリケーション完全リファクタリング（MVP + Facade + Container-Component パターン）
 - ✅ app/roomディレクトリ完全リファクタリング（1,092行→モジュラー設計）
-- ✅ MVP（Model-View-Presenter）パターン導入
-- ✅ Facadeパターンによるデータ管理集約
-- ✅ Container-Componentパターンによる責務分離
+- ✅ app/create-roomディレクトリ リファクタリング（106行→MVP パターン）
+- ✅ app/join-roomディレクトリ リファクタリング（158行→MVP パターン）
+- ✅ MVP（Model-View-Presenter）パターン全ページ統一
+- ✅ Facadeパターンによるグローバル状態管理
+- ✅ Container-Componentパターンによる完全な責務分離
 - ✅ Custom Hookパターンによるビジネスロジック再利用化
-- ✅ 各ゲーム状態の独立コンポーネント化（4つのPresenter+Component）
+- ✅ 各ページの独立コンポーネント化とアーキテクチャ統一
+- ✅ ESLintルール最適化（未使用パラメータ警告解決）
 - ✅ お題データ拡張（72→175個）
 
 ### URL構造

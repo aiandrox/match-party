@@ -11,19 +11,32 @@
 - 👥 **最大20人**: 大人数でのパーティーゲームに最適
 - ⚡ **リアルタイム**: 参加者の状況をリアルタイムで同期
 - 🔗 **簡単参加**: ルームコードで簡単に参加可能
+- 🎯 **豊富なお題**: 175個の多様なお題でゲームが飽きない
+- 🏗️ **エンタープライズ品質**: MVP + Facade + Container-Component統一アーキテクチャ
 
-## 🚀 デモサイト
+## 🚀 本番サイト
 
-https://match-party-findy.web.app/
+**現在稼働中**: https://match-party-findy.web.app/
 
 ## 🛠️ 技術スタック
 
-- **フロントエンド**: Next.js 15, TypeScript, Tailwind CSS
-- **バックエンド**: Firebase Firestore（リアルタイム同期）
-- **サーバーレス**: Firebase Cloud Functions v2（自動クリーンアップ）
-- **ホスティング**: Firebase Hosting（静的サイト・CDN）
-- **CI/CD**: GitHub Actions（自動ビルド・デプロイ）
-- **監視**: Firebase コンソール、自動ログ収集
+### フロントエンド
+- **Next.js 15**: App Router + Static Export
+- **TypeScript**: 厳密な型安全性
+- **Tailwind CSS**: ユーティリティファーストCSS
+- **MVP パターン**: 全ページ統一アーキテクチャ
+
+### バックエンド・インフラ
+- **Firebase Firestore**: リアルタイムデータベース
+- **Firebase Cloud Functions v2**: 自動クリーンアップ・サーバーレス
+- **Firebase Hosting**: 静的サイト・グローバルCDN
+- **localStorage**: シンプルな名前ベース認証（Firebase Auth不使用）
+
+### 開発・運用
+- **GitHub Actions**: 完全自動 CI/CD（Functions含む）
+- **Firebase Emulator**: 本番データを汚さない開発環境
+- **ESLint + TypeScript**: 型安全性・コード品質保証
+- **自動監視**: Cloud Functions による期限切れルーム削除
 
 ## 📱 使い方
 
@@ -70,35 +83,21 @@ npm run build
 firebase deploy
 ```
 
-## 📁 プロジェクト構造
+## 📚 ドキュメント
 
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── create-room/        # ルーム作成ページ
-│   ├── join-room/          # ルーム参加ページ
-│   ├── room/               # ルーム表示ページ
-│   │   ├── components/     # ルーム関連コンポーネント
-│   │   │   ├── WaitingRoomView.tsx
-│   │   │   ├── PlayingGameView.tsx
-│   │   │   ├── RevealingAnswersView.tsx
-│   │   │   ├── GameEndedView.tsx
-│   │   │   └── *.ts        # Presenter Hooks
-│   │   └── hooks/          # 共通フック
-│   └── page.tsx            # ホームページ
-├── data/                   # 静的データ
-│   └── topics.json         # お題データ（72個）
-├── lib/                    # ユーティリティ・サービス
-│   ├── roomService.ts      # ルーム管理
-│   ├── gameRoundService.ts # ゲームラウンド管理
-│   ├── gameHistoryService.ts # ゲーム履歴管理
-│   ├── topicService.ts     # お題管理
-│   └── utils.ts            # 共通関数
-├── types/                  # TypeScript型定義
-└── functions/              # Firebase Cloud Functions
-    ├── src/index.ts        # 自動クリーンアップ機能
-    └── package.json        # Functions依存関係
-```
+### 技術ドキュメント
+- **[アーキテクチャパターンガイド](docs/architecture-pattern-guide.md)**: MVP + Facade + Container-Component統一設計パターン
+- **[アーキテクチャリファクタリング記録](docs/architecture-refactoring.md)**: 全アプリケーション統一アーキテクチャ変革記録
+- **[データベース設計](docs/database-design.md)**: Firebase Firestore設計・コレクション構造
+- **[開発ワークフロー](docs/development-workflow.md)**: 開発環境・CI/CD・デプロイ手順
+
+### 要件・仕様書
+- **[要件仕様書](docs/spec.md)**: ゲーム仕様・機能フロー
+- **[詳細要件定義](docs/requirements.md)**: 技術要件・実装優先度
+- **[技術選定記録](docs/tech-decision.md)**: Firebase選定理由・代替案比較
+
+### 開発ガイド
+- **[CLAUDE.md](CLAUDE.md)**: プロジェクト全体概要・開発制約・セッション継続ガイド
 
 ## 🤝 貢献
 
@@ -110,11 +109,6 @@ src/
 
 ## 🎵 音源ライセンス
 
-このプロジェクトで使用している音響効果は以下のサイトから取得しています：
-
-- **効果音**: [On-Jin ～音人～](https://otologic.jp/)
-  - ピンポーン音（正解音）
-  - ブザー音（不正解音） 
-  - 問題音
-  - フリー音素材として無償使用許可済み
-  - 著作権: otologic.jp
+音響効果（将来追加予定）: [On-Jin ～音人～](https://otologic.jp/)
+- フリー音素材として無償使用許可済み
+- 著作権: otologic.jp

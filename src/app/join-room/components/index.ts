@@ -1,0 +1,1 @@
+export { JoinRoomView } from './JoinRoom.component';

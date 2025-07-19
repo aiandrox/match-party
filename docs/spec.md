@@ -2,10 +2,13 @@
 
 ## 1. 概要
 
+**現在の状況**: ✅ Phase 6完了・本番稼働中（https://match-party-findy.web.app/）
+
 * ブラウザ上で遊べるリアルタイムお題回答一致ゲーム
-* WebSocketを使ってリアルタイム同期
+* Firebase Firestoreでリアルタイム同期
 * 主催者が部屋を作り、URLで参加者を招待
 * 全員が同じお題に回答し、一致を目指して遊ぶ
+* MVP + Facade + Container-Component統一アーキテクチャ実現
 
 
 ## 2. ユーザー種別
