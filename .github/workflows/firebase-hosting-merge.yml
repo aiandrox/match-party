@@ -39,6 +39,12 @@ jobs:
           NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+      - name: Deploy Firestore rules and indexes
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_MATCH_PARTY_FINDY }}' > firebase-service-account.json
+          npx firebase deploy --only firestore:rules,firestore:indexes --project match-party-findy
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: firebase-service-account.json
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
