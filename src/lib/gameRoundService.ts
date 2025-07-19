@@ -12,7 +12,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { GameRound, JudgmentResult } from "@/types";
+import { GameRound, JudgmentResult, GameRoundStatus } from "@/types";
 
 // アクティブなゲームラウンドを作成
 export async function createGameRound(roomId: string, topicContent: string, roundNumber: number): Promise<string> {
@@ -21,7 +21,7 @@ export async function createGameRound(roomId: string, topicContent: string, roun
       roomId,
       topicContent,
       roundNumber,
-      status: "active",
+      status: GameRoundStatus.ACTIVE,
       createdAt: new Date(),
     };
 
@@ -45,7 +45,7 @@ export async function completeGameRound(
   try {
     const gameRoundRef = doc(db, "gameRounds", gameRoundId);
     const updateData: any = {
-      status: "completed",
+      status: GameRoundStatus.COMPLETED,
     };
 
     // judgmentがundefinedでない場合のみ追加

@@ -1,4 +1,4 @@
-import { Room } from "@/types";
+import { Room, JudgmentResult } from "@/types";
 import { useGameEndedPresenter } from "./GameEnded.presenter";
 
 interface GameEndedViewProps {
@@ -70,16 +70,16 @@ export function GameEndedView({ room, currentUserId }: GameEndedViewProps) {
                       <div className="font-medium text-gray-900">第{round.roundNumber}ラウンド</div>
                       <div
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          round.judgment === "match"
+                          round.judgment === JudgmentResult.MATCH
                             ? "bg-green-100 text-green-800"
-                            : round.judgment === "no-match"
+                            : round.judgment === JudgmentResult.NO_MATCH
                             ? "bg-red-100 text-red-800"
                             : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        {round.judgment === "match"
+                        {round.judgment === JudgmentResult.MATCH
                           ? "一致"
-                          : round.judgment === "no-match"
+                          : round.judgment === JudgmentResult.NO_MATCH
                           ? "不一致"
                           : "判定なし"}
                       </div>

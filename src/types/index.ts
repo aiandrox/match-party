@@ -1,7 +1,23 @@
-// Type definitions
-export type RoomStatus = "waiting" | "playing" | "revealing" | "ended";
-export type GameRoundStatus = "active" | "completed";
-export type JudgmentResult = "match" | "no-match";
+// Type definitions with const objects for enum-like usage
+export const RoomStatus = {
+  WAITING: "waiting",
+  PLAYING: "playing", 
+  REVEALING: "revealing",
+  ENDED: "ended"
+} as const;
+export type RoomStatus = typeof RoomStatus[keyof typeof RoomStatus];
+
+export const GameRoundStatus = {
+  ACTIVE: "active",
+  COMPLETED: "completed"
+} as const;
+export type GameRoundStatus = typeof GameRoundStatus[keyof typeof GameRoundStatus];
+
+export const JudgmentResult = {
+  MATCH: "match",
+  NO_MATCH: "no-match"
+} as const;
+export type JudgmentResult = typeof JudgmentResult[keyof typeof JudgmentResult];
 
 // Game types
 export interface Room {

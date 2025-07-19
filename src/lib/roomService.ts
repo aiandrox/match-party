@@ -13,7 +13,8 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Room, User, CreateRoomResponse, JoinRoomResponse, JudgmentResult, GameRound } from '@/types';
+import { Room, User, CreateRoomResponse, JoinRoomResponse, GameRound } from '@/types';
+import { RoomStatus, JudgmentResult } from '@/types';
 import { generateRoomCode, createExpirationTime, MAX_PARTICIPANTS } from './utils';
 import { getRandomTopic } from './topicService';
 
@@ -47,7 +48,7 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
     // ルームデータ作成
     const roomData: Omit<Room, 'id'> = {
       code: roomCode,
-      status: "waiting",
+      status: RoomStatus.WAITING,
       participants: [],
       createdAt: new Date(),
       expiresAt: createExpirationTime()
@@ -156,7 +157,7 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
     }
     
     // 新規参加の場合のみゲーム状態をチェック
-    if (roomData.status !== "waiting") {
+    if (roomData.status !== RoomStatus.WAITING) {
       throw new Error('このルームは既にゲームが開始されています');
     }
     
@@ -288,7 +289,7 @@ export async function startGame(roomId: string): Promise<void> {
     const roomData = roomDoc.data() as Room;
     
     // ゲーム開始可能かチェック
-    if (roomData.status !== "waiting") {
+    if (roomData.status !== RoomStatus.WAITING) {
       throw new Error('ゲームは既に開始されています');
     }
     
@@ -310,7 +311,7 @@ export async function startGame(roomId: string): Promise<void> {
     
     // ルーム状態を更新
     await updateDoc(roomRef, {
-      status: "playing",
+      status: RoomStatus.PLAYING,
       currentGameRoundId: gameRoundId,
       // 全参加者の回答状態をリセット
       participants: roomData.participants.map(p => ({
@@ -441,7 +442,7 @@ export async function submitAnswer(roomId: string, userId: string, answer: strin
     if (allAnswered) {
       // 自動的にrevealingステータスに移行
       await updateDoc(roomRef, {
-        status: "revealing"
+        status: RoomStatus.REVEALING
       });
     }
     
@@ -584,7 +585,7 @@ export async function startNextRound(roomId: string): Promise<void> {
     
     // ルーム状態を更新（playingに戻す）
     await updateDoc(roomRef, {
-      status: "playing",
+      status: RoomStatus.PLAYING,
       currentGameRoundId: newGameRoundId,
       // 全参加者の回答状態をリセット
       participants: roomData.participants.map(p => ({
