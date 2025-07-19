@@ -26,35 +26,3 @@ export async function createGameAnswer(
   }
 }
 
-// 特定のラウンドの回答一覧を取得
-export async function getGameRoundAnswers(gameRoundId: string): Promise<Array<{
-  id: string;
-  userName: string;
-  content: string;
-  submittedAt: Date;
-}>> {
-  try {
-    const { collection, getDocs, query, where, orderBy, Timestamp } = await import('firebase/firestore');
-    const { db } = await import('./firebase');
-    
-    const answersQuery = query(
-      collection(db, "gameAnswers"),
-      where("gameRoundId", "==", gameRoundId),
-      orderBy("submittedAt", "asc")
-    );
-    const answersSnapshot = await getDocs(answersQuery);
-
-    return answersSnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        userName: data.userName,
-        content: data.content,
-        submittedAt: data.submittedAt instanceof Timestamp ? data.submittedAt.toDate() : data.submittedAt,
-      };
-    });
-  } catch (error) {
-    console.error("getGameRoundAnswers error:", error);
-    return [];
-  }
-}

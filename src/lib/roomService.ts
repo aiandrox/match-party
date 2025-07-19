@@ -457,17 +457,6 @@ export async function submitAnswer(roomId: string, userId: string, answer: strin
   }
 }
 
-// 特定のゲームラウンドの全回答を取得
-export async function getAnswersByGameRoundId(gameRoundId: string): Promise<Array<{ content: string; userName: string; submittedAt: Date }>> {
-  try {
-    const { getGameRoundAnswers } = await import('@/lib/gameRoundService');
-    return await getGameRoundAnswers(gameRoundId);
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('getAnswersByGameRoundId error:', error);
-    return [];
-  }
-}
 
 // 特定のゲームラウンドの全回答を取得（未回答者も含む）
 export async function getAnswersByGameRoundIdWithParticipants(gameRoundId: string, participants: Array<{ name: string; [key: string]: any }>): Promise<Array<{ content: string; userName: string; submittedAt: Date | null; hasAnswered: boolean }>> {

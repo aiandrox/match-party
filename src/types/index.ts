@@ -27,33 +27,6 @@ export interface User {
 
 export type Topic = string;
 
-export interface GameState {
-  room: Room | null;
-  currentUser: User | null;
-  isLoading: boolean;
-  error: string | null;
-}
-
-// Firebase types
-export interface FirebaseConfig {
-  apiKey: string;
-  authDomain: string;
-  projectId: string;
-  storageBucket: string;
-  messagingSenderId: string;
-  appId: string;
-}
-
-// API types
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
-export interface CreateRoomRequest {
-  hostName: string;
-}
 
 export interface CreateRoomResponse {
   roomId: string;
@@ -61,10 +34,6 @@ export interface CreateRoomResponse {
   hostId: string;
 }
 
-export interface JoinRoomRequest {
-  roomCode: string;
-  userName: string;
-}
 
 export interface JoinRoomResponse {
   roomId: string;
@@ -83,11 +52,3 @@ export interface GameRound {
   createdAt: Date;
 }
 
-export interface GameAnswer {
-  id: string;
-  gameRoundId: string;
-  userName: string;
-  content: string;
-  submittedAt: Date;
-  createdAt: Date;
-}
