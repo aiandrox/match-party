@@ -71,8 +71,9 @@ service cloud.firestore {
            data.createdAt is timestamp &&
            data.expiresAt is timestamp &&
            data.expiresAt > data.createdAt &&
-           // 有効期限は作成時刻から30分後（1800秒）
-           data.expiresAt.toMillis() - data.createdAt.toMillis() == 1800000 &&
+           // 有効期限は作成時刻から30分後（1800秒）の許容範囲内（±30秒許容）
+           data.expiresAt.toMillis() - data.createdAt.toMillis() >= 1770000 &&
+           data.expiresAt.toMillis() - data.createdAt.toMillis() <= 1830000 &&
            // 作成時はcurrentGameRoundIdは存在しない
            !data.keys().hasAny(['currentGameRoundId']);
   }
@@ -124,18 +125,21 @@ service cloud.firestore {
   function isValidGameRoundUpdate() {
     let data = request.resource.data;
     let existing = resource.data;
-    return // 不変フィールドの保護
-           data.roomId == existing.roomId &&
-           data.roundNumber == existing.roundNumber &&
-           data.createdAt == existing.createdAt &&
-           data.topicContent == existing.topicContent &&
-           // 状態遷移の制約（active → completed のみ許可）
-           isValidGameRoundStatusTransition(existing.status, data.status) &&
-           // judgmentは active → completed 時のみ追加可能
-           (existing.status == 'active' && data.status == 'completed' && 
-            data.judgment is string && data.judgment in ['match', 'no-match']) ||
-           (existing.status == 'completed' && data.status == 'completed' &&
-            data.judgment == existing.judgment);
+    return // 不変フィールドの保護（存在する場合のみチェック）
+           (!data.keys().hasAny(['roomId']) || data.roomId == existing.roomId) &&
+           (!data.keys().hasAny(['roundNumber']) || data.roundNumber == existing.roundNumber) &&
+           (!data.keys().hasAny(['createdAt']) || data.createdAt == existing.createdAt) &&
+           // topicContentは更新可能（バリデーションのみ）
+           (!data.keys().hasAny(['topicContent']) || 
+            (data.topicContent is string && 
+             data.topicContent.size() >= 1 && 
+             data.topicContent.size() <= 100)) &&
+           // 状態遷移の制約（存在する場合のみチェック）
+           (!data.keys().hasAny(['status']) || 
+            isValidGameRoundStatusTransition(existing.status, data.status)) &&
+           // judgmentフィールドの更新制約（存在する場合のみチェック）
+           (!data.keys().hasAny(['judgment']) || 
+            (data.judgment is string && data.judgment in ['match', 'no-match']));
   }
   
   function isValidAnswerCreation() {
@@ -154,8 +158,9 @@ service cloud.firestore {
            data.content.size() >= 1 &&
            data.content.size() <= 100 &&
            data.submittedAt is timestamp &&
-           // createdAtとsubmittedAtは同一でなければならない
-           (!data.keys().hasAny(['createdAt']) || data.createdAt == data.submittedAt);
+           // createdAtとsubmittedAtの整合性チェック（5秒以内の許容範囲）
+           (!data.keys().hasAny(['createdAt']) || 
+            math.abs(data.createdAt.toMillis() - data.submittedAt.toMillis()) <= 5000);
   }
   
   function isValidUserCreation() {
