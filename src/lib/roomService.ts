@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Room, User, CreateRoomResponse, JoinRoomResponse, JudgmentResult, GameRound } from '@/types';
-import { generateRoomCode, generateUserId, createExpirationTime, MAX_PARTICIPANTS } from './utils';
+import { generateRoomCode, createExpirationTime, MAX_PARTICIPANTS } from './utils';
 import { getRandomTopic } from './topicService';
 
 // ルーム作成
@@ -44,13 +44,9 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
       throw new Error('ルームコードの生成に失敗しました。もう一度お試しください。');
     }
 
-    // ホストユーザーID生成
-    const hostId = generateUserId();
-    
     // ルームデータ作成
     const roomData: Omit<Room, 'id'> = {
       code: roomCode,
-      hostId: hostId,
       status: "waiting",
       participants: [],
       createdAt: new Date(),
@@ -96,7 +92,7 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
     return {
       roomId: roomRef.id,
       roomCode: roomCode,
-      hostId: hostRef.id
+      hostUserId: hostRef.id
     };
   } catch (error) {
     // eslint-disable-next-line no-console

@@ -7,7 +7,6 @@ export type JudgmentResult = "match" | "no-match";
 export interface Room {
   id: string;
   code: string;
-  hostId: string;
   status: RoomStatus;
   participants: User[];
   currentGameRoundId?: string;
@@ -31,7 +30,7 @@ export type Topic = string;
 export interface CreateRoomResponse {
   roomId: string;
   roomCode: string;
-  hostId: string;
+  hostUserId: string;
 }
 
 

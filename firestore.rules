@@ -43,13 +43,11 @@ service cloud.firestore {
   // バリデーション関数
   function isValidRoomCreation() {
     let data = request.resource.data;
-    return data.keys().hasAll(['code', 'hostId', 'status', 'participants', 'createdAt', 'expiresAt']) &&
-           data.keys().hasOnly(['code', 'hostId', 'status', 'participants', 'createdAt', 'expiresAt', 'currentGameRoundId']) &&
+    return data.keys().hasAll(['code', 'status', 'participants', 'createdAt', 'expiresAt']) &&
+           data.keys().hasOnly(['code', 'status', 'participants', 'createdAt', 'expiresAt', 'currentGameRoundId']) &&
            data.code is string &&
            data.code.size() == 20 &&
            data.code.matches('^[a-zA-Z0-9]+$') &&
-           data.hostId is string &&
-           data.hostId.size() > 0 &&
            data.status in ['waiting', 'playing', 'revealing', 'ended'] &&
            data.participants is list &&
            data.participants.size() <= 20 && // MAX_PARTICIPANTS
@@ -64,10 +62,9 @@ service cloud.firestore {
   function isValidRoomUpdate() {
     let data = request.resource.data;
     let existing = resource.data;
-    return data.keys().hasAll(['code', 'hostId', 'status', 'participants', 'createdAt', 'expiresAt']) &&
-           data.keys().hasOnly(['code', 'hostId', 'status', 'participants', 'createdAt', 'expiresAt', 'currentGameRoundId']) &&
+    return data.keys().hasAll(['code', 'status', 'participants', 'createdAt', 'expiresAt']) &&
+           data.keys().hasOnly(['code', 'status', 'participants', 'createdAt', 'expiresAt', 'currentGameRoundId']) &&
            data.code == existing.code &&
-           data.hostId == existing.hostId &&
            data.createdAt == existing.createdAt &&
            data.expiresAt == existing.expiresAt &&
            data.status in ['waiting', 'playing', 'revealing', 'ended'] &&

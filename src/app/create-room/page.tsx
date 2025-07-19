@@ -32,7 +32,7 @@ export default function CreateRoomPage() {
       const result = await createRoom(hostName);
       
       // userIdをlocalStorageに保存
-      localStorage.setItem(`userId_${result.roomCode}`, result.hostId);
+      localStorage.setItem(`userId_${result.roomCode}`, result.hostUserId);
       
       // ルーム作成成功時にルームページへリダイレクト
       router.push(`/room?code=${result.roomCode}`);

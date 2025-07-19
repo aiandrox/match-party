@@ -20,15 +20,6 @@ export function generateRoomCode(): string {
   return result;
 }
 
-export function generateUserId(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < 16; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
 export function validateUserName(name: string): boolean {
   // 2-20文字、日本語・英語・数字のみ
   const regex = /^[a-zA-Z0-9ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠ー]+$/;
