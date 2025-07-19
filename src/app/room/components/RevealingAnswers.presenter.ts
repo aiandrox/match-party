@@ -156,7 +156,7 @@ export function useRevealingAnswersPresenter({
 
   const submitJudgment = useCallback(
     async (judgment: JudgmentResult) => {
-      if (!currentGameRoundId) return;
+      if (!currentGameRoundId || !isHost) return;
 
       try {
         const { saveHostJudgment } = await import("@/lib/roomService");
@@ -166,11 +166,11 @@ export function useRevealingAnswersPresenter({
         console.error("Host judgment failed:", err);
       }
     },
-    [room.id, currentGameRoundId]
+    [room.id, currentGameRoundId, isHost]
   );
 
   const startNextRound = useCallback(async () => {
-    if (!room) return;
+    if (!room || !isHost) return;
 
     setIsStartingNextRound(true);
     try {
@@ -184,10 +184,10 @@ export function useRevealingAnswersPresenter({
     } finally {
       setIsStartingNextRound(false);
     }
-  }, [room]);
+  }, [room, isHost]);
 
   const endGame = useCallback(async () => {
-    if (!room) return;
+    if (!room || !isHost) return;
 
     setIsEndingGame(true);
     try {
@@ -198,7 +198,7 @@ export function useRevealingAnswersPresenter({
     } finally {
       setIsEndingGame(false);
     }
-  }, [room]);
+  }, [room, isHost]);
 
   // 判定結果に基づく色設定を返す関数
   const judgmentStyle = useMemo((): JudgmentStyle => {

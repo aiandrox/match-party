@@ -62,7 +62,7 @@ export function useWaitingRoomPresenter({
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(inviteUrl);
       } else {
-        // フォールバック：execCommandを使用
+        // フォールバック：レガシーAPI使用（非推奨だが古いブラウザサポート用）
         const textArea = document.createElement("textarea");
         textArea.value = inviteUrl;
         document.body.appendChild(textArea);

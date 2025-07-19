@@ -61,12 +61,7 @@ describe('useRevealingAnswersPresenter', () => {
       expect(result.current.isHost).toBe(true);
     });
 
-    it('ゲストユーザーもホストアクションを実行できる（実装上の動作）', async () => {
-      const { saveHostJudgment, startNextRound, endGame } = await import('@/lib/roomService');
-      const mockSaveJudgment = saveHostJudgment as jest.Mock;
-      const mockStartNext = startNextRound as jest.Mock;
-      const mockEndGame = endGame as jest.Mock;
-      
+    it('ゲストユーザーはホストアクションを実行できない', async () => {
       const room = createMockRoom([
         { id: 'user1', isHost: true },
         { id: 'user2', isHost: false },
@@ -77,6 +72,19 @@ describe('useRevealingAnswersPresenter', () => {
       );
 
       expect(result.current.isHost).toBe(false);
+
+      // ゲストユーザーがホストアクションを実行してもサービスが呼ばれないことをテスト
+      await act(async () => {
+        await result.current.submitJudgment('match');
+        await result.current.startNextRound();
+        await result.current.endGame();
+      });
+
+      const { saveHostJudgment, startNextRound, endGame } = await import('@/lib/roomService');
+      
+      expect(saveHostJudgment).not.toHaveBeenCalled();
+      expect(startNextRound).not.toHaveBeenCalled();
+      expect(endGame).not.toHaveBeenCalled();
       
       // ホストの権限でゲーム終了が実行される
       expect(typeof result.current.submitJudgment).toBe('function');
