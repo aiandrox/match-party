@@ -1,37 +1,21 @@
 /**
  * ゲーム効果音とアニメーションを管理するユーティリティ
+ * 
+ * 音源について:
+ * - 効果音: On-Jin ～音人～ (https://otologic.jp/)
+ * - フリー音素材として無償使用許可済み
+ * - 著作権: otologic.jp
  */
 
 // 音声効果を再生する関数
 export function playMatchSound(): void {
   try {
-    // Web Audio APIを使用して「ピンポーン」音を生成
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
-    // ピンポーン音: 高い「ピン」→低い「ポーン」
-    const createTone = (frequency: number, startTime: number, duration: number) => {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-      oscillator.type = 'sine';
-      
-      // 音量の設定
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
-      gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + startTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + startTime + duration);
-      
-      oscillator.start(audioContext.currentTime + startTime);
-      oscillator.stop(audioContext.currentTime + startTime + duration);
-    };
-    
-    // 「ピン」（高い音）
-    createTone(1000, 0, 0.3);
-    // 「ポーン」（低めの音）
-    createTone(800, 0.25, 0.5);
+    // 音声ファイルを再生
+    const audio = new Audio('/sounds/quiz-ding-dong.mp3');
+    audio.volume = 0.3; // 音量を控えめに設定
+    audio.play().catch(error => {
+      console.warn('Match sound playback failed:', error);
+    });
   } catch (error) {
     console.warn('Match sound playback failed:', error);
   }
@@ -39,34 +23,27 @@ export function playMatchSound(): void {
 
 export function playNoMatchSound(): void {
   try {
-    // Web Audio APIを使用して「ブブー」音を生成
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
-    // ブブー音: 低い音の2回繰り返し
-    const createBuzzTone = (startTime: number) => {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.type = 'square'; // より「ブー」らしい音質
-      oscillator.frequency.setValueAtTime(150, audioContext.currentTime + startTime); // 低い音
-      
-      // 音量の設定
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
-      gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + startTime + 0.05);
-      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + startTime + 0.25);
-      
-      oscillator.start(audioContext.currentTime + startTime);
-      oscillator.stop(audioContext.currentTime + startTime + 0.3);
-    };
-    
-    // 「ブ」「ブー」の2回繰り返し
-    createBuzzTone(0);     // 1回目の「ブ」
-    createBuzzTone(0.35);  // 2回目の「ブー」
+    // 音声ファイルを再生
+    const audio = new Audio('/sounds/quiz-buzzer.mp3');
+    audio.volume = 0.3; // 音量を控えめに設定
+    audio.play().catch(error => {
+      console.warn('No match sound playback failed:', error);
+    });
   } catch (error) {
     console.warn('No match sound playback failed:', error);
+  }
+}
+
+export function playQuestionSound(): void {
+  try {
+    // 問題音声ファイルを再生
+    const audio = new Audio('/sounds/quiz-question.mp3');
+    audio.volume = 0.2; // 問題音は少し小さめに
+    audio.play().catch(error => {
+      console.warn('Question sound playback failed:', error);
+    });
+  } catch (error) {
+    console.warn('Question sound playback failed:', error);
   }
 }
 

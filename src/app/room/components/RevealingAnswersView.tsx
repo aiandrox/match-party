@@ -39,21 +39,17 @@ export function RevealingAnswersView({ room, currentUserId }: RevealingAnswersVi
       playMatchSound();
       createConfettiEffect();
       // アニメーションを2秒後に停止
-      if (!hasAnimated) {
-        setTimeout(() => {
-          setHasAnimated(true);
-        }, 2000);
-      }
+      setTimeout(() => {
+        setHasAnimated(true);
+      }, 2000);
     } else if (hostJudgment === "no-match") {
       playNoMatchSound();
       // アニメーションを2秒後に停止
-      if (!hasAnimated) {
-        setTimeout(() => {
-          setHasAnimated(true);
-        }, 2000);
-      }
+      setTimeout(() => {
+        setHasAnimated(true);
+      }, 2000);
     }
-  }, [hostJudgment, hasAnimated]);
+  }, [hostJudgment]);
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">

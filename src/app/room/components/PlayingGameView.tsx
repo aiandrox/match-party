@@ -1,5 +1,7 @@
 import { Room } from "@/types";
 import { usePlayingGamePresenter } from "./usePlayingGamePresenter";
+import { useEffect, useRef } from "react";
+import { playQuestionSound } from "@/lib/gameEffects";
 
 interface PlayingGameViewProps {
   room: Room;
@@ -24,6 +26,15 @@ export function PlayingGameView({ room, currentUserId }: PlayingGameViewProps) {
 
   const answeredCount = room.participants.filter((p) => p.hasAnswered).length;
   const totalCount = room.participants.length;
+  const hasPlayedQuestionSound = useRef(false);
+
+  // 問題が表示された時に問題音を再生（1回のみ）
+  useEffect(() => {
+    if (currentTopicContent && !hasPlayedQuestionSound.current) {
+      playQuestionSound();
+      hasPlayedQuestionSound.current = true;
+    }
+  }, [currentTopicContent]);
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
