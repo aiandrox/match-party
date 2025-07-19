@@ -70,6 +70,12 @@ service cloud.firestore {
            data.status in ['waiting', 'playing', 'revealing', 'ended'] &&
            data.participants is list &&
            data.participants.size() <= 20 && // MAX_PARTICIPANTS
+           // participantsの各要素の基本チェックのみ
+           data.participants.size() == 0 || 
+           (data.participants[0].keys().hasAny(['id', 'name', 'isHost']) && 
+            data.participants[0].id is string &&
+            data.participants[0].name is string &&
+            data.participants[0].isHost is bool) &&
            (!data.keys().hasAny(['currentGameRoundId']) || 
             (data.currentGameRoundId is string && data.currentGameRoundId.size() > 0));
   }

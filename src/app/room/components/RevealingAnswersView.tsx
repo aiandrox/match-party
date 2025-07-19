@@ -1,5 +1,12 @@
 import { Room } from "@/types";
 import { useRevealingAnswersPresenter } from "./useRevealingAnswersPresenter";
+import { useEffect, useState } from "react";
+import {
+  playMatchSound,
+  playNoMatchSound,
+  createConfettiEffect,
+  injectGameAnimations,
+} from "@/lib/gameEffects";
 
 interface RevealingAnswersViewProps {
   room: Room;
@@ -18,6 +25,35 @@ export function RevealingAnswersView({ room, currentUserId }: RevealingAnswersVi
     startNextRound,
     endGame,
   } = useRevealingAnswersPresenter({ room, currentUserId });
+
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  // アニメーションCSSの注入
+  useEffect(() => {
+    injectGameAnimations();
+  }, []);
+
+  // 判定結果に応じた効果音・エフェクト
+  useEffect(() => {
+    if (hostJudgment === "match") {
+      playMatchSound();
+      createConfettiEffect();
+      // アニメーションを2秒後に停止
+      if (!hasAnimated) {
+        setTimeout(() => {
+          setHasAnimated(true);
+        }, 2000);
+      }
+    } else if (hostJudgment === "no-match") {
+      playNoMatchSound();
+      // アニメーションを2秒後に停止
+      if (!hasAnimated) {
+        setTimeout(() => {
+          setHasAnimated(true);
+        }, 2000);
+      }
+    }
+  }, [hostJudgment, hasAnimated]);
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -39,11 +75,23 @@ export function RevealingAnswersView({ room, currentUserId }: RevealingAnswersVi
 
       {/* 判定結果表示 */}
       {hostJudgment && (
-        <div className="mb-6">
+        <div className="mb-6 text-center">
           {hostJudgment === "match" ? (
-            <h3 className="text-2xl font-bold text-green-800 mb-2 text-center">🎉 全員一致</h3>
+            <h3
+              className={`text-3xl font-bold text-green-800 mb-2 ${
+                !hasAnimated ? "animate-match-text" : ""
+              }`}
+            >
+              🎉✨ 全員一致 ✨🎉
+            </h3>
           ) : (
-            <h3 className="text-2xl font-bold text-red-800 mb-2 text-center">❌ 全員一致ならず</h3>
+            <h3
+              className={`text-3xl font-bold text-red-800 mb-2 ${
+                !hasAnimated ? "animate-no-match-text" : ""
+              }`}
+            >
+              💥 全員一致ならず 💥
+            </h3>
           )}
         </div>
       )}
@@ -65,10 +113,14 @@ export function RevealingAnswersView({ room, currentUserId }: RevealingAnswersVi
 
             return (
               <div key={index} className={`p-4 rounded-lg border ${bgColor}`}>
-                <p className={`font-bold text-xl mb-2 ${textColor}`}>
+                <p className={`font-bold text-xl mb-2 transition-colors duration-500 ${textColor}`}>
                   {answer.hasAnswered ? answer.content : ""}
                 </p>
-                <p className={`text-sm text-right ${answer.hasAnswered ? "text-gray-600" : "text-gray-400"}`}>
+                <p
+                  className={`text-sm text-right ${
+                    answer.hasAnswered ? "text-gray-600" : "text-gray-400"
+                  }`}
+                >
                   {answer.userName}
                 </p>
               </div>

@@ -83,7 +83,7 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
         name: hostName,
         isHost: true,
         roomId: roomRef.id,
-        joinedAt: new Date(),
+        joinedAt: Timestamp.now(),
         isReady: false,
         hasAnswered: false
       })
@@ -197,7 +197,7 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
         name: userName,
         isHost: false,
         roomId: roomDoc.id,
-        joinedAt: new Date(),
+        joinedAt: Timestamp.now(),
         isReady: false,
         hasAnswered: false
       })
