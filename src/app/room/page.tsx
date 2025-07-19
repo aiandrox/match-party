@@ -1,14 +1,33 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, lazy } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRoomData } from "./Room.facade";
-import {
-  WaitingRoomView,
-  PlayingGameView,
-  RevealingAnswersView,
-  GameEndedView,
-} from "./components";
+
+// Lazy load game state components for better performance
+const WaitingRoomView = lazy(() =>
+  import("./components/WaitingRoom.component").then(m => ({ 
+    default: m.WaitingRoomView 
+  }))
+);
+
+const PlayingGameView = lazy(() =>
+  import("./components/PlayingGame.component").then(m => ({ 
+    default: m.PlayingGameView 
+  }))
+);
+
+const RevealingAnswersView = lazy(() =>
+  import("./components/RevealingAnswers.component").then(m => ({ 
+    default: m.RevealingAnswersView 
+  }))
+);
+
+const GameEndedView = lazy(() =>
+  import("./components/GameEnded.component").then(m => ({ 
+    default: m.GameEndedView 
+  }))
+);
 
 function RoomContent() {
   const router = useRouter();
@@ -96,17 +115,47 @@ function RoomContent() {
     );
   }
 
+  // Component loading fallback
+  const GameComponentFallback = () => (
+    <div className="bg-white rounded-lg shadow-lg p-6">
+      <div className="animate-pulse">
+        <div className="h-8 bg-gray-200 rounded mb-4"></div>
+        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+        <div className="h-32 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+  );
+
   // ステータスに応じた表示
   const renderRoomView = () => {
+    const componentProps = { room, currentUserId };
+    
     switch (room.status) {
       case "waiting":
-        return <WaitingRoomView room={room} currentUserId={currentUserId} />;
+        return (
+          <Suspense fallback={<GameComponentFallback />}>
+            <WaitingRoomView {...componentProps} />
+          </Suspense>
+        );
       case "playing":
-        return <PlayingGameView room={room} currentUserId={currentUserId} />;
+        return (
+          <Suspense fallback={<GameComponentFallback />}>
+            <PlayingGameView {...componentProps} />
+          </Suspense>
+        );
       case "revealing":
-        return <RevealingAnswersView room={room} currentUserId={currentUserId} />;
+        return (
+          <Suspense fallback={<GameComponentFallback />}>
+            <RevealingAnswersView {...componentProps} />
+          </Suspense>
+        );
       case "ended":
-        return <GameEndedView room={room} currentUserId={currentUserId} />;
+        return (
+          <Suspense fallback={<GameComponentFallback />}>
+            <GameEndedView {...componentProps} />
+          </Suspense>
+        );
       default:
         return (
           <div className="bg-white rounded-lg shadow-lg p-6">
