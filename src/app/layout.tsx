@@ -16,6 +16,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
+      <head>
+        {/* Preload critical audio assets for better game performance */}
+        <link rel="preload" href="/sounds/quiz-question.mp3" as="audio" />
+        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+      </head>
       <body className={inter.className}>
         {children}
       </body>

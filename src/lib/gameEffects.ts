@@ -7,12 +7,26 @@
  * - 著作権: otologic.jp
  */
 
-// 音声効果を再生する関数（パフォーマンス最適化：動的インポート）
+// Audio instances cache for performance optimization
+const audioCache = new Map<string, HTMLAudioElement>();
+
+// Get or create cached audio instance
+function getAudio(src: string, volume: number = 0.3): HTMLAudioElement {
+  if (!audioCache.has(src)) {
+    const audio = new Audio(src);
+    audio.volume = volume;
+    audio.preload = 'auto';
+    audioCache.set(src, audio);
+  }
+  return audioCache.get(src)!;
+}
+
+// 音声効果を再生する関数（パフォーマンス最適化：音声キャッシュ & 動的インポート）
 export async function playMatchSound(): Promise<void> {
   try {
-    // 動的インポートで音声ファイルを遅延読み込み
-    const audio = new Audio('/sounds/quiz-ding-dong.mp3');
-    audio.volume = 0.3; // 音量を控えめに設定
+    const audio = getAudio('/sounds/quiz-ding-dong.mp3', 0.3);
+    // Reset to beginning in case it was played before
+    audio.currentTime = 0;
     await audio.play().catch(error => {
       console.warn('Match sound playback failed:', error);
     });
@@ -23,9 +37,8 @@ export async function playMatchSound(): Promise<void> {
 
 export async function playNoMatchSound(): Promise<void> {
   try {
-    // 動的インポートで音声ファイルを遅延読み込み
-    const audio = new Audio('/sounds/quiz-buzzer.mp3');
-    audio.volume = 0.3; // 音量を控えめに設定
+    const audio = getAudio('/sounds/quiz-buzzer.mp3', 0.3);
+    audio.currentTime = 0;
     await audio.play().catch(error => {
       console.warn('No match sound playback failed:', error);
     });
@@ -36,15 +49,22 @@ export async function playNoMatchSound(): Promise<void> {
 
 export async function playQuestionSound(): Promise<void> {
   try {
-    // 動的インポートで問題音声ファイルを遅延読み込み
-    const audio = new Audio('/sounds/quiz-question.mp3');
-    audio.volume = 0.2; // 問題音は少し小さめに
+    const audio = getAudio('/sounds/quiz-question.mp3', 0.2);
+    audio.currentTime = 0;
     await audio.play().catch(error => {
       console.warn('Question sound playback failed:', error);
     });
   } catch (error) {
     console.warn('Question sound playback failed:', error);
   }
+}
+
+// Preload audio files for better performance
+export function preloadGameAudio(): void {
+  // Preload all game audio files when the game starts
+  getAudio('/sounds/quiz-ding-dong.mp3', 0.3);
+  getAudio('/sounds/quiz-buzzer.mp3', 0.3);
+  getAudio('/sounds/quiz-question.mp3', 0.2);
 }
 
 

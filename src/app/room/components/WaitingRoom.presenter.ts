@@ -58,6 +58,10 @@ export function useWaitingRoomPresenter({
 
     setIsStartingGame(true);
     try {
+      // Preload audio files for better game performance
+      const { preloadGameAudio } = await import("@/lib/gameEffects");
+      preloadGameAudio();
+      
       const { startGame: startGameService } = await import("@/lib/roomService");
       await startGameService(room.id);
     } catch (error) {
