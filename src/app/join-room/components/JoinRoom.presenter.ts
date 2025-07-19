@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { validateUserName, validateRoomCode } from '@/lib/utils';
 
 interface JoinRoomPresenterProps {
@@ -25,7 +25,7 @@ export function useJoinRoomPresenter({
     setRoomCode(initialRoomCode);
   }, [initialRoomCode]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!roomCode.trim()) {
@@ -50,21 +50,21 @@ export function useJoinRoomPresenter({
 
     setValidationError(null);
     await onSubmit(roomCode, userName);
-  };
+  }, [roomCode, userName, onSubmit]);
 
-  const handleRoomCodeChange = (code: string) => {
+  const handleRoomCodeChange = useCallback((code: string) => {
     setRoomCode(code);
     if (validationError) {
       setValidationError(null); // バリデーションエラーをクリア
     }
-  };
+  }, [validationError]);
 
-  const handleUserNameChange = (name: string) => {
+  const handleUserNameChange = useCallback((name: string) => {
     setUserName(name);
     if (validationError) {
       setValidationError(null); // バリデーションエラーをクリア
     }
-  };
+  }, [validationError]);
 
   // グローバルエラーまたはバリデーションエラーを表示
   const displayError = globalError || validationError;

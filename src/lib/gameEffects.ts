@@ -7,13 +7,13 @@
  * - 著作権: otologic.jp
  */
 
-// 音声効果を再生する関数
-export function playMatchSound(): void {
+// 音声効果を再生する関数（パフォーマンス最適化：動的インポート）
+export async function playMatchSound(): Promise<void> {
   try {
-    // 音声ファイルを再生
+    // 動的インポートで音声ファイルを遅延読み込み
     const audio = new Audio('/sounds/quiz-ding-dong.mp3');
     audio.volume = 0.3; // 音量を控えめに設定
-    audio.play().catch(error => {
+    await audio.play().catch(error => {
       console.warn('Match sound playback failed:', error);
     });
   } catch (error) {
@@ -21,12 +21,12 @@ export function playMatchSound(): void {
   }
 }
 
-export function playNoMatchSound(): void {
+export async function playNoMatchSound(): Promise<void> {
   try {
-    // 音声ファイルを再生
+    // 動的インポートで音声ファイルを遅延読み込み
     const audio = new Audio('/sounds/quiz-buzzer.mp3');
     audio.volume = 0.3; // 音量を控えめに設定
-    audio.play().catch(error => {
+    await audio.play().catch(error => {
       console.warn('No match sound playback failed:', error);
     });
   } catch (error) {
@@ -34,12 +34,12 @@ export function playNoMatchSound(): void {
   }
 }
 
-export function playQuestionSound(): void {
+export async function playQuestionSound(): Promise<void> {
   try {
-    // 問題音声ファイルを再生
+    // 動的インポートで問題音声ファイルを遅延読み込み
     const audio = new Audio('/sounds/quiz-question.mp3');
     audio.volume = 0.2; // 問題音は少し小さめに
-    audio.play().catch(error => {
+    await audio.play().catch(error => {
       console.warn('Question sound playback failed:', error);
     });
   } catch (error) {

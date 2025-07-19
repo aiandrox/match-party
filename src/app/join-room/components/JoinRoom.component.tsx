@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { useJoinRoomPresenter } from './JoinRoom.presenter';
 
 interface JoinRoomViewProps {
@@ -8,13 +9,13 @@ interface JoinRoomViewProps {
   isGlobalLoading: boolean;
 }
 
-export function JoinRoomView({
+export const JoinRoomView = memo(({
   initialRoomCode,
   onSubmit,
   onBack,
   globalError,
   isGlobalLoading
-}: JoinRoomViewProps) {
+}: JoinRoomViewProps) => {
   const {
     roomCode,
     userName,
@@ -114,4 +115,6 @@ export function JoinRoomView({
       </div>
     </div>
   );
-}
+});
+
+JoinRoomView.displayName = 'JoinRoomView';

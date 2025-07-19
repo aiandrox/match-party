@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Room } from "@/types";
 
 interface UseWaitingRoomPresenterProps {
@@ -15,6 +15,14 @@ interface UseWaitingRoomPresenterReturn {
   copyInviteUrl: () => Promise<void>;
   inviteUrl?: string;
   isCurrentUser: (_participantId: string) => boolean;
+  participantList: Array<{
+    id: string;
+    name: string;
+    isHost: boolean;
+    hasAnswered: boolean;
+    isCurrentUser: boolean;
+  }>;
+  participantCount: number;
 }
 
 export function useWaitingRoomPresenter({
@@ -24,8 +32,26 @@ export function useWaitingRoomPresenter({
   const [isStartingGame, setIsStartingGame] = useState(false);
   const [inviteUrlCopySuccess, setInviteUrlCopySuccess] = useState(false);
 
-  const isHost = room.participants.some((p) => p.id === currentUserId && p.isHost);
-  const canStartGame = room.participants.length >= 2;
+  // メモ化された参加者リスト（パフォーマンス最適化）
+  const participantList = useMemo(() => 
+    room.participants.map(p => ({ 
+      ...p, 
+      isCurrentUser: p.id === currentUserId,
+    })),
+    [room.participants, currentUserId]
+  );
+
+  const participantCount = useMemo(() => room.participants.length, [room.participants]);
+  
+  const isHost = useMemo(() => 
+    room.participants.some((p) => p.id === currentUserId && p.isHost),
+    [room.participants, currentUserId]
+  );
+  
+  const canStartGame = useMemo(() => 
+    room.participants.length >= 2,
+    [room.participants.length]
+  );
 
   const startGame = useCallback(async () => {
     if (!isHost || !canStartGame || isStartingGame) return;
@@ -86,5 +112,7 @@ export function useWaitingRoomPresenter({
     copyInviteUrl,
     inviteUrl,
     isCurrentUser,
+    participantList,
+    participantCount,
   };
 }

@@ -1,12 +1,12 @@
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 export function useCreateRoomFacade() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const createRoom = async (hostName: string) => {
+  const createRoom = useCallback(async (hostName: string) => {
     setIsLoading(true);
     setError(null);
 
@@ -27,11 +27,11 @@ export function useCreateRoomFacade() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router]);
 
-  const navigateToHome = () => {
+  const navigateToHome = useCallback(() => {
     router.push('/');
-  };
+  }, [router]);
 
   return {
     isLoading,

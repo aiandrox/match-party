@@ -1,9 +1,11 @@
+import React, { memo } from 'react';
+
 interface HomeViewProps {
   onCreateRoom: () => void;
   onJoinRoom: () => void;
 }
 
-export function HomeView({ onCreateRoom, onJoinRoom }: HomeViewProps) {
+export const HomeView = memo(({ onCreateRoom, onJoinRoom }: HomeViewProps) => {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
       <div className="container mx-auto px-4 py-8">
@@ -81,4 +83,6 @@ export function HomeView({ onCreateRoom, onJoinRoom }: HomeViewProps) {
       </div>
     </main>
   );
-}
+});
+
+HomeView.displayName = 'HomeView';

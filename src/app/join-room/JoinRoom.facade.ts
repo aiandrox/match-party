@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 export function useJoinRoomFacade() {
@@ -16,7 +16,7 @@ export function useJoinRoomFacade() {
     }
   }, [searchParams]);
 
-  const joinRoom = async (roomCode: string, userName: string) => {
+  const joinRoom = useCallback(async (roomCode: string, userName: string) => {
     setIsLoading(true);
     setError(null);
 
@@ -37,11 +37,11 @@ export function useJoinRoomFacade() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router]);
 
-  const navigateToHome = () => {
+  const navigateToHome = useCallback(() => {
     router.push('/');
-  };
+  }, [router]);
 
   return {
     initialRoomCode: roomCode,

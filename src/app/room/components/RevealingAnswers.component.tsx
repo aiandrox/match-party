@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { Room } from "@/types";
 import { useRevealingAnswersPresenter } from "./RevealingAnswers.presenter";
 
@@ -6,7 +7,7 @@ interface RevealingAnswersViewProps {
   currentUserId: string | null;
 }
 
-export function RevealingAnswersView({ room, currentUserId }: RevealingAnswersViewProps) {
+export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnswersViewProps) => {
   const {
     currentTopicContent,
     allAnswers,
@@ -144,4 +145,6 @@ export function RevealingAnswersView({ room, currentUserId }: RevealingAnswersVi
       )}
     </div>
   );
-}
+});
+
+RevealingAnswersView.displayName = 'RevealingAnswersView';

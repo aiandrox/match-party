@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useCallback } from 'react';
 
 export interface HomeFacade {
   onCreateRoom: () => void;
@@ -10,13 +11,13 @@ export interface HomeFacade {
 export function useHomeFacade(): HomeFacade {
   const router = useRouter();
 
-  const handleCreateRoom = () => {
+  const handleCreateRoom = useCallback(() => {
     router.push('/create-room');
-  };
+  }, [router]);
 
-  const handleJoinRoom = () => {
+  const handleJoinRoom = useCallback(() => {
     router.push('/join-room');
-  };
+  }, [router]);
 
   return {
     onCreateRoom: handleCreateRoom,

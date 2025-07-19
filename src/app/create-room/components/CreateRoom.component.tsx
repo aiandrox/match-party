@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { useCreateRoomPresenter } from './CreateRoom.presenter';
 
 interface CreateRoomViewProps {
@@ -7,12 +8,12 @@ interface CreateRoomViewProps {
   isGlobalLoading: boolean;
 }
 
-export function CreateRoomView({ 
+export const CreateRoomView = memo(({ 
   onSubmit, 
   onBack, 
   globalError,
   isGlobalLoading 
-}: CreateRoomViewProps) {
+}: CreateRoomViewProps) => {
   const {
     hostName,
     isLoading,
@@ -85,4 +86,6 @@ export function CreateRoomView({
       </div>
     </div>
   );
-}
+});
+
+CreateRoomView.displayName = 'CreateRoomView';

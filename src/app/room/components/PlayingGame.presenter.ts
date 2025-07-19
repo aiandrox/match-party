@@ -196,8 +196,8 @@ export function usePlayingGamePresenter({
   // 問題音を1回だけ再生する関数
   const playQuestionSoundOnce = useCallback(() => {
     if (currentTopicContent) {
-      import("@/lib/gameEffects").then(({ playQuestionSound }) => {
-        playQuestionSound();
+      import("@/lib/gameEffects").then(async ({ playQuestionSound }) => {
+        await playQuestionSound();
       });
     }
   }, [currentTopicContent]);

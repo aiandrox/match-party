@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { validateUserName } from '@/lib/utils';
 
 interface CreateRoomPresenterProps {
@@ -17,7 +17,7 @@ export function useCreateRoomPresenter({
   const [hostName, setHostName] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!hostName.trim()) {
@@ -32,14 +32,14 @@ export function useCreateRoomPresenter({
 
     setValidationError(null);
     await onSubmit(hostName);
-  };
+  }, [hostName, onSubmit]);
 
-  const handleHostNameChange = (name: string) => {
+  const handleHostNameChange = useCallback((name: string) => {
     setHostName(name);
     if (validationError) {
       setValidationError(null); // バリデーションエラーをクリア
     }
-  };
+  }, [validationError]);
 
   // グローバルエラーまたはバリデーションエラーを表示
   const displayError = globalError || validationError;

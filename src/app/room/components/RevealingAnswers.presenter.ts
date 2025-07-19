@@ -222,8 +222,8 @@ export function useRevealingAnswersPresenter({
   // 判定結果に応じた効果音・エフェクト再生
   const playJudgmentEffects = useCallback((judgment: "match" | "no-match" | null) => {
     if (judgment === "match") {
-      import("@/lib/gameEffects").then(({ playMatchSound, createConfettiEffect }) => {
-        playMatchSound();
+      import("@/lib/gameEffects").then(async ({ playMatchSound, createConfettiEffect }) => {
+        await playMatchSound();
         createConfettiEffect();
         // アニメーションを2秒後に停止
         setTimeout(() => {
@@ -231,8 +231,8 @@ export function useRevealingAnswersPresenter({
         }, 2000);
       });
     } else if (judgment === "no-match") {
-      import("@/lib/gameEffects").then(({ playNoMatchSound }) => {
-        playNoMatchSound();
+      import("@/lib/gameEffects").then(async ({ playNoMatchSound }) => {
+        await playNoMatchSound();
         // アニメーションを2秒後に停止
         setTimeout(() => {
           setHasAnimated(true);

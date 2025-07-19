@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { Room } from "@/types";
 import { usePlayingGamePresenter } from "./PlayingGame.presenter";
 
@@ -6,7 +7,7 @@ interface PlayingGameViewProps {
   currentUserId: string | null;
 }
 
-export function PlayingGameView({ room, currentUserId }: PlayingGameViewProps) {
+export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewProps) => {
   const {
     currentTopicContent,
     answer,
@@ -132,4 +133,6 @@ export function PlayingGameView({ room, currentUserId }: PlayingGameViewProps) {
       )}
     </div>
   );
-}
+});
+
+PlayingGameView.displayName = 'PlayingGameView';

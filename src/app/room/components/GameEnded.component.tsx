@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { Room, JudgmentResult } from "@/types";
 import { useGameEndedPresenter } from "./GameEnded.presenter";
 
@@ -6,7 +7,7 @@ interface GameEndedViewProps {
   currentUserId: string | null;
 }
 
-export function GameEndedView({ room, currentUserId }: GameEndedViewProps) {
+export const GameEndedView = memo(({ room, currentUserId }: GameEndedViewProps) => {
   const {
     gameRounds,
     isLoadingHistory,
@@ -149,4 +150,6 @@ export function GameEndedView({ room, currentUserId }: GameEndedViewProps) {
       </div>
     </div>
   );
-}
+});
+
+GameEndedView.displayName = 'GameEndedView';

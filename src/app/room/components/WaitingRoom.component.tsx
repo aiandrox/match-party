@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { Room } from "@/types";
 import { useWaitingRoomPresenter } from "./WaitingRoom.presenter";
 import { MAX_PARTICIPANTS } from "@/lib/utils";
@@ -7,7 +8,7 @@ interface WaitingRoomViewProps {
   currentUserId: string | null;
 }
 
-export function WaitingRoomView({ room, currentUserId }: WaitingRoomViewProps) {
+export const WaitingRoomView = memo(({ room, currentUserId }: WaitingRoomViewProps) => {
   const { 
     isStartingGame, 
     inviteUrlCopySuccess, 
@@ -119,4 +120,6 @@ export function WaitingRoomView({ room, currentUserId }: WaitingRoomViewProps) {
       )}
     </div>
   );
-}
+});
+
+WaitingRoomView.displayName = 'WaitingRoomView';
