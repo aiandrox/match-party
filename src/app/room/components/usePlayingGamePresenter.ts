@@ -106,13 +106,30 @@ export function usePlayingGamePresenter({
     };
   }, [room.currentGameRoundId, currentGameRoundId]);
 
-  // 現在のユーザーの回答状態を確認
+  // 現在のユーザーの回答状態を確認＆既存回答を取得
   useEffect(() => {
     const currentUser = room.participants.find((p) => p.id === currentUserId);
     if (currentUser) {
       setHasSubmittedAnswer(currentUser.hasAnswered);
+      
+      // 回答済みの場合、既存の回答を取得して表示
+      if (currentUser.hasAnswered && currentGameRoundId && currentUserId && !submittedAnswer) {
+        const loadExistingAnswer = async () => {
+          try {
+            const { getUserAnswerForGameRound } = await import("@/lib/gameHistoryService");
+            const existingAnswer = await getUserAnswerForGameRound(currentGameRoundId, currentUserId);
+            if (existingAnswer) {
+              setSubmittedAnswer(existingAnswer);
+              setAnswer(existingAnswer);
+            }
+          } catch (error) {
+            console.error("既存の回答の取得に失敗しました:", error);
+          }
+        };
+        loadExistingAnswer();
+      }
     }
-  }, [room.participants, currentUserId]);
+  }, [room.participants, currentUserId, currentGameRoundId, submittedAnswer]);
 
   const submitAnswer = useCallback(async () => {
     if (!currentUserId || !answer.trim() || isSubmittingAnswer || hasSubmittedAnswer) return;
