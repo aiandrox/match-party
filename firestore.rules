@@ -40,6 +40,19 @@ service cloud.firestore {
     }
   }
   
+  // 状態遷移バリデーション関数
+  function isValidRoomStatusTransition(fromStatus, toStatus) {
+    return (fromStatus == 'waiting' && toStatus in ['waiting', 'playing']) ||
+           (fromStatus == 'playing' && toStatus in ['playing', 'revealing']) ||
+           (fromStatus == 'revealing' && toStatus in ['revealing', 'playing', 'ended']) ||
+           (fromStatus == 'ended' && toStatus == 'ended');
+  }
+  
+  function isValidGameRoundStatusTransition(fromStatus, toStatus) {
+    return (fromStatus == 'active' && toStatus in ['active', 'completed']) ||
+           (fromStatus == 'completed' && toStatus == 'completed');
+  }
+  
   // バリデーション関数
   function isValidRoomCreation() {
     let data = request.resource.data;
@@ -69,15 +82,19 @@ service cloud.firestore {
     let existing = resource.data;
     return data.keys().hasAll(['code', 'status', 'participants', 'createdAt', 'expiresAt']) &&
            data.keys().hasOnly(['code', 'status', 'participants', 'createdAt', 'expiresAt', 'currentGameRoundId']) &&
+           // 不変フィールドの保護
            data.code == existing.code &&
            data.createdAt == existing.createdAt &&
            data.expiresAt == existing.expiresAt &&
-           data.status in ['waiting', 'playing', 'revealing', 'ended'] &&
+           // 状態遷移の制約
+           isValidRoomStatusTransition(existing.status, data.status) &&
            data.participants is list &&
            data.participants.size() <= 20 && // MAX_PARTICIPANTS
-           // participantsの各要素の基本チェックのみ
+           // 参加者数は減少しない（退出機能がないため）
+           data.participants.size() >= existing.participants.size() &&
+           // participantsの各要素の基本チェック
            data.participants.size() == 0 || 
-           (data.participants[0].keys().hasAny(['id', 'name', 'isHost']) && 
+           (data.participants[0].keys().hasAll(['id', 'name', 'isHost']) && 
             data.participants[0].id is string &&
             data.participants[0].name is string &&
             data.participants[0].isHost is bool) &&
@@ -107,15 +124,18 @@ service cloud.firestore {
   function isValidGameRoundUpdate() {
     let data = request.resource.data;
     let existing = resource.data;
-    return data.roomId == existing.roomId &&
+    return // 不変フィールドの保護
+           data.roomId == existing.roomId &&
            data.roundNumber == existing.roundNumber &&
            data.createdAt == existing.createdAt &&
-           data.status in ['active', 'completed'] &&
-           data.topicContent is string &&
-           data.topicContent.size() >= 1 &&
-           data.topicContent.size() <= 100 &&
-           (!data.keys().hasAny(['judgment']) || 
-            (data.judgment is string && data.judgment in ['match', 'no-match']));
+           data.topicContent == existing.topicContent &&
+           // 状態遷移の制約（active → completed のみ許可）
+           isValidGameRoundStatusTransition(existing.status, data.status) &&
+           // judgmentは active → completed 時のみ追加可能
+           (existing.status == 'active' && data.status == 'completed' && 
+            data.judgment is string && data.judgment in ['match', 'no-match']) ||
+           (existing.status == 'completed' && data.status == 'completed' &&
+            data.judgment == existing.judgment);
   }
   
   function isValidAnswerCreation() {
@@ -160,11 +180,16 @@ service cloud.firestore {
     let existing = resource.data;
     return data.keys().hasAll(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered']) &&
            data.keys().hasOnly(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered']) &&
+           // 不変フィールドの保護
            data.name == existing.name &&
            data.isHost == existing.isHost &&
            data.roomId == existing.roomId &&
            data.joinedAt == existing.joinedAt &&
+           // 状態フィールドのみ更新可能
            data.isReady is bool &&
-           data.hasAnswered is bool;
+           data.hasAnswered is bool &&
+           // hasAnsweredは false → true の一方向のみ許可（リセットはゲーム終了時のみ）
+           (data.hasAnswered == existing.hasAnswered || 
+            (existing.hasAnswered == false && data.hasAnswered == true));
   }
 }
