@@ -49,52 +49,37 @@ export function usePlayingGamePresenter({
 
   const isHost = room.participants.some((p) => p.id === currentUserId && p.isHost);
 
-  // お題情報の取得とリアルタイム監視
+  // GameRoundのリアルタイム監視（統合版 - 1つのサブスクリプションで両方のケースを処理）
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
 
-    const loadAndSubscribeTopic = async () => {
+    const setupGameRoundSubscription = async () => {
       try {
-        const { getTopicByRoomId } = await import("@/lib/roomService");
-        const topic = await getTopicByRoomId(room.id);
-        if (topic) {
-          setCurrentTopicContent(topic);
-          setCurrentGameRoundId(topic.id);
+        let targetGameRoundId: string | null = null;
 
-          // GameRoundの変更をリアルタイム監視
-          const { subscribeToGameRound } = await import("@/lib/gameRoundService");
-          unsubscribe = subscribeToGameRound(topic.id, (updatedGameRound) => {
-            if (updatedGameRound) {
-              setCurrentTopicContent({
-                content: updatedGameRound.topicContent,
-                round: updatedGameRound.roundNumber
-              });
-            }
-          });
+        // 初回ロード時はroom.idからお題を取得
+        if (!currentGameRoundId) {
+          const { getTopicByRoomId } = await import("@/lib/roomService");
+          const topic = await getTopicByRoomId(room.id);
+          if (topic) {
+            targetGameRoundId = topic.id;
+            setCurrentGameRoundId(topic.id);
+            setCurrentTopicContent(topic);
+          }
         }
-      } catch (error) {
-        console.error("お題の読み込みに失敗しました:", error);
-      }
-    };
+        // room.currentGameRoundIdが変更された場合はそれを使用
+        else if (room.currentGameRoundId && room.currentGameRoundId !== currentGameRoundId) {
+          targetGameRoundId = room.currentGameRoundId;
+        }
+        // 既存のGameRoundが有効な場合はそれを継続
+        else if (currentGameRoundId) {
+          targetGameRoundId = currentGameRoundId;
+        }
 
-    loadAndSubscribeTopic();
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, [room.id]);
-
-  // currentGameRoundIdの変更を監視（次のラウンドに進んだ場合）
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-
-    if (room.currentGameRoundId && room.currentGameRoundId !== currentGameRoundId) {
-      const subscribeToNewRound = async () => {
-        try {
+        // GameRoundのリアルタイム監視を設定
+        if (targetGameRoundId) {
           const { subscribeToGameRound } = await import("@/lib/gameRoundService");
-          unsubscribe = subscribeToGameRound(room.currentGameRoundId!, (updatedGameRound) => {
+          unsubscribe = subscribeToGameRound(targetGameRoundId, (updatedGameRound) => {
             if (updatedGameRound) {
               setCurrentTopicContent({
                 content: updatedGameRound.topicContent,
@@ -103,20 +88,20 @@ export function usePlayingGamePresenter({
               setCurrentGameRoundId(updatedGameRound.id);
             }
           });
-        } catch (error) {
-          console.error("新しいラウンドの監視に失敗しました:", error);
         }
-      };
+      } catch (error) {
+        console.error("GameRoundの監視設定に失敗しました:", error);
+      }
+    };
 
-      subscribeToNewRound();
-    }
+    setupGameRoundSubscription();
 
     return () => {
       if (unsubscribe) {
         unsubscribe();
       }
     };
-  }, [room.currentGameRoundId, currentGameRoundId]);
+  }, [room.id, room.currentGameRoundId, currentGameRoundId]);
 
   // 現在のユーザーの回答状態を確認＆既存回答を取得
   useEffect(() => {
