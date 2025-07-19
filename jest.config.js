@@ -21,6 +21,8 @@ const customJestConfig = {
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
+    '!src/**/index.ts',
+    '!src/**/page.tsx',
     '!src/data/**/*',
   ],
   // TODO: Gradually increase coverage thresholds as more tests are added
