@@ -44,19 +44,24 @@ service cloud.firestore {
   function isValidRoomCreation() {
     let data = request.resource.data;
     return data.keys().hasAll(['code', 'status', 'participants', 'createdAt', 'expiresAt']) &&
-           data.keys().hasOnly(['code', 'status', 'participants', 'createdAt', 'expiresAt', 'currentGameRoundId']) &&
+           data.keys().hasOnly(['code', 'status', 'participants', 'createdAt', 'expiresAt']) &&
+           // ルームコードは20文字の英数字
            data.code is string &&
            data.code.size() == 20 &&
-           data.code.matches('^[a-zA-Z0-9]+$') &&
-           data.status in ['waiting', 'playing', 'revealing', 'ended'] &&
+           data.code.matches('^[A-Z0-9]{20}$') &&
+           // 作成時は必ずwaiting状態
+           data.status == 'waiting' &&
+           // 作成時は参加者リストが空
            data.participants is list &&
-           data.participants.size() <= 20 && // MAX_PARTICIPANTS
+           data.participants.size() == 0 &&
+           // タイムスタンプの合理性チェック
            data.createdAt is timestamp &&
            data.expiresAt is timestamp &&
            data.expiresAt > data.createdAt &&
-           // currentGameRoundIdがある場合の検証
-           (!data.keys().hasAny(['currentGameRoundId']) || 
-            (data.currentGameRoundId is string && data.currentGameRoundId.size() > 0));
+           // 有効期限は作成時刻から30分後（1800秒）
+           data.expiresAt.toMillis() - data.createdAt.toMillis() == 1800000 &&
+           // 作成時はcurrentGameRoundIdは存在しない
+           !data.keys().hasAny(['currentGameRoundId']);
   }
   
   function isValidRoomUpdate() {
@@ -83,7 +88,7 @@ service cloud.firestore {
   function isValidGameRoundCreation() {
     let data = request.resource.data;
     return data.keys().hasAll(['roomId', 'topicContent', 'roundNumber', 'status', 'createdAt']) &&
-           data.keys().hasOnly(['roomId', 'topicContent', 'roundNumber', 'status', 'createdAt', 'judgment']) &&
+           data.keys().hasOnly(['roomId', 'topicContent', 'roundNumber', 'status', 'createdAt']) &&
            data.roomId is string &&
            data.roomId.size() > 0 &&
            data.topicContent is string &&
@@ -92,10 +97,11 @@ service cloud.firestore {
            data.roundNumber is number &&
            data.roundNumber >= 1 &&
            data.roundNumber <= 100 &&
-           data.status in ['active', 'completed'] &&
+           // 作成時は必ずactive状態
+           data.status == 'active' &&
            data.createdAt is timestamp &&
-           (!data.keys().hasAny(['judgment']) || 
-            (data.judgment is string && data.judgment in ['match', 'no-match']));
+           // 作成時はjudgmentフィールドは存在しない
+           !data.keys().hasAny(['judgment']);
   }
   
   function isValidGameRoundUpdate() {
@@ -123,11 +129,13 @@ service cloud.firestore {
            data.userName is string &&
            data.userName.size() >= 2 &&
            data.userName.size() <= 20 &&
-           data.userName.matches('^[a-zA-Z0-9ぁ-ゖァ-ヾ一-龯０-９]+$') &&
+           data.userName.matches('^[a-zA-Z0-9ａ-ｚＡ-Ｚ０-９ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠ー]+$') &&
            data.content is string &&
            data.content.size() >= 1 &&
            data.content.size() <= 100 &&
-           data.submittedAt is timestamp;
+           data.submittedAt is timestamp &&
+           // createdAtとsubmittedAtは同一でなければならない
+           (!data.keys().hasAny(['createdAt']) || data.createdAt == data.submittedAt);
   }
   
   function isValidUserCreation() {
@@ -137,13 +145,14 @@ service cloud.firestore {
            data.name is string &&
            data.name.size() >= 2 &&
            data.name.size() <= 20 &&
-           data.name.matches('^[a-zA-Z0-9ぁ-ゖァ-ヾ一-龯０-９]+$') &&
+           data.name.matches('^[a-zA-Z0-9ａ-ｚＡ-Ｚ０-９ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠ー]+$') &&
            data.isHost is bool &&
            data.roomId is string &&
            data.roomId.size() > 0 &&
            data.joinedAt is timestamp &&
-           data.isReady is bool &&
-           data.hasAnswered is bool;
+           // 作成時は常にfalse（準備状態・回答状態は初期化）
+           data.isReady == false &&
+           data.hasAnswered == false;
   }
   
   function isValidUserUpdate() {
