@@ -132,7 +132,8 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
     }
     
     // localStorageから既存のuserIdを確認
-    const existingUserId = localStorage.getItem(`userId_${roomCode}`);
+    const { getUserIdForRoom } = await import('@/lib/localStorage');
+    const existingUserId = getUserIdForRoom(roomCode);
     
     if (existingUserId) {
       // 既存のユーザーIDで参加者リストに存在するかチェック
@@ -150,7 +151,8 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
         }
       }
       // 既存のuserIdが参加者リストにない場合は、localStorageをクリア
-      localStorage.removeItem(`userId_${roomCode}`);
+      const { removeUserIdForRoom } = await import('@/lib/localStorage');
+      removeUserIdForRoom(roomCode);
     }
     
     // 新規参加の場合のみゲーム状態をチェック

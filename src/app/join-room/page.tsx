@@ -52,7 +52,8 @@ function JoinRoomPageContent() {
       const result = await joinRoom(roomCode, userName);
       
       // userIdをlocalStorageに保存
-      localStorage.setItem(`userId_${roomCode}`, result.userId);
+      const { saveUserIdForRoom } = await import('@/lib/localStorage');
+      saveUserIdForRoom(roomCode, result.userId);
       
       // ルーム参加成功時にルームページへリダイレクト
       router.push(`/room?code=${roomCode}`);

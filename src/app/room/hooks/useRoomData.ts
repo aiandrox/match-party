@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Room } from "@/types";
+import { getUserIdForRoom } from "@/lib/localStorage";
 
 interface UseRoomDataReturn {
   room: Room | null;
@@ -22,7 +23,7 @@ export function useRoomData(roomCode: string): UseRoomDataReturn {
     }
 
     // localStorageからユーザーIDを取得
-    const userId = localStorage.getItem(`userId_${roomCode}`);
+    const userId = getUserIdForRoom(roomCode);
     setCurrentUserId(userId);
 
     let unsubscribe: (() => void) | undefined;
