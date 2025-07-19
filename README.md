@@ -11,7 +11,7 @@
 - 👥 **最大20人**: 大人数でのパーティーゲームに最適
 - ⚡ **リアルタイム**: 参加者の状況をリアルタイムで同期
 - 🔗 **簡単参加**: ルームコードで簡単に参加可能
-- 🎯 **豊富なお題**: 175個の多様なお題でゲームが飽きない
+- 🎯 **豊富なお題**: 447個の多様なお題でゲームが飽きない
 - 🏗️ **エンタープライズ品質**: MVP + Facade + Container-Component統一アーキテクチャ
 
 ## 🚀 本番サイト
@@ -33,7 +33,9 @@
 - **localStorage**: シンプルな名前ベース認証（Firebase Auth不使用）
 
 ### 開発・運用
-- **GitHub Actions**: 完全自動 CI/CD（Functions含む）
+- **GitHub Actions**: 4段階CI/CDパイプライン（テスト→Firestore→Functions→Hosting）
+- **Jest + Testing Library**: 44テスト実装、カバレッジ測定統合
+- **Terraform/OpenTofu**: IAM権限のインフラストラクチャ・アズ・コード管理
 - **Firebase Emulator**: 本番データを汚さない開発環境
 - **ESLint + TypeScript**: 型安全性・コード品質保証
 - **自動監視**: Cloud Functions による期限切れルーム削除
@@ -53,9 +55,10 @@
 ## 🔧 開発環境
 
 ### 必要な環境
-- Node.js 18+
+- Node.js 20+
 - npm または yarn
 - Firebase CLI
+- OpenTofu（インフラ管理時）
 
 ### セットアップ
 ```bash
@@ -74,13 +77,21 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
-### ビルド・デプロイ
+### テスト・ビルド・デプロイ
 ```bash
+# テスト実行
+npm test                    # 通常のテスト実行
+npm run test:coverage       # カバレッジ付きテスト実行
+
 # 本番ビルド
 npm run build
 
-# Firebase デプロイ
+# Firebase デプロイ（手動時）
 firebase deploy
+
+# CI/CDによる自動デプロイ
+# mainブランチへのpushで自動実行：
+# 1. テスト実行 → 2. Firestore → 3. Functions → 4. Hosting
 ```
 
 ## 📚 ドキュメント

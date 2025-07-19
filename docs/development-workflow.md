@@ -1,6 +1,6 @@
 # 開発ワークフロー
 
-**現在の状況**: ✅ Phase 6完了、全アプリケーション統一アーキテクチャ実現
+**現在の状況**: ✅ Phase 7完了、エンタープライズ品質基盤実現（テスト・CI/CD・IaC）
 **最終更新**: 2025-07-19
 
 ## Git運用方針
@@ -14,8 +14,9 @@
 ### 実際の開発フロー
 1. **機能開発**: `main`から直接開発（小規模チームのため）
 2. **機能実装**: 小さな単位でコミット、Claude Codeとのペアプログラミング
-3. **自動テスト**: GitHub Actions で自動ビルド・型チェック
-4. **自動デプロイ**: `main`ブランチへのpushで自動デプロイ
+3. **自動テスト**: GitHub Actions 4段階パイプライン（テスト→Firestore→Functions→Hosting）
+4. **品質ゲート**: テスト失敗時は自動デプロイ停止
+5. **自動デプロイ**: `main`ブランチへのpushで全サービス自動デプロイ
 
 ## 開発ステップ
 
@@ -92,11 +93,14 @@ Closes #123
 
 ### 必要なツール
 ```bash
-# Node.js (推奨: v18以上)
+# Node.js (必須: v20以上)
 node --version
 
 # Firebase CLI
 npm install -g firebase-tools
+
+# OpenTofu (インフラ管理用)
+brew install opentofu
 
 # プロジェクト依存関係
 npm install
@@ -151,16 +155,22 @@ npm run dev:with-emulator
 2. **Integration Tests**: Firebase連携、API通信
 3. **E2E Tests**: 実際のゲームフロー
 
-### テストコマンド
+### テストコマンド（Jest + Testing Library）
 ```bash
-# 単体テスト
-npm run test
+# 通常のテスト実行（44テスト実装済み）
+npm test
 
-# E2Eテスト
-npm run test:e2e
+# ウォッチモードでテスト実行
+npm run test:watch
 
-# テストカバレッジ
+# カバレッジ付きテスト実行
 npm run test:coverage
+
+# CI環境用テスト実行
+npm run test:ci
+
+# カバレッジ確認（HTMLレポート）
+open coverage/lcov-report/index.html
 ```
 
 ## デプロイ戦略
@@ -169,13 +179,26 @@ npm run test:coverage
 - **Development**: Firebase Hosting (develop branch)
 - **Production**: Firebase Hosting (main branch)
 
-### 自動デプロイ
+### CI/CD自動デプロイ（GitHub Actions）
 ```bash
-# 開発環境
-firebase deploy --only hosting:dev
+# mainブランチpush時に4段階パイプライン自動実行
+# 1. テスト実行 (npm run lint + npm run test:ci)
+# 2. Firestore デプロイ (rules + indexes)
+# 3. Functions デプロイ (Cloud Functions v2)
+# 4. Hosting デプロイ (Next.js静的サイト)
 
-# 本番環境  
-firebase deploy --only hosting:prod
+# 手動デプロイ（必要時のみ）
+firebase deploy --only hosting
+firebase deploy --only functions
+firebase deploy --only firestore:rules,firestore:indexes
+```
+
+### インフラ管理（Terraform/OpenTofu）
+```bash
+# IAM権限管理
+cd terraform
+tofu plan     # 変更確認
+tofu apply    # 権限適用
 ```
 
 ## 開発時の注意点

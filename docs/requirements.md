@@ -1,6 +1,6 @@
 # 詳細要件定義
 
-**プロジェクト状態**: ✅ Phase 6完了・全アプリケーション統一アーキテクチャ実現
+**プロジェクト状態**: ✅ Phase 7完了・エンタープライズ品質基盤実現（テスト・CI/CD・IaC）
 **稼働URL**: https://match-party-findy.web.app/
 **最終更新**: 2025-07-19
 
@@ -13,8 +13,9 @@
 - **Cloud Functions**: v2、毎日自動クリーンアップ稼働中
 
 ### 開発環境
-- **Node.js**: v18以上の最新安定版、バージョン管理を実施
+- **Node.js**: v20以上の最新安定版、バージョン管理を実施
 - **パッケージマネージャー**: npm使用
+- **インフラ管理**: Terraform/OpenTofu によるIAM権限管理
 
 ## 2. 機能仕様の詳細
 
@@ -93,7 +94,7 @@
 - [x] Firebase Functions v2完全移行
 - [x] CI/CD最適化（Functions自動ビルド統合）
 - [x] UI/UX統一（戻るボタン動作一貫性）
-- [x] お題データ拡張（30→175個）
+- [x] お題データ拡張（30→447個）
 - [x] TopicData型簡素化（interface→string）
 - [x] エラー解決・型安全性確保
 
@@ -109,13 +110,27 @@
 - [x] 各ページの独立コンポーネント化とアーキテクチャ統一
 - [x] ESLintルール最適化（未使用パラメータ警告解決）
 
-### Phase 7（将来拡張）- 📋 将来検討
+### Phase 7（テスト基盤構築・CI/CD統合・IaC）- ✅ 完了
+- [x] Jest + Testing Library テスト環境構築完了
+- [x] Presenter層ユニットテスト実装（CreateRoom・JoinRoom）
+- [x] Utils層ユニットテスト実装（バリデーション・ルームコード生成等）
+- [x] 44個のテスト実装、全テスト合格確認
+- [x] カバレッジ測定機能実装（Jest Coverage）
+- [x] CI/CDパイプライン構築（GitHub Actions 4段階ワークフロー）
+- [x] テスト失敗時のデプロイ停止機能
+- [x] カバレッジレポート自動生成・HTML出力
+- [x] Firestore security rules強化（create/update時制約）
+- [x] Firebase全サービスCI/CD統合（Firestore・Functions・Hosting）
+- [x] Terraform/OpenTofuによるIAM権限管理（14権限をコード管理）
+- [x] インフラストラクチャ・アズ・コード基盤確立
+
+### Phase 8（将来拡張）- 📋 将来検討
 - [ ] 音声・視覚効果の追加
 - [ ] 複数ラウンドでの得点システム
-- [ ] 監視・ログ機能強化
+- [ ] 監視・ログ機能強化（APM・アラート）
 - [ ] パフォーマンス最適化
-- [ ] セキュリティ強化
 - [ ] 不適切コンテンツ対策
+- [ ] WAF・CDN設定のコード化
 
 ## 6. 技術的制約
 
