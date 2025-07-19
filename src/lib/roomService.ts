@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Room, User, CreateRoomResponse, JoinRoomResponse, JudgmentResult, GameRound } from '@/types';
-import { generateRoomCode, generateUserId, createExpirationTime } from './utils';
+import { generateRoomCode, generateUserId, createExpirationTime, MAX_PARTICIPANTS } from './utils';
 import { getRandomTopic } from './topicService';
 
 // ルーム作成
@@ -163,7 +163,7 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
     }
     
     // 参加者数確認
-    if (roomData.participants.length >= 20) {
+    if (roomData.participants.length >= MAX_PARTICIPANTS) {
       throw new Error('このルームは満員です');
     }
     

@@ -1,5 +1,6 @@
 import { Room } from "@/types";
 import { useWaitingRoomPresenter } from "./useWaitingRoomPresenter";
+import { MAX_PARTICIPANTS } from "@/lib/utils";
 
 interface WaitingRoomViewProps {
   room: Room;
@@ -42,7 +43,7 @@ export function WaitingRoomView({ room, currentUserId }: WaitingRoomViewProps) {
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-lg font-semibold text-gray-900">参加者一覧</h3>
           <div className="text-sm text-gray-600">
-            {room.participants.length}/20人
+            {room.participants.length}/{MAX_PARTICIPANTS}人
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">

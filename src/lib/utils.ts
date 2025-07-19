@@ -4,6 +4,9 @@ import { twMerge } from "tailwind-merge";
 // ルーム有効期限の定数（分）
 export const ROOM_EXPIRY_MINUTES = 30 as const;
 
+// ルーム最大参加者数
+export const MAX_PARTICIPANTS = 20 as const;
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

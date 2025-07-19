@@ -52,7 +52,7 @@ service cloud.firestore {
            data.hostId.size() > 0 &&
            data.status in ['waiting', 'playing', 'revealing', 'ended'] &&
            data.participants is list &&
-           data.participants.size() <= 20 &&
+           data.participants.size() <= 20 && // MAX_PARTICIPANTS
            data.createdAt is timestamp &&
            data.expiresAt is timestamp &&
            data.expiresAt > data.createdAt &&
@@ -72,7 +72,7 @@ service cloud.firestore {
            data.expiresAt == existing.expiresAt &&
            data.status in ['waiting', 'playing', 'revealing', 'ended'] &&
            data.participants is list &&
-           data.participants.size() <= 20 &&
+           data.participants.size() <= 20 && // MAX_PARTICIPANTS
            (!data.keys().hasAny(['currentGameRoundId']) || 
             (data.currentGameRoundId is string && data.currentGameRoundId.size() > 0));
   }
