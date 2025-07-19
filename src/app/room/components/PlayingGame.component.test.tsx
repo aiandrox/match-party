@@ -121,8 +121,8 @@ describe('PlayingGameView', () => {
       const room = createMockRoom([{ id: 'user1', name: 'プレイヤー1', isHost: false, hasAnswered: false }]);
       render(<PlayingGameView room={room} currentUserId="user1" />);
 
-      const textarea = screen.getByPlaceholderText('回答を入力してください...');
-      fireEvent.change(textarea, { target: { value: 'テスト回答' } });
+      const input = screen.getByPlaceholderText('回答を入力してください...');
+      fireEvent.change(input, { target: { value: 'テスト回答' } });
 
       expect(setAnswer).toHaveBeenCalledWith('テスト回答');
     });
@@ -170,6 +170,7 @@ describe('PlayingGameView', () => {
       expect(screen.getByPlaceholderText('回答を入力してください...')).toBeDisabled();
       expect(screen.getByRole('button', { name: '送信中...' })).toBeDisabled();
     });
+
   });
 
   describe('回答完了状態', () => {

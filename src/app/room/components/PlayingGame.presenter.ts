@@ -239,6 +239,7 @@ export function usePlayingGamePresenter({
     return answerStatistics.answeredCount === 0 && !isChangingTopic;
   }, [answerStatistics.answeredCount, isChangingTopic]);
 
+
   return {
     currentTopicContent,
     currentGameRoundId,

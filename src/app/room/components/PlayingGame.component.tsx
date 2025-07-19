@@ -25,7 +25,7 @@ export function PlayingGameView({ room, currentUserId }: PlayingGameViewProps) {
     canForceRevealStyle,
     canForceReveal,
     showForceRevealHelp,
-    canChangeTopic
+    canChangeTopic,
   } = usePlayingGamePresenter({ room, currentUserId });
 
   return (
@@ -67,12 +67,12 @@ export function PlayingGameView({ room, currentUserId }: PlayingGameViewProps) {
           </div>
         ) : (
           <div className="space-y-3">
-            <textarea
+            <input
+              type="text"
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               placeholder="回答を入力してください..."
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 resize-none"
-              rows={3}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500"
               disabled={isSubmittingAnswer}
             />
             <button
