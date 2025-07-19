@@ -23,6 +23,10 @@ yarn-error.log*
 .firebase/
 firebase-debug.log*
 
+# Testing
+coverage/
+*.lcov
+
 # OS
 .DS_Store
 Thumbs.db

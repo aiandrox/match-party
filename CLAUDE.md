@@ -81,18 +81,31 @@ npm run dev:with-emulator
 npm run dev:emulator
 
 # テスト実行
-npm run test
-npm run test:e2e
+npm run test                    # 通常のテスト実行
+npm run test:watch              # ウォッチモードでテスト実行
+npm run test:coverage           # カバレッジ付きテスト実行
+npm run test:ci                 # CI環境用テスト実行
+
+# カバレッジ確認
+npm run test:coverage
+open coverage/lcov-report/index.html  # HTMLレポートを開く
 
 # デプロイ
 firebase deploy
 ```
 
+### テスト戦略
+- **テスト必須**: 新機能実装時は必ずテスト作成
+- **MVP活用**: アーキテクチャの責任分離によりテストが容易
+- **CI/CD統合**: 全デプロイ前にテスト実行を必須とする
+- **カバレッジ確認**: `npm run test:coverage`でカバレッジ測定
+- **段階的改善**: Presenter → Utils → Component → Facade → E2E の順でカバレッジ向上
+
 ### 重要なルール
 - **意思決定ログ**: 全ての技術選択、設計判断は`docs/`配下に記録
 - **環境変数**: `.env.local`で管理（Git除外済み）
 - **セキュリティ**: FirestoreルールとAPI キー管理を徹底
-- **テスト**: 各機能実装後は必ずテスト実行
+- **テスト**: 各機能実装後は必ずテスト実行と追加
 - **コードレビュー**: 技術的な違和感や改善点は積極的に指摘する（ユーザーの学習支援）
 
 ## 🚫 厳格な開発制約（違反厳禁）
@@ -135,18 +148,20 @@ firebase deploy
 2. **docs/requirements.md** - 詳細要件定義
 3. **docs/tech-decision.md** - 技術選定の経緯と理由
 4. **docs/development-workflow.md** - 開発プロセス
-5. **docs/diary.md** - 開発日記（前回の思考・感情）
-6. **docs/user-todos.md** - ユーザーのTODOリスト
+5. **docs/testing-guide.md** - テスト戦略・カバレッジ確認方法
+6. **docs/diary.md** - 開発日記（前回の思考・感情）
+7. **docs/user-todos.md** - ユーザーのTODOリスト
 
 ## 現在の状況（2025-07-19更新）
 
-### 完成状況 - MVP Phase 1-6 + 全体アーキテクチャリファクタリング完了 🎉
-- **プロジェクト状態**: エンタープライズ品質レベル（全アプリケーション統一アーキテクチャ完了）
+### 完成状況 - MVP Phase 1-6 + テスト基盤構築完了 🎉
+- **プロジェクト状態**: エンタープライズ品質レベル（テスト基盤・CI/CD統合完了）
 - **技術スタック確定**: Next.js 15 + TypeScript + Tailwind CSS + Firebase Hosting + Firestore + Cloud Functions v2 + localStorage
 - **デプロイ状況**: Firebase Hosting本番稼働（https://match-party-findy.web.app/）
-- **CI/CD**: GitHub Actions完全自動化、Functions含む
+- **CI/CD**: GitHub Actions完全自動化、テスト実行必須化、Functions含む
 - **アーキテクチャ**: MVP（Model-View-Presenter）+ Facade + Container-Component パターン全統一
-- **品質**: 型安全性・ESLint警告解決・テスタビリティ完全対応
+- **品質**: 型安全性・ESLint警告解決・テスト基盤・CI/CD品質ゲート完全対応
+- **テスト**: Jest + Testing Library、44テスト実装、カバレッジ測定・CI統合完了
 
 ### 実装完了機能
 
@@ -198,7 +213,20 @@ firebase deploy
 - ✅ Custom Hookパターンによるビジネスロジック再利用化
 - ✅ 各ページの独立コンポーネント化とアーキテクチャ統一
 - ✅ ESLintルール最適化（未使用パラメータ警告解決）
-- ✅ お題データ拡張（72→175個）
+- ✅ お題データ拡張（72→447個）
+
+**Phase 7（テスト基盤構築・CI/CD統合）**
+- ✅ Jest + @testing-library/react テスト環境構築完了
+- ✅ Presenter層ユニットテスト実装（CreateRoom・JoinRoom完了）
+- ✅ Utils層ユニットテスト実装（バリデーション・ルームコード生成等）
+- ✅ 44個のテスト実装、全テスト合格確認
+- ✅ カバレッジ測定機能実装（Jest Coverage）
+- ✅ CI/CDパイプライン構築（GitHub Actions 3ワークフロー）
+- ✅ テスト失敗時のデプロイ停止機能
+- ✅ カバレッジレポート自動生成・HTML出力
+- ✅ 包括的テストガイド作成（docs/testing-guide.md）
+- ✅ テスト戦略ドキュメント整備
+- ✅ 最重要技術的負債「テスト欠如」完全解決
 
 ### URL構造
 - ホーム: `/`

@@ -98,6 +98,7 @@ firebase deploy
 
 ### 開発ガイド
 - **[CLAUDE.md](CLAUDE.md)**: プロジェクト全体概要・開発制約・セッション継続ガイド
+- **[テストガイド](docs/testing-guide.md)**: テスト戦略・カバレッジ確認・CI/CD
 
 ## 🤝 貢献
 
