@@ -46,6 +46,9 @@ jobs:
       - name: Deploy Firestore rules and indexes
         run: |
           npx firebase deploy --only firestore:rules,firestore:indexes --project match-party-findy
+      - name: Deploy Firebase Functions
+        run: |
+          npx firebase deploy --only functions --project match-party-findy
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
