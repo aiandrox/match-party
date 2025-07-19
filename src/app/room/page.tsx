@@ -2,7 +2,6 @@
 
 import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { RoomStatus } from "@/types";
 import { useRoomData } from "./hooks/useRoomData";
 import { WaitingRoomView } from "./components/WaitingRoomView";
 import { PlayingGameView } from "./components/PlayingGameView";
@@ -98,13 +97,13 @@ function RoomContent() {
   // ステータスに応じた表示
   const renderRoomView = () => {
     switch (room.status) {
-      case RoomStatus.WAITING:
+      case "waiting":
         return <WaitingRoomView room={room} currentUserId={currentUserId} />;
-      case RoomStatus.PLAYING:
+      case "playing":
         return <PlayingGameView room={room} currentUserId={currentUserId} />;
-      case RoomStatus.REVEALING:
+      case "revealing":
         return <RevealingAnswersView room={room} currentUserId={currentUserId} />;
-      case RoomStatus.ENDED:
+      case "ended":
         return <GameEndedView room={room} currentUserId={currentUserId} />;
       default:
         return (

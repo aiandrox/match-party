@@ -14,7 +14,7 @@ interface UseRevealingAnswersPresenterReturn {
   isHost: boolean;
   isStartingNextRound: boolean;
   isEndingGame: boolean;
-  submitJudgment: (judgmentResult: JudgmentResult) => Promise<void>;
+  submitJudgment: (_judgment: JudgmentResult) => Promise<void>;
   startNextRound: () => Promise<void>;
   endGame: () => Promise<void>;
 }
@@ -50,7 +50,6 @@ export function useRevealingAnswersPresenter({
       if (gameRoundDoc.exists()) {
         const gameRoundData = gameRoundDoc.data();
         if (gameRoundData.judgment) {
-          console.log("Initial judgment loaded:", gameRoundData.judgment);
           setHostJudgment(gameRoundData.judgment);
         }
       }
@@ -84,7 +83,6 @@ export function useRevealingAnswersPresenter({
               setCurrentGameRoundId(gameRound.id);
               
               // 判定結果も更新（重要：リアルタイム同期）
-              console.log("GameRound judgment updated:", gameRound.judgment);
               setHostJudgment(gameRound.judgment || null);
             }
           });
@@ -122,7 +120,6 @@ export function useRevealingAnswersPresenter({
             if (gameRoundDoc.exists()) {
               const gameRoundData = gameRoundDoc.data();
               if (gameRoundData.judgment) {
-                console.log("Initial judgment loaded on room load:", gameRoundData.judgment);
                 setHostJudgment(gameRoundData.judgment);
               }
             }
@@ -134,16 +131,14 @@ export function useRevealingAnswersPresenter({
     };
 
     loadInitialData();
-  }, [room.id, room.currentGameRoundId, loadAnswersForRevealing]);
+  }, [room, loadAnswersForRevealing]);
 
   const submitJudgment = useCallback(async (judgment: JudgmentResult) => {
     if (!currentGameRoundId) return;
 
     try {
-      console.log("Host judgment started:", judgment);
       const { saveHostJudgment } = await import("@/lib/roomService");
       await saveHostJudgment(room.id, judgment);
-      console.log("Host judgment saved:", judgment);
       setHostJudgment(judgment);
     } catch (err) {
       console.error("Host judgment failed:", err);

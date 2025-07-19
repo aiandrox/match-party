@@ -1,4 +1,4 @@
-import { Room, JudgmentResult } from "@/types";
+import { Room } from "@/types";
 import { useRevealingAnswersPresenter } from "./useRevealingAnswersPresenter";
 
 interface RevealingAnswersViewProps {
@@ -40,7 +40,7 @@ export function RevealingAnswersView({ room, currentUserId }: RevealingAnswersVi
       {/* 判定結果表示 */}
       {hostJudgment && (
         <div className="mb-6">
-          {hostJudgment === JudgmentResult.MATCH ? (
+          {hostJudgment === "match" ? (
             <h3 className="text-2xl font-bold text-green-800 mb-2 text-center">🎉 全員一致</h3>
           ) : (
             <h3 className="text-2xl font-bold text-red-800 mb-2 text-center">❌ 全員一致ならず</h3>
@@ -55,10 +55,10 @@ export function RevealingAnswersView({ room, currentUserId }: RevealingAnswersVi
             let bgColor = "bg-gray-50 border-gray-200";
             let textColor = "text-gray-900";
 
-            if (hostJudgment === JudgmentResult.MATCH) {
+            if (hostJudgment === "match") {
               bgColor = "bg-green-100 border-green-300";
               textColor = "text-green-900";
-            } else if (hostJudgment === JudgmentResult.NO_MATCH) {
+            } else if (hostJudgment === "no-match") {
               bgColor = "bg-red-100 border-red-300";
               textColor = "text-red-900";
             }
@@ -83,13 +83,13 @@ export function RevealingAnswersView({ room, currentUserId }: RevealingAnswersVi
           <p className="text-gray-700 font-medium mb-4">回答の一致を判定してください</p>
           <div className="flex justify-center gap-4">
             <button
-              onClick={() => submitJudgment(JudgmentResult.MATCH)}
+              onClick={() => submitJudgment("match")}
               className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
             >
               全員一致
             </button>
             <button
-              onClick={() => submitJudgment(JudgmentResult.NO_MATCH)}
+              onClick={() => submitJudgment("no-match")}
               className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
             >
               全員一致ならず

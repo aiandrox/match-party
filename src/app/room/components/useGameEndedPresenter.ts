@@ -11,12 +11,11 @@ interface UseGameEndedPresenterReturn {
   isLoadingHistory: boolean;
   selectedRound: any;
   roundAnswers: any[];
-  loadRoundAnswers: (gameRound: any) => Promise<void>;
+  loadRoundAnswers: (_gameRound: any) => Promise<void>;
 }
 
 export function useGameEndedPresenter({
-  room,
-  currentUserId: _currentUserId
+  room
 }: UseGameEndedPresenterProps): UseGameEndedPresenterReturn {
   const [gameRounds, setGameRounds] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -49,7 +48,7 @@ export function useGameEndedPresenter({
     } catch (error) {
       console.error("ラウンド回答の読み込みに失敗しました:", error);
     }
-  }, [room.id]);
+  }, [room.participants]);
 
   // ゲーム終了時に履歴を自動読み込み
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { Room, JudgmentResult } from "@/types";
+import { Room } from "@/types";
 import { useGameEndedPresenter } from "./useGameEndedPresenter";
 
 interface GameEndedViewProps {
@@ -111,10 +111,10 @@ export function GameEndedView({ room, currentUserId }: GameEndedViewProps) {
                   let bgColor = "bg-gray-50 border-gray-200";
                   let textColor = "text-gray-900";
 
-                  if (selectedRound.judgment === JudgmentResult.MATCH) {
+                  if (selectedRound.judgment === "match") {
                     bgColor = "bg-green-100 border-green-300";
                     textColor = "text-green-900";
-                  } else if (selectedRound.judgment === JudgmentResult.NO_MATCH) {
+                  } else if (selectedRound.judgment === "no-match") {
                     bgColor = "bg-red-100 border-red-300";
                     textColor = "text-red-900";
                   }

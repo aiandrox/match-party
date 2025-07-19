@@ -1,20 +1,7 @@
-// Enum types
-export enum RoomStatus {
-  WAITING = "waiting",
-  PLAYING = "playing",
-  REVEALING = "revealing",
-  ENDED = "ended",
-}
-
-export enum GameRoundStatus {
-  ACTIVE = "active",
-  COMPLETED = "completed",
-}
-
-export enum JudgmentResult {
-  MATCH = "match",
-  NO_MATCH = "no-match",
-}
+// Type definitions
+export type RoomStatus = "waiting" | "playing" | "revealing" | "ended";
+export type GameRoundStatus = "active" | "completed";
+export type JudgmentResult = "match" | "no-match";
 
 // Game types
 export interface Room {
