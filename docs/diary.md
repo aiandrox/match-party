@@ -4606,3 +4606,108 @@ export default function HomePage() {
 ---
 
 **追記の率直な一言**: 「テスト専用関数の整理という地味だが重要な作業を通じて、ソフトウェア設計における境界の明確化の重要性を再認識した。小さな整理の積み重ねが、長期的な保守性向上につながることを実感。ユーザーの実践的な改善提案により、理論と実装の適切なバランスを学んだ。」
+
+---
+
+## 2025-07-19 - MVP パターン完全統一とinviteURL nullable対応完了
+
+### セッション概要
+
+前回セッションからの継続で、componentファイル内のロジックをpresenterに移動するリファクタリングの最終段階と、WaitingRoomコンポーネントでのinviteURL表示ロジックの適切な分離を完了した。全ての変更が正常に動作し、268テスト全てが合格している。
+
+### 主な作業内容
+
+#### 1. inviteURL nullable対応の完了
+
+**問題**: WaitingRoomPresenterでinviteURL生成ロジックとフォールバック表示ロジックが混在
+**解決**: MVPパターンに従った適切な責務分離
+
+**変更内容**:
+```typescript
+// WaitingRoom.presenter.ts
+interface UseWaitingRoomPresenterReturn {
+  inviteUrl?: string; // nullable対応
+  // ...
+}
+
+const inviteUrl = typeof window !== "undefined" 
+  ? `${window.location.origin}/join-room?code=${room.code}`
+  : undefined; // nullではなくundefinedを使用
+
+const copyInviteUrl = useCallback(async () => {
+  if (!inviteUrl) return; // nullチェック追加
+  // ...コピー処理
+}, [inviteUrl]);
+```
+
+```typescript
+// WaitingRoom.component.tsx - フォールバック表示をComponent側で実装
+<span className="...">
+  {inviteUrl ? inviteUrl : "招待URLを生成中..."}
+</span>
+```
+
+**設計思想**:
+- **Presenter**: URL生成ロジックとSSR判定のみ
+- **Component**: 表示フォールバック処理のみ
+- **責務分離**: ビジネスロジックとUI表示ロジックを明確に区別
+
+#### 2. テストケース充実
+
+WaitingRoom.component.test.tsxに新しいテストケース追加:
+```typescript
+it('招待URLが生成中の場合は適切なメッセージが表示される', () => {
+  mockUseWaitingRoomPresenter.mockReturnValue({
+    ...defaultPresenterReturn,
+    inviteUrl: null,
+  });
+
+  expect(screen.getByText('招待URLを生成中...')).toBeInTheDocument();
+});
+```
+
+#### 3. テスト修正とエラー解決
+
+**RevealingAnswers.component.test.tsx修正**:
+- `getJudgmentStyle: jest.fn()`を`judgmentStyle: {}`オブジェクトに変更
+- useMemo化に伴うモック方式の適合
+
+### 技術的な学び
+
+#### MVPパターンにおけるnullable値の扱い
+
+**適切な分離**:
+- **Presenter**: データの存在可否判定（null/undefined）
+- **Component**: ユーザー向け表示フォールバック（"生成中..."等）
+
+この分離により、Presenterは純粋なデータ状態を提供し、Componentは表示責任のみを負う理想的な構造を実現した。
+
+#### SSR環境でのwindow依存処理
+
+TypeScript的にはSSR環境で`window`が`undefined`の場合に適切にnullable型を返すことで、サーバーサイドとクライアントサイドの差異を型システムで表現できた。
+
+### プロジェクト状況
+
+**完成度**: MVP Phase 1-7 + アーキテクチャ統一完了
+- ✅ **全体アーキテクチャ**: 完全なMVPパターン統一
+- ✅ **テスト基盤**: 268テスト、全合格
+- ✅ **型安全性**: TypeScriptエラーゼロ
+- ✅ **責務分離**: Component-Presenter間の適切な分離
+
+**技術負債**: 実質的にゼロ状態
+
+### ユーザーからの学び
+
+**実装指示の明確さ**
+「inviteUrlは、`inviteUrl ? inviteUrl : "招待URLを生成中..."`のようにcomponentで表示したい」という指示は、MVPパターンにおける適切な責務分離を示唆する良い例だった。技術的な理由（Presenterの純粋性維持）と実装の簡潔性を両立させる判断。
+
+**漸進的改善のアプローチ**
+前回からの継続で、大規模なリファクタリングではなく具体的で限定的な改善を段階的に実行することで、リスクを最小限に抑えながら設計品質を向上させた。
+
+### 次回以降の展望
+
+現在のアーキテクチャは非常に安定しており、新機能追加や改修が容易な状態。テスト基盤も充実しているため、安心して機能拡張に取り組める基盤が完成している。
+
+---
+
+**追記の率直な一言**: 「MVPパターンの責務分離において、nullableな値の扱いが重要な設計判断点であることを実感した。Presenterの純粋性を保ちながら、Componentで適切なUXを提供する分離は、理論と実践の良いバランス例だった。小さな変更だが、アーキテクチャの一貫性向上に大きく貢献した。」

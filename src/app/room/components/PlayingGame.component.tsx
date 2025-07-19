@@ -1,7 +1,5 @@
 import { Room } from "@/types";
 import { usePlayingGamePresenter } from "./PlayingGame.presenter";
-import { useEffect, useRef } from "react";
-import { playQuestionSound } from "@/lib/gameEffects";
 
 interface PlayingGameViewProps {
   room: Room;
@@ -22,19 +20,13 @@ export function PlayingGameView({ room, currentUserId }: PlayingGameViewProps) {
     submitAnswer,
     forceRevealAnswers,
     changeTopic,
+    answerStatistics,
+    canChangeTopicStyle,
+    canForceRevealStyle,
+    canForceReveal,
+    showForceRevealHelp,
+    canChangeTopic
   } = usePlayingGamePresenter({ room, currentUserId });
-
-  const answeredCount = room.participants.filter((p) => p.hasAnswered).length;
-  const totalCount = room.participants.length;
-  const hasPlayedQuestionSound = useRef(false);
-
-  // 問題が表示された時に問題音を再生（1回のみ）
-  useEffect(() => {
-    if (currentTopicContent && !hasPlayedQuestionSound.current) {
-      playQuestionSound();
-      hasPlayedQuestionSound.current = true;
-    }
-  }, [currentTopicContent]);
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -53,12 +45,8 @@ export function PlayingGameView({ room, currentUserId }: PlayingGameViewProps) {
           {isHost && (
             <button
               onClick={changeTopic}
-              disabled={answeredCount > 0 || isChangingTopic}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                answeredCount === 0 && !isChangingTopic
-                  ? "bg-gray-600 hover:bg-gray-700 text-white"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+              disabled={!canChangeTopic}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${canChangeTopicStyle}`}
             >
               {isChangingTopic ? "変更中..." : "変更"}
             </button>
@@ -104,7 +92,7 @@ export function PlayingGameView({ room, currentUserId }: PlayingGameViewProps) {
 
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          回答状況 ({answeredCount}/{totalCount})
+          回答状況 ({answerStatistics.answeredCount}/{answerStatistics.totalCount})
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {room.participants.map((participant) => (
@@ -132,16 +120,12 @@ export function PlayingGameView({ room, currentUserId }: PlayingGameViewProps) {
         <div className="text-center">
           <button
             onClick={forceRevealAnswers}
-            disabled={answeredCount < 2 || isForceRevealing}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              answeredCount >= 2 && !isForceRevealing
-                ? "bg-orange-600 hover:bg-orange-700 text-white"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
+            disabled={!canForceReveal}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors ${canForceRevealStyle}`}
           >
             {isForceRevealing ? "公開中..." : "回答を強制公開"}
           </button>
-          {answeredCount < 2 && (
+          {showForceRevealHelp && (
             <p className="text-sm text-gray-600 mt-2">回答公開には2人以上の回答が必要です</p>
           )}
         </div>

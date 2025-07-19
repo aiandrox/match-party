@@ -8,8 +8,16 @@ interface WaitingRoomViewProps {
 }
 
 export function WaitingRoomView({ room, currentUserId }: WaitingRoomViewProps) {
-  const { isStartingGame, inviteUrlCopySuccess, isHost, canStartGame, startGame, copyInviteUrl } =
-    useWaitingRoomPresenter({ room, currentUserId });
+  const { 
+    isStartingGame, 
+    inviteUrlCopySuccess, 
+    isHost, 
+    canStartGame, 
+    startGame, 
+    copyInviteUrl,
+    inviteUrl,
+    isCurrentUser
+  } = useWaitingRoomPresenter({ room, currentUserId });
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -24,9 +32,7 @@ export function WaitingRoomView({ room, currentUserId }: WaitingRoomViewProps) {
         <div className="text-blue-800 mb-2 font-medium">招待URL:</div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-mono bg-white px-3 py-2 rounded border text-slate-700 flex-1 break-all">
-            {typeof window !== "undefined"
-              ? `${window.location.origin}/join-room?code=${room.code}`
-              : `招待URLを生成中...`}
+            {inviteUrl ? inviteUrl : "招待URLを生成中..."}
           </span>
           <button
             onClick={copyInviteUrl}
@@ -49,12 +55,12 @@ export function WaitingRoomView({ room, currentUserId }: WaitingRoomViewProps) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {room.participants.map((participant) => {
-            const isCurrentUser = participant.id === currentUserId;
+            const isCurrentUserFlag = isCurrentUser(participant.id);
             return (
               <div
                 key={participant.id}
                 className={`bg-white rounded-lg p-3 border ${
-                  isCurrentUser ? "border-blue-300 bg-blue-50" : "border-gray-200"
+                  isCurrentUserFlag ? "border-blue-300 bg-blue-50" : "border-gray-200"
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -69,10 +75,10 @@ export function WaitingRoomView({ room, currentUserId }: WaitingRoomViewProps) {
                   </div>
                   <div className="flex-1">
                     <div
-                      className={`font-medium ${isCurrentUser ? "text-blue-900" : "text-gray-900"}`}
+                      className={`font-medium ${isCurrentUserFlag ? "text-blue-900" : "text-gray-900"}`}
                     >
                       {participant.name}
-                      {isCurrentUser && (
+                      {isCurrentUserFlag && (
                         <span className="text-sm text-blue-600 ml-2">(あなた)</span>
                       )}
                     </div>

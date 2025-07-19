@@ -13,11 +13,13 @@ interface UseWaitingRoomPresenterReturn {
   canStartGame: boolean;
   startGame: () => Promise<void>;
   copyInviteUrl: () => Promise<void>;
+  inviteUrl?: string;
+  isCurrentUser: (_participantId: string) => boolean;
 }
 
 export function useWaitingRoomPresenter({
   room,
-  currentUserId
+  currentUserId,
 }: UseWaitingRoomPresenterProps): UseWaitingRoomPresenterReturn {
   const [isStartingGame, setIsStartingGame] = useState(false);
   const [inviteUrlCopySuccess, setInviteUrlCopySuccess] = useState(false);
@@ -39,11 +41,24 @@ export function useWaitingRoomPresenter({
     }
   }, [room.id, isHost, canStartGame, isStartingGame]);
 
+  // 招待URL生成
+  const inviteUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/join-room?code=${room.code}`
+      : undefined;
+
+  // ユーザー識別関数
+  const isCurrentUser = useCallback(
+    (participantId: string) => {
+      return participantId === currentUserId;
+    },
+    [currentUserId]
+  );
 
   const copyInviteUrl = useCallback(async () => {
+    if (!inviteUrl) return;
+
     try {
-      const inviteUrl = `${window.location.origin}/join-room?code=${room.code}`;
-      
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(inviteUrl);
       } else {
@@ -60,7 +75,7 @@ export function useWaitingRoomPresenter({
     } catch (error) {
       console.error("招待URLのコピーに失敗しました:", error);
     }
-  }, [room.code]);
+  }, [inviteUrl]);
 
   return {
     isStartingGame,
@@ -68,6 +83,8 @@ export function useWaitingRoomPresenter({
     isHost,
     canStartGame,
     startGame,
-    copyInviteUrl
+    copyInviteUrl,
+    inviteUrl,
+    isCurrentUser,
   };
 }

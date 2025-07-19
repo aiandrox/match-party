@@ -7,12 +7,15 @@ interface GameEndedViewProps {
 }
 
 export function GameEndedView({ room, currentUserId }: GameEndedViewProps) {
-  const { gameRounds, isLoadingHistory, selectedRound, roundAnswers, loadRoundAnswers } =
-    useGameEndedPresenter({ room, currentUserId });
-
-  // 統計情報を計算
-  const totalRounds = gameRounds.length;
-  const matchedRounds = gameRounds.filter((round) => round.judgment === "match").length;
+  const {
+    gameRounds,
+    isLoadingHistory,
+    selectedRound,
+    roundAnswers,
+    loadRoundAnswers,
+    gameStatistics,
+    answerStyle,
+  } = useGameEndedPresenter({ room, currentUserId });
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -25,21 +28,21 @@ export function GameEndedView({ room, currentUserId }: GameEndedViewProps) {
 
       <div className="mb-6">
         {/* ゲーム統計 */}
-        {!isLoadingHistory && totalRounds > 0 && (
+        {!isLoadingHistory && gameStatistics.totalRounds > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-blue-50 rounded-lg p-4">
               <div className="text-blue-600 text-sm font-medium mb-1">総ラウンド数</div>
-              <div className="text-3xl font-bold text-blue-900">{totalRounds}</div>
+              <div className="text-3xl font-bold text-blue-900">{gameStatistics.totalRounds}</div>
             </div>
             <div className="bg-green-50 rounded-lg p-4">
               <div className="text-green-600 text-sm font-medium mb-1">一致回数</div>
-              <div className="text-3xl font-bold text-green-900">{matchedRounds}</div>
+              <div className="text-3xl font-bold text-green-900">
+                {gameStatistics.matchedRounds}
+              </div>
             </div>
             <div className="bg-yellow-50 rounded-lg p-4">
               <div className="text-yellow-600 text-sm font-medium mb-1">一致率</div>
-              <div className="text-3xl font-bold text-yellow-900">
-                {totalRounds > 0 ? Math.round((matchedRounds / totalRounds) * 100) : 0}%
-              </div>
+              <div className="text-3xl font-bold text-yellow-900">{gameStatistics.matchRate}%</div>
             </div>
           </div>
         )}
@@ -107,24 +110,12 @@ export function GameEndedView({ room, currentUserId }: GameEndedViewProps) {
             {roundAnswers.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {roundAnswers.map((answer, index) => {
-                  // 判定結果に基づく色設定
-                  let bgColor = "bg-gray-50 border-gray-200";
-                  let textColor = "text-gray-900";
-
-                  if (selectedRound.judgment === "match") {
-                    bgColor = "bg-green-100 border-green-300";
-                    textColor = "text-green-900";
-                  } else if (selectedRound.judgment === "no-match") {
-                    bgColor = "bg-red-100 border-red-300";
-                    textColor = "text-red-900";
-                  }
-
                   return (
                     <div
                       key={`${answer.userName}-${index}`}
-                      className={`p-4 rounded-lg border ${bgColor}`}
+                      className={`p-4 rounded-lg border ${answerStyle.bgColor}`}
                     >
-                      <p className={`font-bold text-xl mb-2 ${textColor}`}>
+                      <p className={`font-bold text-xl mb-2 ${answerStyle.textColor}`}>
                         {answer.hasAnswered ? answer.content : ""}
                       </p>
                       <p

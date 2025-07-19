@@ -28,6 +28,8 @@ describe('WaitingRoomView', () => {
     canStartGame: false,
     startGame: jest.fn(),
     copyInviteUrl: jest.fn(),
+    inviteUrl: 'http://localhost:3000/join-room?code=ABC123DEF456GHI789JK',
+    isCurrentUser: jest.fn((id: string) => id === 'user1'),
   };
 
   const createMockRoom = (participants: Array<{ id: string; name: string; isHost: boolean }> = []): Room => ({
@@ -73,6 +75,19 @@ describe('WaitingRoomView', () => {
       expect(screen.getByText('http://localhost:3000/join-room?code=ABC123DEF456GHI789JK')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'URLコピー' })).toBeInTheDocument();
       expect(screen.getByText('このURLを友達に送って、簡単にルームに招待できます')).toBeInTheDocument();
+    });
+
+    it('招待URLが生成中の場合は適切なメッセージが表示される', () => {
+      mockUseWaitingRoomPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        inviteUrl: null,
+      });
+
+      const room = createMockRoom([{ id: 'user1', name: 'ホスト', isHost: true }]);
+      render(<WaitingRoomView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText('招待URLを生成中...')).toBeInTheDocument();
+      expect(screen.queryByText('http://localhost:3000/join-room?code=ABC123DEF456GHI789JK')).not.toBeInTheDocument();
     });
 
     it('参加者数の表示が正しい', () => {

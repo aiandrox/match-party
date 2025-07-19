@@ -27,6 +27,11 @@ describe('RevealingAnswersView', () => {
     submitJudgment: jest.fn(),
     startNextRound: jest.fn(),
     endGame: jest.fn(),
+    judgmentStyle: {
+      bgColor: 'bg-gray-50 border-gray-200',
+      textColor: 'text-gray-900'
+    },
+    hasAnimated: false,
   };
 
   const createMockRoom = (): Room => ({

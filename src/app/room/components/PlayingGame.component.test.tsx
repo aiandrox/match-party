@@ -12,7 +12,6 @@ jest.mock('@/lib/gameEffects', () => ({
 
 describe('PlayingGameView', () => {
   const mockUsePlayingGamePresenter = require('./PlayingGame.presenter').usePlayingGamePresenter;
-  const mockPlayQuestionSound = require('@/lib/gameEffects').playQuestionSound;
   
   const defaultPresenterReturn = {
     currentTopicContent: null,
@@ -27,6 +26,15 @@ describe('PlayingGameView', () => {
     submitAnswer: jest.fn(),
     forceRevealAnswers: jest.fn(),
     changeTopic: jest.fn(),
+    answerStatistics: {
+      answeredCount: 0,
+      totalCount: 0,
+    },
+    canChangeTopicStyle: 'bg-gray-300 text-gray-500 cursor-not-allowed',
+    canForceRevealStyle: 'bg-gray-300 text-gray-500 cursor-not-allowed',
+    canForceReveal: false,
+    showForceRevealHelp: true,
+    canChangeTopic: false,
   };
 
   const createMockRoom = (participants: Array<{ id: string; name: string; isHost: boolean; hasAnswered: boolean }> = []): Room => ({
@@ -54,6 +62,14 @@ describe('PlayingGameView', () => {
 
   describe('基本表示', () => {
     it('ゲーム画面の基本要素が表示される', () => {
+      mockUsePlayingGamePresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        answerStatistics: {
+          answeredCount: 0,
+          totalCount: 1,
+        },
+      });
+
       const room = createMockRoom([{ id: 'user1', name: 'プレイヤー1', isHost: false, hasAnswered: false }]);
       
       render(<PlayingGameView room={room} currentUserId="user1" />);
@@ -181,6 +197,14 @@ describe('PlayingGameView', () => {
         { id: 'user3', name: 'プレイヤー3', isHost: true, hasAnswered: true },
       ]);
 
+      mockUsePlayingGamePresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        answerStatistics: {
+          answeredCount: 2,
+          totalCount: 3,
+        },
+      });
+
       render(<PlayingGameView room={room} currentUserId="user2" />);
 
       expect(screen.getByText('回答状況 (2/3)')).toBeInTheDocument();
@@ -224,6 +248,8 @@ describe('PlayingGameView', () => {
         ...defaultPresenterReturn,
         isHost: true,
         changeTopic,
+        canChangeTopic: true,
+        canChangeTopicStyle: 'bg-gray-600 hover:bg-gray-700 text-white',
       });
 
       const room = createMockRoom([{ id: 'user1', name: 'ホスト', isHost: true, hasAnswered: false }]);
@@ -239,6 +265,12 @@ describe('PlayingGameView', () => {
       mockUsePlayingGamePresenter.mockReturnValue({
         ...defaultPresenterReturn,
         isHost: true,
+        answerStatistics: {
+          answeredCount: 1,
+          totalCount: 2,
+        },
+        canChangeTopic: false,
+        canChangeTopicStyle: 'bg-gray-300 text-gray-500 cursor-not-allowed',
       });
 
       const room = createMockRoom([
@@ -272,6 +304,12 @@ describe('PlayingGameView', () => {
         ...defaultPresenterReturn,
         isHost: true,
         forceRevealAnswers,
+        answerStatistics: {
+          answeredCount: 2,
+          totalCount: 2,
+        },
+        canForceReveal: true,
+        canForceRevealStyle: 'bg-orange-600 hover:bg-orange-700 text-white',
       });
 
       const room = createMockRoom([
@@ -345,23 +383,28 @@ describe('PlayingGameView', () => {
   });
 
   describe('音声効果', () => {
-    it('お題が表示された時に音声が再生される', () => {
+    it('お題が表示された場合のレンダリングが正常に動作する', () => {
       mockUsePlayingGamePresenter.mockReturnValue({
         ...defaultPresenterReturn,
         currentTopicContent: { content: 'テストお題', round: 1 },
+        answerStatistics: {
+          answeredCount: 0,
+          totalCount: 1,
+        },
       });
 
       const room = createMockRoom([{ id: 'user1', name: 'プレイヤー1', isHost: false, hasAnswered: false }]);
       render(<PlayingGameView room={room} currentUserId="user1" />);
 
-      expect(mockPlayQuestionSound).toHaveBeenCalled();
+      expect(screen.getByText('テストお題')).toBeInTheDocument();
+      expect(screen.getByText('お題 (第1ラウンド)')).toBeInTheDocument();
     });
 
-    it('お題がない場合は音声が再生されない', () => {
+    it('お題がない場合のレンダリングが正常に動作する', () => {
       const room = createMockRoom([{ id: 'user1', name: 'プレイヤー1', isHost: false, hasAnswered: false }]);
       render(<PlayingGameView room={room} currentUserId="user1" />);
 
-      expect(mockPlayQuestionSound).not.toHaveBeenCalled();
+      expect(screen.getByText('お題を読み込み中...')).toBeInTheDocument();
     });
   });
 });

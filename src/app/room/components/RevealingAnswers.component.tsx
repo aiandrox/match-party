@@ -1,12 +1,5 @@
 import { Room } from "@/types";
 import { useRevealingAnswersPresenter } from "./RevealingAnswers.presenter";
-import { useEffect, useState } from "react";
-import {
-  playMatchSound,
-  playNoMatchSound,
-  createConfettiEffect,
-  injectGameAnimations,
-} from "@/lib/gameEffects";
 
 interface RevealingAnswersViewProps {
   room: Room;
@@ -24,32 +17,9 @@ export function RevealingAnswersView({ room, currentUserId }: RevealingAnswersVi
     submitJudgment,
     startNextRound,
     endGame,
+    judgmentStyle,
+    hasAnimated,
   } = useRevealingAnswersPresenter({ room, currentUserId });
-
-  const [hasAnimated, setHasAnimated] = useState(false);
-
-  // アニメーションCSSの注入
-  useEffect(() => {
-    injectGameAnimations();
-  }, []);
-
-  // 判定結果に応じた効果音・エフェクト
-  useEffect(() => {
-    if (hostJudgment === "match") {
-      playMatchSound();
-      createConfettiEffect();
-      // アニメーションを2秒後に停止
-      setTimeout(() => {
-        setHasAnimated(true);
-      }, 2000);
-    } else if (hostJudgment === "no-match") {
-      playNoMatchSound();
-      // アニメーションを2秒後に停止
-      setTimeout(() => {
-        setHasAnimated(true);
-      }, 2000);
-    }
-  }, [hostJudgment]);
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -95,21 +65,11 @@ export function RevealingAnswersView({ room, currentUserId }: RevealingAnswersVi
       <div className="mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {allAnswers.map((answer, index) => {
-            // 判定後の色設定
-            let bgColor = "bg-gray-50 border-gray-200";
-            let textColor = "text-gray-900";
-
-            if (hostJudgment === "match") {
-              bgColor = "bg-green-100 border-green-300";
-              textColor = "text-green-900";
-            } else if (hostJudgment === "no-match") {
-              bgColor = "bg-red-100 border-red-300";
-              textColor = "text-red-900";
-            }
-
             return (
-              <div key={index} className={`p-4 rounded-lg border ${bgColor}`}>
-                <p className={`font-bold text-xl mb-2 transition-colors duration-500 ${textColor}`}>
+              <div key={index} className={`p-4 rounded-lg border ${judgmentStyle.bgColor}`}>
+                <p
+                  className={`font-bold text-xl mb-2 transition-colors duration-500 ${judgmentStyle.textColor}`}
+                >
                   {answer.hasAnswered ? answer.content : ""}
                 </p>
                 <p

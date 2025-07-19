@@ -1,9 +1,20 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Room } from "@/types";
 
 interface UseGameEndedPresenterProps {
   room: Room;
   currentUserId: string | null;
+}
+
+interface GameStatistics {
+  totalRounds: number;
+  matchedRounds: number;
+  matchRate: number;
+}
+
+interface AnswerStyle {
+  bgColor: string;
+  textColor: string;
 }
 
 interface UseGameEndedPresenterReturn {
@@ -12,10 +23,12 @@ interface UseGameEndedPresenterReturn {
   selectedRound: any;
   roundAnswers: any[];
   loadRoundAnswers: (_gameRound: any) => Promise<void>;
+  gameStatistics: GameStatistics;
+  answerStyle: AnswerStyle;
 }
 
 export function useGameEndedPresenter({
-  room
+  room,
 }: UseGameEndedPresenterProps): UseGameEndedPresenterReturn {
   const [gameRounds, setGameRounds] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -39,27 +52,64 @@ export function useGameEndedPresenter({
   }, [room]);
 
   // 特定のラウンドの回答を読み込み
-  const loadRoundAnswers = useCallback(async (_gameRound: any) => {
-    try {
-      const { getGameRoundAnswersWithParticipants } = await import("@/lib/gameRoundService");
-      const answers = await getGameRoundAnswersWithParticipants(_gameRound.id, room.participants);
-      setRoundAnswers(answers);
-      setSelectedRound(_gameRound);
-    } catch (error) {
-      console.error("ラウンド回答の読み込みに失敗しました:", error);
-    }
-  }, [room.participants]);
+  const loadRoundAnswers = useCallback(
+    async (_gameRound: any) => {
+      try {
+        const { getGameRoundAnswersWithParticipants } = await import("@/lib/gameRoundService");
+        const answers = await getGameRoundAnswersWithParticipants(_gameRound.id, room.participants);
+        setRoundAnswers(answers);
+        setSelectedRound(_gameRound);
+      } catch (error) {
+        console.error("ラウンド回答の読み込みに失敗しました:", error);
+      }
+    },
+    [room.participants]
+  );
 
   // ゲーム終了時に履歴を自動読み込み
   useEffect(() => {
     loadGameRounds();
   }, [loadGameRounds]);
 
+  // 統計情報を計算
+  const gameStatistics: GameStatistics = {
+    totalRounds: gameRounds.length,
+    matchedRounds: gameRounds.filter((round) => round.judgment === "match").length,
+    matchRate:
+      gameRounds.length > 0
+        ? Math.round(
+            (gameRounds.filter((round) => round.judgment === "match").length / gameRounds.length) *
+              100
+          )
+        : 0,
+  };
+
+  // 判定結果に基づく色設定を返す関数
+  const answerStyle: AnswerStyle = useMemo(() => {
+    if (selectedRound?.judgment === "match") {
+      return {
+        bgColor: "bg-green-100 border-green-300",
+        textColor: "text-green-900",
+      };
+    } else if (selectedRound?.judgment === "no-match") {
+      return {
+        bgColor: "bg-red-100 border-red-300",
+        textColor: "text-red-900",
+      };
+    }
+    return {
+      bgColor: "bg-gray-50 border-gray-200",
+      textColor: "text-gray-900",
+    };
+  }, [selectedRound]);
+
   return {
     gameRounds,
     isLoadingHistory,
     selectedRound,
     roundAnswers,
-    loadRoundAnswers
+    loadRoundAnswers,
+    gameStatistics,
+    answerStyle,
   };
 }
