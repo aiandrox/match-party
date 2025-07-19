@@ -7,14 +7,14 @@ jest.mock('@/lib/roomService', () => ({
   getTopicByRoomId: jest.fn(),
   submitAnswer: jest.fn(),
   forceRevealAnswers: jest.fn(),
-  changeTopicIfNoAnswers: jest.fn(),
+  changeTopic: jest.fn(),
 }));
 
 jest.mock('@/lib/gameRoundService', () => ({
   subscribeToGameRound: jest.fn(),
 }));
 
-jest.mock('@/lib/gameHistoryService', () => ({
+jest.mock('@/lib/gameAnswerService', () => ({
   getUserAnswerForGameRound: jest.fn(),
 }));
 
@@ -57,9 +57,9 @@ describe('usePlayingGamePresenter', () => {
     });
 
     it('ゲストはホストアクションを実行できない', async () => {
-      const { forceRevealAnswers, changeTopicIfNoAnswers } = await import('@/lib/roomService');
+      const { forceRevealAnswers, changeTopic } = await import('@/lib/roomService');
       const mockForceReveal = forceRevealAnswers as jest.Mock;
-      const mockChangeTopic = changeTopicIfNoAnswers as jest.Mock;
+      const mockChangeTopic = changeTopic as jest.Mock;
       
       const room = createMockRoom([
         { id: 'user1', isHost: true, hasAnswered: false },
@@ -234,8 +234,8 @@ describe('usePlayingGamePresenter', () => {
     });
 
     it('ホストはお題を変更できる', async () => {
-      const { changeTopicIfNoAnswers } = await import('@/lib/roomService');
-      const mockChangeTopic = changeTopicIfNoAnswers as jest.Mock;
+      const { changeTopic } = await import('@/lib/roomService');
+      const mockChangeTopic = changeTopic as jest.Mock;
       mockChangeTopic.mockResolvedValue(undefined);
 
       const room = createMockRoom([
@@ -282,8 +282,8 @@ describe('usePlayingGamePresenter', () => {
     });
 
     it('お題変更中は重複実行を防ぐ', async () => {
-      const { changeTopicIfNoAnswers } = await import('@/lib/roomService');
-      const mockChangeTopic = changeTopicIfNoAnswers as jest.Mock;
+      const { changeTopic } = await import('@/lib/roomService');
+      const mockChangeTopic = changeTopic as jest.Mock;
       mockChangeTopic.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
 
       const room = createMockRoom([

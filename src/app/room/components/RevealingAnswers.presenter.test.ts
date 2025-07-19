@@ -4,8 +4,8 @@ import { Room } from '@/types';
 
 jest.mock('@/lib/roomService', () => ({
   getTopicByRoomId: jest.fn(),
-  getAnswersByGameRoundIdWithParticipants: jest.fn(),
-  saveHostJudgment: jest.fn(),
+  getRoundAnswers: jest.fn(),
+  submitJudgment: jest.fn(),
   startNextRound: jest.fn(),
   endGame: jest.fn(),
 }));
@@ -80,9 +80,9 @@ describe('useRevealingAnswersPresenter', () => {
         await result.current.endGame();
       });
 
-      const { saveHostJudgment, startNextRound, endGame } = await import('@/lib/roomService');
+      const { submitJudgment, startNextRound, endGame } = await import('@/lib/roomService');
       
-      expect(saveHostJudgment).not.toHaveBeenCalled();
+      expect(submitJudgment).not.toHaveBeenCalled();
       expect(startNextRound).not.toHaveBeenCalled();
       expect(endGame).not.toHaveBeenCalled();
       
@@ -120,8 +120,8 @@ describe('useRevealingAnswersPresenter', () => {
     });
 
     it('currentGameRoundIdが未設定の場合は判定を送信しない', async () => {
-      const { saveHostJudgment } = await import('@/lib/roomService');
-      const mockSaveJudgment = saveHostJudgment as jest.Mock;
+      const { submitJudgment } = await import('@/lib/roomService');
+      const mockSaveJudgment = submitJudgment as jest.Mock;
 
       const room = createMockRoom([
         { id: 'user1', isHost: true },

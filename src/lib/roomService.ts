@@ -330,7 +330,7 @@ export async function startGame(roomId: string): Promise<void> {
 }
 
 // 現在のゲームラウンドとお題情報を取得
-export async function getCurrentGameRoundWithTopic(roomId: string): Promise<{
+export async function getCurrentRound(roomId: string): Promise<{
   gameRound: any;
   topic: any;
   round: number;
@@ -379,14 +379,14 @@ export async function getCurrentGameRoundWithTopic(roomId: string): Promise<{
     };
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('getCurrentGameRoundWithTopic error:', error);
+    console.error('getCurrentRound error:', error);
     return null;
   }
 }
 
 // 後方互換性のための関数
 export async function getTopicByRoomId(roomId: string): Promise<{ id: string; content: string; round: number } | null> {
-  const result = await getCurrentGameRoundWithTopic(roomId);
+  const result = await getCurrentRound(roomId);
   if (!result) {
     return null;
   }
@@ -423,7 +423,7 @@ export async function submitAnswer(roomId: string, userId: string, answer: strin
     
     // ゲーム履歴に回答を保存
     if (roomData.currentGameRoundId) {
-      const { createGameAnswer } = await import('@/lib/gameHistoryService');
+      const { createGameAnswer } = await import('@/lib/gameAnswerService');
       const user = roomData.participants.find(p => p.id === userId);
       if (user) {
         await createGameAnswer(
@@ -457,20 +457,20 @@ export async function submitAnswer(roomId: string, userId: string, answer: strin
 
 
 // 特定のゲームラウンドの全回答を取得（未回答者も含む）
-export async function getAnswersByGameRoundIdWithParticipants(gameRoundId: string, participants: Array<{ name: string; [key: string]: any }>): Promise<Array<{ content: string; userName: string; submittedAt: Date | null; hasAnswered: boolean }>> {
+export async function getRoundAnswers(gameRoundId: string, participants: Array<{ name: string; [key: string]: any }>): Promise<Array<{ content: string; userName: string; submittedAt: Date | null; hasAnswered: boolean }>> {
   try {
     const { getGameRoundAnswersWithParticipants } = await import('@/lib/gameRoundService');
     return await getGameRoundAnswersWithParticipants(gameRoundId, participants);
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('getAnswersByGameRoundIdWithParticipants error:', error);
+    console.error('getRoundAnswers error:', error);
     return [];
   }
 }
 
 
 // 主催者による一致判定を保存
-export async function saveHostJudgment(roomId: string, judgment: JudgmentResult): Promise<void> {
+export async function submitJudgment(roomId: string, judgment: JudgmentResult): Promise<void> {
   try {
     // ルーム情報を取得
     const roomRef = doc(db, 'rooms', roomId);
@@ -490,7 +490,7 @@ export async function saveHostJudgment(roomId: string, judgment: JudgmentResult)
     
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('saveHostJudgment error:', error);
+    console.error('submitJudgment error:', error);
     if (error instanceof Error) {
       throw error;
     }
@@ -604,7 +604,7 @@ export async function startNextRound(roomId: string): Promise<void> {
 }
 
 // お題変更（誰も回答していない場合のみ）
-export async function changeTopicIfNoAnswers(roomId: string): Promise<void> {
+export async function changeTopic(roomId: string): Promise<void> {
   try {
     const roomRef = doc(db, 'rooms', roomId);
     const roomDoc = await getDoc(roomRef);
@@ -637,7 +637,7 @@ export async function changeTopicIfNoAnswers(roomId: string): Promise<void> {
     
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('changeTopicIfNoAnswers error:', error);
+    console.error('changeTopic error:', error);
     if (error instanceof Error) {
       throw error;
     }

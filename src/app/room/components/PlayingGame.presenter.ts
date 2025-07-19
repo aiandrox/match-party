@@ -128,7 +128,7 @@ export function usePlayingGamePresenter({
       if (currentUser.hasAnswered && currentGameRoundId && currentUserId && !submittedAnswer) {
         const loadExistingAnswer = async () => {
           try {
-            const { getUserAnswerForGameRound } = await import("@/lib/gameHistoryService");
+            const { getUserAnswerForGameRound } = await import("@/lib/gameAnswerService");
             const existingAnswer = await getUserAnswerForGameRound(currentGameRoundId, currentUserId);
             if (existingAnswer) {
               setSubmittedAnswer(existingAnswer);
@@ -178,8 +178,8 @@ export function usePlayingGamePresenter({
 
     setIsChangingTopic(true);
     try {
-      const { changeTopicIfNoAnswers } = await import("@/lib/roomService");
-      await changeTopicIfNoAnswers(room.id);
+      const { changeTopic } = await import("@/lib/roomService");
+      await changeTopic(room.id);
     } catch (error) {
       console.error("お題の変更に失敗しました:", error);
     } finally {

@@ -45,6 +45,14 @@ describe('utils', () => {
       expect(validateUserName('Test123User')).toBe(true);
     });
 
+    it('should accept full-width alphanumeric names', () => {
+      expect(validateUserName('ｕｓｅｒ')).toBe(true);
+      expect(validateUserName('ＵＳＥＲ')).toBe(true);
+      expect(validateUserName('１２３')).toBe(true);
+      expect(validateUserName('ｕｓｅｒ１２３')).toBe(true);
+      expect(validateUserName('ＵｓｅＲ１２３')).toBe(true);
+    });
+
     it('should reject names that are too short', () => {
       expect(validateUserName('a')).toBe(false);
       expect(validateUserName('1')).toBe(false);

@@ -56,8 +56,8 @@ export function useRevealingAnswersPresenter({
       if (!roomData.currentGameRoundId) {
         return;
       }
-      const { getAnswersByGameRoundIdWithParticipants } = await import("@/lib/roomService");
-      const answers = await getAnswersByGameRoundIdWithParticipants(
+      const { getRoundAnswers } = await import("@/lib/roomService");
+      const answers = await getRoundAnswers(
         roomData.currentGameRoundId,
         roomData.participants
       );
@@ -159,8 +159,8 @@ export function useRevealingAnswersPresenter({
       if (!currentGameRoundId || !isHost) return;
 
       try {
-        const { saveHostJudgment } = await import("@/lib/roomService");
-        await saveHostJudgment(room.id, judgment);
+        const { submitJudgment } = await import("@/lib/roomService");
+        await submitJudgment(room.id, judgment);
         setHostJudgment(judgment);
       } catch (err) {
         console.error("Host judgment failed:", err);

@@ -20,7 +20,7 @@ Match PartyアプリケーションはFirebase Firestoreを使用し、リアル
 | `status` | RoomStatus | ルーム状態 (`waiting`, `playing`, `revealing`, `ended`) | `roomService.ts` 状態遷移関数群, `room/page.tsx` UI表示切り替え |
 | `participants` | Array<User> | 参加者配列（埋め込み） | `roomService.ts` `joinRoom()`, `room/page.tsx` 参加者リスト表示 |
 | `currentGameRoundId` | String? | 現在のラウンドID（参照） | `roomService.ts` ラウンド管理, `room/page.tsx` ラウンド状態表示 |
-| `currentJudgment` | JudgmentResult? | 現在の判定結果 (`match`, `no-match`) | `roomService.ts` `saveHostJudgment()`, `room/page.tsx` 判定結果表示 |
+| `currentJudgment` | JudgmentResult? | 現在の判定結果 (`match`, `no-match`) | `roomService.ts` `submitJudgment()`, `room/page.tsx` 判定結果表示 |
 | `createdAt` | Timestamp | ルーム作成時刻 | `roomService.ts` `createRoom()`, `room/page.tsx` 作成時刻表示 |
 | `expiresAt` | Timestamp | ルーム有効期限（30分） | `roomService.ts` `createRoom()`, `room/page.tsx` 有効期限チェック |
 
@@ -111,17 +111,17 @@ users (1) ←→ (n) answers (userId外部キー、現在のゲーム進行)
 - **topics**: `startGame()`, `startNextRound()` - ラウンド用お題
 - **answers**: `submitAnswer()` - ユーザー回答（現在のゲーム進行）
 - **gameRounds**: `createGameRound()` - ラウンドレコード
-- **gameAnswers**: `createGameAnswer()` - 履歴用回答
+- **gameAnswers**: `createGameAnswer()` - 回答データ保存
 
 ### 読み取り（Read）
 - **rooms**: `getRoomByCode()`, `subscribeToRoom()` - リアルタイムルーム監視
-- **topics**: `getTopicByRoomId()`, `getCurrentGameRoundWithTopic()` - お題取得
+- **topics**: `getTopicByRoomId()`, `getCurrentRound()` - お題取得
 - **answers**: `getAnswersByTopicId()` - 現在のゲーム回答取得
 - **gameRounds**: `getGameRoundWithTopic()` - ラウンド情報
 - **gameAnswers**: `getGameRoundAnswers()` - 履歴回答
 
 ### 更新（Update）
-- **rooms**: `startGame()`, `submitAnswer()`, `saveHostJudgment()`, `forceRevealAnswers()`, `startNextRound()`, `endGame()` - ゲーム状態管理
+- **rooms**: `startGame()`, `submitAnswer()`, `submitJudgment()`, `forceRevealAnswers()`, `startNextRound()`, `endGame()` - ゲーム状態管理
 - **gameRounds**: `completeGameRound()`, `updateGameRoundJudgment()` - ラウンド完了
 
 ### 削除（Delete）

@@ -1,6 +1,3 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
 // ルーム有効期限の定数（分）
 export const ROOM_EXPIRY_MINUTES = 30 as const;
 
@@ -17,8 +14,8 @@ export function generateRoomCode(): string {
 }
 
 export function validateUserName(name: string): boolean {
-  // 2-20文字、日本語・英語・数字のみ
-  const regex = /^[a-zA-Z0-9ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠ー]+$/;
+  // 2-20文字、日本語・英語・数字（半角・全角）のみ
+  const regex = /^[a-zA-Z0-9ａ-ｚＡ-Ｚ０-９ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠ー]+$/;
   return name.length >= 2 && name.length <= 20 && regex.test(name);
 }
 
