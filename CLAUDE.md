@@ -94,10 +94,66 @@ open coverage/lcov-report/index.html  # HTMLレポートを開く
 firebase deploy
 ```
 
-### テスト戦略
+### テスト戦略（t_wada思想準拠）
+
+#### 基本方針
 - **テスト必須**: 新機能実装時は必ずテスト作成
 - **MVP活用**: アーキテクチャの責任分離によりテストが容易
 - **CI/CD統合**: 全デプロイ前にテスト実行を必須とする
+
+#### テスティングトロフィー採用
+```
+        /\      E2E (few, expensive, slow)
+       /  \     
+      /    \    Integration (some, moderate)
+     /      \   
+    /________\  Unit (many, cheap, fast)
+```
+
+- **Unit Tests (多数)**: Presenter層を中心とした単体テスト
+- **Integration Tests (適数)**: Facade層での統合テスト  
+- **E2E Tests (少数)**: 重要ユーザーフローのみ
+
+#### t_wada テスト哲学
+テスト駆動開発の第一人者である和田卓人氏の思想を採用：
+
+**1. 動作・仕様重視、実装詳細回避**
+```javascript
+// ❌ 実装詳細をテスト
+expect(component.state.isLoading).toBe(true);
+
+// ✅ ユーザーが見る動作をテスト  
+expect(screen.getByText('読み込み中...')).toBeInTheDocument();
+```
+
+**2. 意味のあるモック戦略**
+- **外部依存のみモック**: API、データベース、外部サービス
+- **内部ロジックは実際に実行**: 計算、状態管理、バリデーション
+- **ブラウザAPIは最小限**: localStorage、navigator等
+
+**3. 自然言語によるテスト名**
+```javascript
+// ✅ 仕様を自然言語で記述
+it('ホストフラグがtrueのユーザーはホストとして認識される', () => {
+  // テストの意図が明確
+});
+
+// ❌ 技術的すぎる名前
+it('isHost returns true when user.isHost is true', () => {
+  // 実装に依存しすぎ
+});
+```
+
+#### MVPアーキテクチャとの相性
+- **Presenter**: 純粋なロジックなので単体テストが容易
+- **Component**: UIの動作をテスト、Presenterをモック
+- **Facade**: 全体統合の動作をテスト
+
+#### 実践指針
+- **テスト可読性**: 日本語テスト名で仕様を明確に
+- **テスト独立性**: 各テストは他のテストに依存しない
+- **テスト高速性**: モックを活用して高速実行
+- **テスト信頼性**: 外部要因による不安定さを排除
 - **カバレッジ確認**: `npm run test:coverage`でカバレッジ測定
 - **段階的改善**: Presenter → Utils → Component → Facade → E2E の順でカバレッジ向上
 
