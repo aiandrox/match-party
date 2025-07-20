@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { validateUserName } from '@/lib/utils';
 
 interface CreateRoomPresenterProps {
@@ -41,8 +41,11 @@ export function useCreateRoomPresenter({
     }
   }, [validationError]);
 
-  // グローバルエラーまたはバリデーションエラーを表示
-  const displayError = globalError || validationError;
+  // グローバルエラーまたはバリデーションエラーを表示（メモ化）
+  const displayError = useMemo(() => 
+    globalError || validationError, 
+    [globalError, validationError]
+  );
 
   return {
     hostName,

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { validateUserName, validateRoomCode } from '@/lib/utils';
 
 interface JoinRoomPresenterProps {
@@ -66,8 +66,11 @@ export function useJoinRoomPresenter({
     }
   }, [validationError]);
 
-  // グローバルエラーまたはバリデーションエラーを表示
-  const displayError = globalError || validationError;
+  // グローバルエラーまたはバリデーションエラーを表示（メモ化）
+  const displayError = useMemo(() => 
+    globalError || validationError, 
+    [globalError, validationError]
+  );
 
   return {
     roomCode,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Room } from "@/types";
 import { getUserIdForRoom } from "@/lib/localStorage";
 
@@ -15,6 +15,25 @@ export function useRoomData(roomCode: string): UseRoomDataReturn {
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // Get user ID with memoization
+  const userId = useMemo(() => {
+    return roomCode ? getUserIdForRoom(roomCode) : null;
+  }, [roomCode]);
+
+  // Room expiration check function (memoized)
+  const checkRoomExpiration = useCallback((roomData: Room): boolean => {
+    const now = new Date();
+    const expiresAt = roomData.expiresAt instanceof Date 
+      ? roomData.expiresAt 
+      : new Date(roomData.expiresAt);
+    return now > expiresAt;
+  }, []);
+
+  // Participant validation function (memoized)
+  const isValidParticipant = useCallback((roomData: Room, userId: string | null): boolean => {
+    return userId ? roomData.participants.some((p) => p.id === userId) : false;
+  }, []);
+
   useEffect(() => {
     if (!roomCode) {
       setError("ルームコードが指定されていません");
@@ -22,8 +41,7 @@ export function useRoomData(roomCode: string): UseRoomDataReturn {
       return;
     }
 
-    // localStorageからユーザーIDを取得
-    const userId = getUserIdForRoom(roomCode);
+    // Use memoized userId
     setCurrentUserId(userId);
 
     let unsubscribe: (() => void) | undefined;
@@ -46,20 +64,14 @@ export function useRoomData(roomCode: string): UseRoomDataReturn {
           return;
         }
 
-        // ルームの有効期限をチェック
-        const now = new Date();
-        const expiresAt =
-          roomData.expiresAt instanceof Date ? roomData.expiresAt : new Date(roomData.expiresAt);
-
-        if (now > expiresAt) {
+        // Use optimized room validation functions
+        if (checkRoomExpiration(roomData)) {
           setError("このルームは有効期限が切れています");
           setIsLoading(false);
           return;
         }
 
-        // ユーザーがルームの参加者として存在するかチェック
-        const isParticipant = roomData.participants.some((p) => p.id === userId);
-        if (!isParticipant) {
+        if (!isValidParticipant(roomData, userId)) {
           setError("このルームへの参加権限がありません");
           setIsLoading(false);
           return;
@@ -72,20 +84,14 @@ export function useRoomData(roomCode: string): UseRoomDataReturn {
         const { subscribeToRoom } = await import("@/lib/roomService");
         unsubscribe = subscribeToRoom(roomData.id, (updatedRoom) => {
           if (updatedRoom) {
-            // 有効期限の再チェック
-            const now = new Date();
-            const expiresAt =
-              updatedRoom.expiresAt instanceof Date ? updatedRoom.expiresAt : new Date(updatedRoom.expiresAt);
-
-            if (now > expiresAt) {
+            // Use optimized validation functions
+            if (checkRoomExpiration(updatedRoom)) {
               setError("このルームは有効期限が切れています");
               setRoom(null);
               return;
             }
 
-            // 参加者として存在するかチェック
-            const isParticipant = updatedRoom.participants.some((p) => p.id === userId);
-            if (isParticipant) {
+            if (isValidParticipant(updatedRoom, userId)) {
               setRoom(updatedRoom);
             } else {
               setError("ルームから退出されました");
@@ -109,7 +115,7 @@ export function useRoomData(roomCode: string): UseRoomDataReturn {
         unsubscribe();
       }
     };
-  }, [roomCode]);
+  }, [roomCode, userId, checkRoomExpiration, isValidParticipant]);
 
   return { room, isLoading, error, currentUserId };
 }
