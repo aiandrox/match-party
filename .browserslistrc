@@ -1,0 +1,21 @@
+# Modern browsers baseline - ES6+ support
+# This configuration eliminates unnecessary polyfills and transpilation
+# for browsers that natively support modern JavaScript features
+
+# Include browsers with >0.5% global usage
+> 0.5%
+
+# Last 2 versions of each browser
+last 2 versions
+
+# Exclude completely dead browsers
+not dead
+
+# Exclude Internet Explorer 11 and below
+not ie <= 11
+
+# Exclude old mobile browsers
+not android <= 4.4
+
+# Exclude old Safari versions (before ES6 support)
+not safari < 10
