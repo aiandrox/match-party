@@ -205,7 +205,7 @@ export function usePlayingGamePresenter({
   // 強制公開ボタンのスタイルを決定
   const canForceRevealStyle = useMemo(() => {
     return answerStatistics.answeredCount >= 2 && !isForceRevealing
-      ? "bg-orange-600 hover:bg-orange-700 text-white"
+      ? "bg-slate-600 hover:bg-slate-700 text-white"
       : "bg-gray-300 text-gray-500 cursor-not-allowed";
   }, [answerStatistics.answeredCount, isForceRevealing]);
 

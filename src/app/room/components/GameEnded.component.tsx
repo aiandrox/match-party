@@ -35,15 +35,15 @@ export const GameEndedView = memo(({ room, currentUserId }: GameEndedViewProps) 
               <div className="text-blue-600 text-sm font-medium mb-1">総ラウンド数</div>
               <div className="text-3xl font-bold text-blue-900">{gameStatistics.totalRounds}</div>
             </div>
-            <div className="bg-green-50 rounded-lg p-4">
-              <div className="text-green-600 text-sm font-medium mb-1">一致回数</div>
-              <div className="text-3xl font-bold text-green-900">
+            <div className="bg-emerald-50 rounded-lg p-4">
+              <div className="text-emerald-600 text-sm font-medium mb-1">一致回数</div>
+              <div className="text-3xl font-bold text-emerald-900">
                 {gameStatistics.matchedRounds}
               </div>
             </div>
-            <div className="bg-yellow-50 rounded-lg p-4">
-              <div className="text-yellow-600 text-sm font-medium mb-1">一致率</div>
-              <div className="text-3xl font-bold text-yellow-900">{gameStatistics.matchRate}%</div>
+            <div className="bg-amber-50 rounded-lg p-4">
+              <div className="text-amber-600 text-sm font-medium mb-1">一致率</div>
+              <div className="text-3xl font-bold text-amber-900">{gameStatistics.matchRate}%</div>
             </div>
           </div>
         )}
@@ -72,9 +72,9 @@ export const GameEndedView = memo(({ room, currentUserId }: GameEndedViewProps) 
                       <div
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
                           round.judgment === JudgmentResult.MATCH
-                            ? "bg-green-100 text-green-800"
+                            ? "bg-emerald-100 text-emerald-800"
                             : round.judgment === JudgmentResult.NO_MATCH
-                            ? "bg-red-100 text-red-800"
+                            ? "bg-rose-100 text-rose-800"
                             : "bg-gray-100 text-gray-800"
                         }`}
                       >

@@ -225,7 +225,7 @@ describe('PlayingGameView', () => {
       const answeredContainer = screen.getByText('プレイヤー1 (あなた)').closest('div');
       const notAnsweredContainer = screen.getByText('プレイヤー2').closest('div');
 
-      expect(answeredContainer).toHaveClass('bg-green-100');
+      expect(answeredContainer).toHaveClass('bg-emerald-100');
       expect(notAnsweredContainer).toHaveClass('bg-gray-100');
     });
   });
@@ -310,7 +310,7 @@ describe('PlayingGameView', () => {
           totalCount: 2,
         },
         canForceReveal: true,
-        canForceRevealStyle: 'bg-orange-600 hover:bg-orange-700 text-white',
+        canForceRevealStyle: 'bg-slate-600 hover:bg-slate-700 text-white',
       });
 
       const room = createMockRoom([

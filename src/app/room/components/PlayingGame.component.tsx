@@ -33,7 +33,7 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
     <div className="bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">ゲーム中</h2>
-        <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+        <div className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm font-medium">
           ゲーム進行中
         </div>
       </div>
@@ -62,9 +62,9 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
         <h3 className="text-lg font-semibold text-gray-900 mb-3">あなたの回答</h3>
 
         {hasSubmittedAnswer ? (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-800 font-medium">回答済み</p>
-            <p className="text-green-700 text-lg mt-2 font-bold">{submittedAnswer}</p>
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <p className="text-emerald-800 font-medium">回答済み</p>
+            <p className="text-emerald-700 text-lg mt-2 font-bold">{submittedAnswer}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -100,12 +100,12 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
             <div
               key={participant.id}
               className={`flex items-center space-x-2 p-2 rounded ${
-                participant.hasAnswered ? "bg-green-100" : "bg-gray-100"
+                participant.hasAnswered ? "bg-emerald-100" : "bg-gray-100"
               }`}
             >
               <div
                 className={`w-2 h-2 rounded-full ${
-                  participant.hasAnswered ? "bg-green-500" : "bg-gray-400"
+                  participant.hasAnswered ? "bg-emerald-500" : "bg-gray-400"
                 }`}
               />
               <span className="text-sm text-gray-700 truncate">

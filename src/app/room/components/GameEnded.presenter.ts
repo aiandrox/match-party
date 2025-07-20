@@ -88,13 +88,13 @@ export function useGameEndedPresenter({
   const answerStyle: AnswerStyle = useMemo(() => {
     if (selectedRound?.judgment === "match") {
       return {
-        bgColor: "bg-green-100 border-green-300",
-        textColor: "text-green-900",
+        bgColor: "bg-emerald-100 border-emerald-300",
+        textColor: "text-emerald-900",
       };
     } else if (selectedRound?.judgment === "no-match") {
       return {
-        bgColor: "bg-red-100 border-red-300",
-        textColor: "text-red-900",
+        bgColor: "bg-rose-100 border-rose-300",
+        textColor: "text-rose-900",
       };
     }
     return {

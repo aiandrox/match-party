@@ -68,7 +68,7 @@ export const WaitingRoomView = memo(({ room, currentUserId }: WaitingRoomViewPro
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
                       participant.isHost
-                        ? "bg-yellow-100 text-yellow-800"
+                        ? "bg-amber-100 text-amber-800"
                         : "bg-gray-100 text-gray-600"
                     }`}
                   >

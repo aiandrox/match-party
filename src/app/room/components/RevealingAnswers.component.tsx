@@ -26,7 +26,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
     <div className="bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">回答発表</h2>
-        <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+        <div className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
           回答公開中
         </div>
       </div>
@@ -93,13 +93,13 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
           <div className="flex justify-center gap-4">
             <button
               onClick={() => submitJudgment("match")}
-              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
             >
               全員一致
             </button>
             <button
               onClick={() => submitJudgment("no-match")}
-              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+              className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium transition-colors"
             >
               全員一致ならず
             </button>

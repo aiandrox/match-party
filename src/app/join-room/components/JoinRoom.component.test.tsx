@@ -193,7 +193,7 @@ describe('JoinRoomView', () => {
 
       expect(screen.getByText('テストエラーメッセージ')).toBeInTheDocument();
       const errorContainer = screen.getByText('テストエラーメッセージ').closest('div');
-      expect(errorContainer).toHaveClass('bg-red-50');
+      expect(errorContainer).toHaveClass('bg-rose-50');
     });
 
     it('エラーがない場合はエラーメッセージが表示されない', () => {
@@ -204,7 +204,7 @@ describe('JoinRoomView', () => {
 
       render(<JoinRoomView {...defaultProps} />);
 
-      expect(document.querySelector('.bg-red-50')).not.toBeInTheDocument();
+      expect(document.querySelector('.bg-rose-50')).not.toBeInTheDocument();
     });
   });
 

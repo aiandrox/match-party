@@ -60,8 +60,8 @@ export const CreateRoomView = memo(({
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg">
+                <p className="text-sm text-rose-700">{error}</p>
               </div>
             )}
 
