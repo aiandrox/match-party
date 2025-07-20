@@ -21,6 +21,7 @@
     "dev:emulator": "firebase emulators:start --only firestore",
     "dev:with-emulator": "concurrently \"firebase emulators:start --only firestore\" \"next dev\"",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -37,6 +38,7 @@
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.4.2",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.13",
     "@testing-library/jest-dom": "^6.6.3",
