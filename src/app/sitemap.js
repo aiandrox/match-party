@@ -1,8 +1,10 @@
 // Static export configuration for sitemap
 export const dynamic = 'force-static'
 
+import { APP_BASE_URL } from '@/constants/app';
+
 export default function sitemap() {
-  const baseUrl = 'https://match-party-findy.web.app'
+  const baseUrl = APP_BASE_URL
   const lastModified = new Date('2025-07-20').toISOString()
   
   return [

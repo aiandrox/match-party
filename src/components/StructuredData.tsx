@@ -1,11 +1,12 @@
+import { APP_BASE_URL, APP_NAME, APP_CREATOR, APP_DESCRIPTION } from '@/constants/app';
+
 export function StructuredData() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "Match Party",
-    description:
-      "プレイヤー同士で回答の一致を目指すリアルタイムゲーム。最大20人で楽しめるパーティーゲーム。",
-    url: "https://match-party-findy.web.app",
+    name: APP_NAME,
+    description: APP_DESCRIPTION,
+    url: APP_BASE_URL,
     applicationCategory: "Game",
     operatingSystem: "Web Browser",
     offers: {
@@ -20,12 +21,12 @@ export function StructuredData() {
     },
     author: {
       "@type": "Person",
-      name: "aiandrox",
+      name: APP_CREATOR,
     },
     publisher: {
       "@type": "Organization",
-      name: "Match Party",
-      url: "https://match-party-findy.web.app",
+      name: APP_NAME,
+      url: APP_BASE_URL,
     },
     inLanguage: "ja",
     isAccessibleForFree: true,
@@ -33,7 +34,7 @@ export function StructuredData() {
     softwareVersion: "1.0.0",
     releaseNotes: "リアルタイム一致ゲーム。最大20人対応、スマホ・PC対応。",
     // TODO: OG画像作成後に有効化
-    // screenshot: "https://match-party-findy.web.app/og-image.jpg",
+    // screenshot: `${APP_BASE_URL}/og-image.jpg`,
     featureList: [
       "リアルタイム同期",
       "最大20人参加",
