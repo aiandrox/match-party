@@ -1,0 +1,16 @@
+# Robots.txt for Match Party
+User-agent: *
+Allow: /
+
+# Important pages for indexing
+Allow: /create-room
+Allow: /join-room
+
+# Block room-specific pages (contain sensitive room codes)
+Disallow: /room*
+
+# Sitemap location
+Sitemap: https://match-party-findy.web.app/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
