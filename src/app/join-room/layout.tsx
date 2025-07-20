@@ -17,3 +17,11 @@ export const metadata: Metadata = {
     canonical: '/join-room',
   },
 }
+
+export default function JoinRoomLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return children
+}
