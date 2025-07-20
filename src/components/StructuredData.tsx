@@ -33,8 +33,7 @@ export function StructuredData() {
     browserRequirements: "Requires JavaScript. Modern web browser recommended.",
     softwareVersion: "1.0.0",
     releaseNotes: "リアルタイム一致ゲーム。最大20人対応、スマホ・PC対応。",
-    // TODO: OG画像作成後に有効化
-    // screenshot: `${APP_BASE_URL}/og-image.jpg`,
+    screenshot: `${APP_BASE_URL}/og-image.jpg`,
     featureList: [
       "リアルタイム同期",
       "最大20人参加",

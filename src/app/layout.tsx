@@ -30,10 +30,6 @@ export const metadata: Metadata = {
     siteName: APP_NAME,
     locale: "ja_JP",
     type: "website",
-    // TODO: OG画像の作成と配置が必要
-    // 1200x630pxの画像を public/og-image.jpg に配置してください
-    // Match Partyのゲーム画面やロゴを含むビジュアルが推奨
-    /*
     images: [
       {
         url: "/og-image.jpg",
@@ -42,14 +38,12 @@ export const metadata: Metadata = {
         alt: "Match Party - リアルタイム一致ゲーム",
       },
     ],
-    */
   },
   twitter: {
     card: "summary_large_image",
     title: `${APP_NAME} - リアルタイム一致ゲーム`,
     description: "みんなで同じ答えを目指そう！最大20人で楽しめるリアルタイムパーティーゲーム",
-    // TODO: OG画像作成後に有効化
-    // images: ["/og-image.jpg"],
+    images: ["/og-image.jpg"],
     creator: `@${APP_CREATOR}`,
   },
   robots: {
