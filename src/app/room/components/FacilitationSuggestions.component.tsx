@@ -73,7 +73,7 @@ export const FacilitationSuggestions = memo(({
 
       {suggestions.length > 0 && (
         <div className="space-y-2">
-          {suggestions.map((suggestion, index) => (
+          {suggestions.map((suggestion) => (
             <div
               key={suggestion.id}
               className={`p-3 rounded border ${getCategoryStyle(suggestion.category)}`}
@@ -222,19 +222,5 @@ function getTypeLabel(type: string): string {
   }
 }
 
-// 優先度のスタイル
-function getPriorityStyle(priority: number): string {
-  if (priority >= 5) {
-    return 'bg-red-100 text-red-800';
-  } else if (priority >= 4) {
-    return 'bg-orange-100 text-orange-800';
-  } else if (priority >= 3) {
-    return 'bg-yellow-100 text-yellow-800';
-  } else if (priority >= 2) {
-    return 'bg-blue-100 text-blue-800';
-  } else {
-    return 'bg-gray-100 text-gray-800';
-  }
-}
 
 FacilitationSuggestions.displayName = 'FacilitationSuggestions';
