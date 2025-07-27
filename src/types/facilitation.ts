@@ -33,7 +33,6 @@ export interface FacilitationAnalysisInput {
     hasAnswered: boolean;
   }>;
   topicContent: string;
-  roundNumber: number;
 }
 
 export interface FacilitationAnalysisResult {

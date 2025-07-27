@@ -38,8 +38,8 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
     await generateSuggestions({
       answers: allAnswers,
       topicContent: currentTopicContent.content,
-      roundNumber: currentTopicContent.round,
-      roomCode: room.code
+      roomCode: room.code,
+      roundNumber: currentTopicContent.round
     });
   };
 

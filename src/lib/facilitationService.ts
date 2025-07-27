@@ -16,7 +16,7 @@ const auth = getAuth(app);
  * JWT認証により、このプロダクトからのアクセスのみ許可
  */
 export async function generateFacilitationSuggestions(
-  input: FacilitationAnalysisInput & { roomCode: string }
+  input: FacilitationAnalysisInput & { roomCode: string; roundNumber?: number }
 ): Promise<FacilitationAnalysisResult> {
   const { answers, roomCode } = input;
   
@@ -89,7 +89,7 @@ function createLocalFallbackAnalysis(input: FacilitationAnalysisInput): Facilita
   // 基本的なフォールバック提案
   if (validAnswers.length >= 2) {
     suggestions.push({
-      id: `fs_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `fs_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       type: 'group' as const,
       message: `${validAnswers.length}人の回答が出揃いました！それぞれの理由を聞いてみませんか？`,
       priority: 3,
@@ -100,7 +100,7 @@ function createLocalFallbackAnalysis(input: FacilitationAnalysisInput): Facilita
   if (validAnswers.length >= 1) {
     const randomAnswer = validAnswers[Math.floor(Math.random() * validAnswers.length)];
     suggestions.push({
-      id: `fs_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `fs_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       type: 'individual' as const,
       target: randomAnswer.userName,
       message: `${randomAnswer.userName}さんの「${randomAnswer.content}」について詳しく聞かせてください！`,

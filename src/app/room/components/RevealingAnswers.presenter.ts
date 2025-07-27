@@ -294,8 +294,8 @@ export function useRevealingAnswersPresenter({
       const result = await generateFacilitationSuggestions({
         answers: allAnswers,
         topicContent: currentTopicContent.content,
-        roundNumber: currentTopicContent.round,
-        roomCode: room.code
+        roomCode: room.code,
+        roundNumber: currentTopicContent.round
       });
 
       setSuggestions(result.suggestions);

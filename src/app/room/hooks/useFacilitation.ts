@@ -6,7 +6,7 @@ interface UseFacilitationReturn {
   suggestions: FacilitationSuggestion[];
   isLoading: boolean;
   error: string | null;
-  generateSuggestions: (input: FacilitationAnalysisInput & { roomCode: string }) => Promise<void>;
+  generateSuggestions: (_input: FacilitationAnalysisInput & { roomCode: string; roundNumber?: number }) => Promise<void>;
   clearSuggestions: () => void;
 }
 
@@ -16,7 +16,7 @@ export function useFacilitation(): UseFacilitationReturn {
   const [error, setError] = useState<string | null>(null);
 
   const generateSuggestions = useCallback(async (
-    input: FacilitationAnalysisInput & { roomCode: string }
+    input: FacilitationAnalysisInput & { roomCode: string; roundNumber?: number }
   ) => {
     setIsLoading(true);
     setError(null);
