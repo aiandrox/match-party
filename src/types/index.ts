@@ -1,23 +1,23 @@
 // Type definitions with const objects for enum-like usage
 export const RoomStatus = {
   WAITING: "waiting",
-  PLAYING: "playing", 
+  PLAYING: "playing",
   REVEALING: "revealing",
-  ENDED: "ended"
+  ENDED: "ended",
 } as const;
-export type RoomStatus = typeof RoomStatus[keyof typeof RoomStatus];
+export type RoomStatus = (typeof RoomStatus)[keyof typeof RoomStatus];
 
 export const GameRoundStatus = {
   ACTIVE: "active",
-  COMPLETED: "completed"
+  COMPLETED: "completed",
 } as const;
-export type GameRoundStatus = typeof GameRoundStatus[keyof typeof GameRoundStatus];
+export type GameRoundStatus = (typeof GameRoundStatus)[keyof typeof GameRoundStatus];
 
 export const JudgmentResult = {
   MATCH: "match",
-  NO_MATCH: "no-match"
+  NO_MATCH: "no-match",
 } as const;
-export type JudgmentResult = typeof JudgmentResult[keyof typeof JudgmentResult];
+export type JudgmentResult = (typeof JudgmentResult)[keyof typeof JudgmentResult];
 
 // Game types
 export interface Room {
@@ -38,17 +38,16 @@ export interface User {
   joinedAt: Date;
   isReady: boolean;
   hasAnswered: boolean;
+  firebaseUserId: string; // 匿名認証用のUID
 }
 
 export type Topic = string;
-
 
 export interface CreateRoomResponse {
   roomId: string;
   roomCode: string;
   hostUserId: string;
 }
-
 
 export interface JoinRoomResponse {
   roomId: string;

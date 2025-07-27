@@ -95,10 +95,13 @@ service cloud.firestore {
            data.participants.size() >= existing.participants.size() &&
            // participantsの各要素の基本チェック
            data.participants.size() == 0 || 
-           (data.participants[0].keys().hasAll(['id', 'name', 'isHost']) && 
+           (data.participants[0].keys().hasAll(['id', 'name', 'isHost', 'firebaseUserId']) && 
             data.participants[0].id is string &&
             data.participants[0].name is string &&
-            data.participants[0].isHost is bool) &&
+            data.participants[0].isHost is bool &&
+            // firebaseUserIdは必須
+            data.participants[0].firebaseUserId is string &&
+            data.participants[0].firebaseUserId.size() > 0) &&
            (!data.keys().hasAny(['currentGameRoundId']) || 
             (data.currentGameRoundId is string && data.currentGameRoundId.size() > 0));
   }
@@ -165,8 +168,8 @@ service cloud.firestore {
   
   function isValidUserCreation() {
     let data = request.resource.data;
-    return data.keys().hasAll(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered']) &&
-           data.keys().hasOnly(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered']) &&
+    return data.keys().hasAll(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered', 'firebaseUserId']) &&
+           data.keys().hasOnly(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered', 'firebaseUserId']) &&
            data.name is string &&
            data.name.size() >= 2 &&
            data.name.size() <= 20 &&
@@ -177,19 +180,24 @@ service cloud.firestore {
            data.joinedAt is timestamp &&
            // 作成時は常にfalse（準備状態・回答状態は初期化）
            data.isReady == false &&
-           data.hasAnswered == false;
+           data.hasAnswered == false &&
+           // firebaseUserIdは必須
+           data.firebaseUserId is string &&
+           data.firebaseUserId.size() > 0;
   }
   
   function isValidUserUpdate() {
     let data = request.resource.data;
     let existing = resource.data;
-    return data.keys().hasAll(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered']) &&
-           data.keys().hasOnly(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered']) &&
+    return data.keys().hasAll(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered', 'firebaseUserId']) &&
+           data.keys().hasOnly(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered', 'firebaseUserId']) &&
            // 不変フィールドの保護
            data.name == existing.name &&
            data.isHost == existing.isHost &&
            data.roomId == existing.roomId &&
            data.joinedAt == existing.joinedAt &&
+           // firebaseUserIdも不変（必須）
+           data.firebaseUserId == existing.firebaseUserId &&
            // 状態フィールドのみ更新可能
            data.isReady is bool &&
            data.hasAnswered is bool &&
