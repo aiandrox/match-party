@@ -1,6 +1,7 @@
-import React, { memo } from 'react';
+import React, { memo } from "react";
 import { Room } from "@/types";
 import { usePlayingGamePresenter } from "./PlayingGame.presenter";
+import { useAnswerVisibility } from "@/hooks/useAnswerVisibility";
 
 interface PlayingGameViewProps {
   room: Room;
@@ -28,6 +29,8 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
     showForceRevealHelp,
     canChangeTopic,
   } = usePlayingGamePresenter({ room, currentUserId });
+
+  const { isAnswerHidden, toggleAnswerVisibility } = useAnswerVisibility();
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -59,12 +62,41 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
       </div>
 
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">あなたの回答</h3>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-lg font-semibold text-gray-900">あなたの回答</h3>
+          <button
+            onClick={toggleAnswerVisibility}
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 border ${
+              isAnswerHidden
+                ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:border-red-300"
+                : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
+            }`}
+            title={isAnswerHidden ? "自分の回答を表示する" : "自分の回答を非表示にする"}
+          >
+            <span className="flex items-center gap-1">
+              {isAnswerHidden ? (
+                <>
+                  <span>👁️</span>
+                  <span>表示する</span>
+                </>
+              ) : (
+                <>
+                  <span>🔒</span>
+                  <span>非表示にする</span>
+                </>
+              )}
+            </span>
+          </button>
+        </div>
 
         {hasSubmittedAnswer ? (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
             <p className="text-emerald-800 font-medium">回答済み</p>
-            <p className="text-emerald-700 text-lg mt-2 font-bold">{submittedAnswer}</p>
+            {isAnswerHidden ? (
+              <p className="text-emerald-700 text-lg mt-2 font-bold">*****</p>
+            ) : (
+              <p className="text-emerald-700 text-lg mt-2 font-bold">{submittedAnswer}</p>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -135,4 +167,4 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
   );
 });
 
-PlayingGameView.displayName = 'PlayingGameView';
+PlayingGameView.displayName = "PlayingGameView";
