@@ -117,6 +117,17 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
         </div>
       </div>
 
+      {/* ファシリテーション提案（一致判定前に表示） */}
+      {!hostJudgment && (
+        <FacilitationSuggestions
+          suggestions={suggestions}
+          isLoading={isFacilitationLoading}
+          error={facilitationError}
+          onGenerateSuggestions={handleGenerateFacilitation}
+          isHost={isHost}
+        />
+      )}
+
       {/* ホストのみに一致判定ボタンを表示 */}
       {isHost && !hostJudgment && (
         <div className="text-center mb-6">
@@ -136,17 +147,6 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
             </button>
           </div>
         </div>
-      )}
-
-      {/* ファシリテーション提案（ホストの判定後に表示） */}
-      {hostJudgment && (
-        <FacilitationSuggestions
-          suggestions={suggestions}
-          isLoading={isFacilitationLoading}
-          error={facilitationError}
-          onGenerateSuggestions={handleGenerateFacilitation}
-          isHost={isHost}
-        />
       )}
 
       {/* 次のラウンドまたはゲーム終了ボタン */}
