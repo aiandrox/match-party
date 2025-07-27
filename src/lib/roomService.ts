@@ -17,6 +17,7 @@ import { Room, User, CreateRoomResponse, JoinRoomResponse, GameRound } from '@/t
 import { RoomStatus, JudgmentResult } from '@/types';
 import { generateRoomCode, createExpirationTime, MAX_PARTICIPANTS } from './utils';
 import { getRandomTopic } from './topicService';
+import { ensureAnonymousAuth } from './authService';
 
 // ルーム作成
 export async function createRoom(hostName: string): Promise<CreateRoomResponse> {
@@ -61,6 +62,9 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
       expiresAt: Timestamp.fromDate(roomData.expiresAt)
     });
 
+    // 匿名認証を実行
+    const authUser = await ensureAnonymousAuth();
+
     // ホストユーザーデータ作成
     const hostData: Omit<User, 'id'> = {
       name: hostName,
@@ -68,7 +72,8 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
       roomId: roomRef.id,
       joinedAt: new Date(),
       isReady: false,
-      hasAnswered: false
+      hasAnswered: false,
+      firebaseUserId: authUser.uid
     };
 
     // Firestoreにホストユーザー作成
@@ -86,7 +91,8 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
         roomId: roomRef.id,
         joinedAt: Timestamp.now(),
         isReady: false,
-        hasAnswered: false
+        hasAnswered: false,
+        firebaseUserId: authUser.uid
       })
     });
 
@@ -173,6 +179,9 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
       throw new Error('この名前は既に使用されています');
     }
 
+    // 匿名認証を実行
+    const authUser = await ensureAnonymousAuth();
+
     // ユーザーデータ作成
     const userData: Omit<User, 'id'> = {
       name: userName,
@@ -180,7 +189,8 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
       roomId: roomDoc.id,
       joinedAt: new Date(),
       isReady: false,
-      hasAnswered: false
+      hasAnswered: false,
+      firebaseUserId: authUser.uid
     };
 
     // Firestoreにユーザー作成
@@ -198,7 +208,8 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
         roomId: roomDoc.id,
         joinedAt: Timestamp.now(),
         isReady: false,
-        hasAnswered: false
+        hasAnswered: false,
+        firebaseUserId: authUser.uid
       })
     });
 
