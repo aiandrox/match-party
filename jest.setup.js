@@ -26,3 +26,6 @@ const localStorageMock = {
   clear: jest.fn(),
 };
 global.localStorage = localStorageMock;
+
+// Mock facilitationService
+jest.mock('./src/lib/facilitationService');
