@@ -17,6 +17,7 @@ import { Room, User, CreateRoomResponse, JoinRoomResponse, GameRound } from '@/t
 import { RoomStatus, JudgmentResult } from '@/types';
 import { generateRoomCode, createExpirationTime, MAX_PARTICIPANTS } from './utils';
 import { getRandomTopic } from './topicService';
+import { reportError } from './errorReporting';
 
 // ルーム作成
 export async function createRoom(hostName: string): Promise<CreateRoomResponse> {
@@ -96,8 +97,13 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
       hostUserId: hostRef.id
     };
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('createRoom error:', error);
+    // 共通エラー報告関数を使用
+    reportError(error, {
+      feature: 'room-creation',
+      action: 'create-room',
+      hostName
+    });
+    
     if (error instanceof Error) {
       throw error;
     }
@@ -209,6 +215,14 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
       userId: userRef.id
     };
   } catch (error) {
+    // 共通エラー報告関数を使用
+    reportError(error, {
+      feature: 'room-join',
+      action: 'join-room-service',
+      roomCode,
+      userName
+    });
+    
     if (error instanceof Error) {
       throw error;
     }
@@ -269,8 +283,11 @@ export function subscribeToRoom(roomId: string, callback: (_room: Room | null) =
       callback(null);
     }
   }, (error) => {
-    // eslint-disable-next-line no-console
-    console.error('Firestore subscription error:', error);
+    reportError(error, {
+      feature: 'room-subscription',
+      action: 'firestore-snapshot-error',
+      roomId
+    });
     callback(null);
   });
 }
@@ -321,8 +338,12 @@ export async function startGame(roomId: string): Promise<void> {
     });
     
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('startGame error:', error);
+    reportError(error, {
+      feature: 'game-management',
+      action: 'start-game',
+      roomId
+    });
+    
     if (error instanceof Error) {
       throw error;
     }
@@ -379,8 +400,11 @@ export async function getCurrentRound(roomId: string): Promise<{
       round: gameRound.roundNumber
     };
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('getCurrentRound error:', error);
+    reportError(error, {
+      feature: 'game-round',
+      action: 'get-current-round',
+      roomId
+    });
     return null;
   }
 }
@@ -447,8 +471,13 @@ export async function submitAnswer(roomId: string, userId: string, answer: strin
     }
     
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('submitAnswer error:', error);
+    reportError(error, {
+      feature: 'game-answer',
+      action: 'submit-answer',
+      roomId,
+      userId
+    });
+    
     if (error instanceof Error) {
       throw error;
     }
@@ -463,8 +492,11 @@ export async function getRoundAnswers(gameRoundId: string, participants: Array<{
     const { getGameRoundAnswersWithParticipants } = await import('@/lib/gameRoundService');
     return await getGameRoundAnswersWithParticipants(gameRoundId, participants);
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('getRoundAnswers error:', error);
+    reportError(error, {
+      feature: 'game-round',
+      action: 'get-round-answers',
+      gameRoundId
+    });
     return [];
   }
 }
@@ -490,8 +522,13 @@ export async function submitJudgment(roomId: string, judgment: JudgmentResult): 
     }
     
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('submitJudgment error:', error);
+    reportError(error, {
+      feature: 'game-judgment',
+      action: 'submit-judgment',
+      roomId,
+      judgment: judgment.result
+    });
+    
     if (error instanceof Error) {
       throw error;
     }
@@ -528,8 +565,12 @@ export async function forceRevealAnswers(roomId: string): Promise<void> {
     });
     
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('forceRevealAnswers error:', error);
+    reportError(error, {
+      feature: 'game-management',
+      action: 'force-reveal-answers',
+      roomId
+    });
+    
     if (error instanceof Error) {
       throw error;
     }
@@ -595,8 +636,12 @@ export async function startNextRound(roomId: string): Promise<void> {
     });
     
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('startNextRound error:', error);
+    reportError(error, {
+      feature: 'game-management',
+      action: 'start-next-round',
+      roomId
+    });
+    
     if (error instanceof Error) {
       throw error;
     }
@@ -637,8 +682,12 @@ export async function changeTopic(roomId: string): Promise<void> {
     }
     
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('changeTopic error:', error);
+    reportError(error, {
+      feature: 'game-management',
+      action: 'change-topic',
+      roomId
+    });
+    
     if (error instanceof Error) {
       throw error;
     }
@@ -660,8 +709,12 @@ export async function endGame(roomId: string): Promise<void> {
       status: "ended"
     });
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('endGame error:', error);
+    reportError(error, {
+      feature: 'game-management',
+      action: 'end-game',
+      roomId
+    });
+    
     if (error instanceof Error) {
       throw error;
     }
