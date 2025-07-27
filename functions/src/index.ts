@@ -2,10 +2,23 @@ import {onSchedule} from 'firebase-functions/v2/scheduler';
 import {initializeApp} from 'firebase-admin/app';
 import {getFirestore, Timestamp} from 'firebase-admin/firestore';
 import {logger} from 'firebase-functions';
+import * as Sentry from '@sentry/node';
 
 // Firebase Admin SDK を初期化
 initializeApp();
 const db = getFirestore();
+
+// Sentry初期化
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  tracesSampleRate: 1.0,
+  debug: process.env.NODE_ENV === 'development',
+  initialScope: {
+    tags: {
+      component: 'cloud-functions',
+    },
+  },
+});
 
 /**
  * 期限切れルームとそれに紐づくデータを削除する
@@ -65,6 +78,19 @@ export const cleanupExpiredRooms = onSchedule({
     });
   } catch (error) {
     logger.error('Cleanup failed', error);
+    
+    // Sentryにエラーを報告
+    Sentry.captureException(error, {
+      tags: {
+        function: 'cleanupExpiredRooms',
+        action: 'cleanup-rooms'
+      },
+      extra: {
+        timestamp: new Date().toISOString(),
+        region: 'asia-northeast1'
+      }
+    });
+    
     throw error;
   }
 });
