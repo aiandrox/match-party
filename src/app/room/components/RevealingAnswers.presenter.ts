@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Room, JudgmentResult } from "@/types";
+import { Room, JudgmentResult, FacilitationSuggestion } from "@/types";
 
 interface UseRevealingAnswersPresenterProps {
   room: Room;
@@ -29,6 +29,10 @@ interface UseRevealingAnswersPresenterReturn {
   endGame: () => Promise<void>;
   judgmentStyle: JudgmentStyle;
   hasAnimated: boolean;
+  suggestions: FacilitationSuggestion[];
+  isFacilitationLoading: boolean;
+  facilitationError: string | null;
+  handleGenerateFacilitation: () => Promise<void>;
 }
 
 export function useRevealingAnswersPresenter({
@@ -47,6 +51,9 @@ export function useRevealingAnswersPresenter({
   const [isStartingNextRound, setIsStartingNextRound] = useState(false);
   const [isEndingGame, setIsEndingGame] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
+  const [suggestions, setSuggestions] = useState<FacilitationSuggestion[]>([]);
+  const [isFacilitationLoading, setIsFacilitationLoading] = useState(false);
+  const [facilitationError, setFacilitationError] = useState<string | null>(null);
 
   const isHost = room.participants.some((p) => p.id === currentUserId && p.isHost);
 
@@ -145,6 +152,11 @@ export function useRevealingAnswersPresenter({
               }
             }
           }
+        }
+
+        // 既存のファシリテーション提案を読み込み
+        if (room.facilitationSuggestions) {
+          setSuggestions(room.facilitationSuggestions as FacilitationSuggestion[]);
         }
       } catch (error) {
         console.error("初期データの読み込みに失敗しました:", error);
@@ -253,6 +265,38 @@ export function useRevealingAnswersPresenter({
     playJudgmentEffects(hostJudgment);
   }, [hostJudgment, playJudgmentEffects]);
 
+  // ファシリテーション提案生成
+  const handleGenerateFacilitation = useCallback(async () => {
+    if (!room.currentGameRoundId || allAnswers.length === 0 || !currentTopicContent) {
+      return;
+    }
+
+    setIsFacilitationLoading(true);
+    setFacilitationError(null);
+
+    try {
+      const { generateFacilitationSuggestions } = await import('@/lib/facilitationService');
+      const { saveFacilitationSuggestions } = await import('@/lib/roomService');
+      
+      const result = await generateFacilitationSuggestions({
+        answers: allAnswers,
+        topicContent: currentTopicContent.content,
+        roundNumber: currentTopicContent.round,
+        roomCode: room.code
+      });
+
+      setSuggestions(result.suggestions);
+      
+      // Firestoreに保存
+      await saveFacilitationSuggestions(room.id, result.suggestions);
+    } catch (error) {
+      console.error('ファシリテーション提案の生成に失敗しました:', error);
+      setFacilitationError('提案の生成に失敗しました。もう一度お試しください。');
+    } finally {
+      setIsFacilitationLoading(false);
+    }
+  }, [room.id, room.code, room.currentGameRoundId, allAnswers, currentTopicContent]);
+
   return {
     currentTopicContent,
     currentGameRoundId,
@@ -266,5 +310,9 @@ export function useRevealingAnswersPresenter({
     endGame,
     judgmentStyle,
     hasAnimated,
+    suggestions,
+    isFacilitationLoading,
+    facilitationError,
+    handleGenerateFacilitation,
   };
 }

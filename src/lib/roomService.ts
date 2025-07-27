@@ -13,7 +13,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Room, User, CreateRoomResponse, JoinRoomResponse, GameRound } from '@/types';
+import { Room, User, CreateRoomResponse, JoinRoomResponse, GameRound, FacilitationSuggestion } from '@/types';
 import { RoomStatus, JudgmentResult } from '@/types';
 import { generateRoomCode, createExpirationTime, MAX_PARTICIPANTS } from './utils';
 import { getRandomTopic } from './topicService';
@@ -658,5 +658,21 @@ export async function endGame(roomId: string): Promise<void> {
       throw error;
     }
     throw new Error('ゲーム終了に失敗しました');
+  }
+}
+
+// ファシリテーション提案を保存
+export async function saveFacilitationSuggestions(roomId: string, suggestions: FacilitationSuggestion[]): Promise<void> {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    
+    await updateDoc(roomRef, {
+      facilitationSuggestions: suggestions
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('ファシリテーション提案の保存に失敗しました');
   }
 }

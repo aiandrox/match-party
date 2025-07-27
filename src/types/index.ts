@@ -26,6 +26,14 @@ export interface Room {
   status: RoomStatus;
   participants: User[];
   currentGameRoundId?: string;
+  facilitationSuggestions?: Array<{
+    id: string;
+    type: string;
+    target?: string;
+    message: string;
+    priority: number;
+    category: string;
+  }>;
   createdAt: Date;
   expiresAt: Date;
 }
