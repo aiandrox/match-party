@@ -66,3 +66,17 @@ export interface GameRound {
   createdAt: Date;
 }
 
+// Facilitation types
+export type { 
+  FacilitationSuggestion, 
+  FacilitationAnalysisInput, 
+  FacilitationAnalysisResult,
+  GeminiFacilitationResponse,
+  FacilitationSuggestionType,
+  FacilitationSuggestionCategory
+} from './facilitation';
+export { 
+  FacilitationSuggestionType as FacilitationType,
+  FacilitationSuggestionCategory as FacilitationCategory
+} from './facilitation';
+

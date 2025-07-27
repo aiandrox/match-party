@@ -15,3 +15,9 @@ variable "github_actions_service_account_email" {
   type        = string
   default     = "github-action-1017460688@match-party-findy.iam.gserviceaccount.com"
 }
+
+variable "facilitation_service_account_name" {
+  description = "ファシリテーション機能用Service Account名"
+  type        = string
+  default     = "match-party-facilitation"
+}
