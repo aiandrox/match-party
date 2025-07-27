@@ -48,6 +48,7 @@ describe('useWaitingRoomPresenter', () => {
       hasAnswered: false,
       isReady: false,
       roomId: 'room123',
+      firebaseUserId: 'test-firebase-uid',
     })),
     currentGameRoundId: undefined,
     createdAt: new Date(),

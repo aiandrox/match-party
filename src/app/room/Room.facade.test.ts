@@ -28,6 +28,7 @@ describe('useRoomData', () => {
         hasAnswered: false,
         isReady: false,
         roomId: 'room123',
+        firebaseUserId: 'test-firebase-uid',
       },
     ],
     currentGameRoundId: undefined,
@@ -124,6 +125,7 @@ describe('useRoomData', () => {
             hasAnswered: false,
             isReady: false,
             roomId: 'room123',
+            firebaseUserId: 'test-firebase-uid',
           },
         ],
       });

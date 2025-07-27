@@ -32,6 +32,7 @@ describe('usePlayingGamePresenter', () => {
       joinedAt: new Date(),
       isReady: false,
       roomId: 'room123',
+      firebaseUserId: 'test-firebase-uid',
     })),
     currentGameRoundId: 'round123',
     createdAt: new Date(),
