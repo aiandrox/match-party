@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Room } from "@/types";
 import { getUserIdForRoom } from "@/lib/localStorage";
-import { reportError } from '@/lib/errorReporting';
 
 interface UseRoomDataReturn {
   room: Room | null;
@@ -106,14 +105,6 @@ export function useRoomData(roomCode: string): UseRoomDataReturn {
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "ルームの読み込みに失敗しました";
         setError(errorMessage);
-        
-        // 共通エラー報告関数を使用
-        reportError(err, {
-          feature: 'room-access',
-          action: 'load-room',
-          roomCode,
-          userId
-        });
         
         setIsLoading(false);
       }

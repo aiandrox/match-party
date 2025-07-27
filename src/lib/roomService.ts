@@ -17,7 +17,6 @@ import { Room, User, CreateRoomResponse, JoinRoomResponse, GameRound } from '@/t
 import { RoomStatus, JudgmentResult } from '@/types';
 import { generateRoomCode, createExpirationTime, MAX_PARTICIPANTS } from './utils';
 import { getRandomTopic } from './topicService';
-import { reportError } from './errorReporting';
 
 // ルーム作成
 export async function createRoom(hostName: string): Promise<CreateRoomResponse> {
@@ -97,13 +96,6 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
       hostUserId: hostRef.id
     };
   } catch (error) {
-    // 共通エラー報告関数を使用
-    reportError(error, {
-      feature: 'room-creation',
-      action: 'create-room',
-      hostName
-    });
-    
     if (error instanceof Error) {
       throw error;
     }
@@ -215,14 +207,6 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
       userId: userRef.id
     };
   } catch (error) {
-    // 共通エラー報告関数を使用
-    reportError(error, {
-      feature: 'room-join',
-      action: 'join-room-service',
-      roomCode,
-      userName
-    });
-    
     if (error instanceof Error) {
       throw error;
     }
@@ -283,11 +267,7 @@ export function subscribeToRoom(roomId: string, callback: (_room: Room | null) =
       callback(null);
     }
   }, (error) => {
-    reportError(error, {
-      feature: 'room-subscription',
-      action: 'firestore-snapshot-error',
-      roomId
-    });
+    console.error('Firestore subscription error:', error);
     callback(null);
   });
 }
@@ -338,12 +318,6 @@ export async function startGame(roomId: string): Promise<void> {
     });
     
   } catch (error) {
-    reportError(error, {
-      feature: 'game-management',
-      action: 'start-game',
-      roomId
-    });
-    
     if (error instanceof Error) {
       throw error;
     }
@@ -400,11 +374,7 @@ export async function getCurrentRound(roomId: string): Promise<{
       round: gameRound.roundNumber
     };
   } catch (error) {
-    reportError(error, {
-      feature: 'game-round',
-      action: 'get-current-round',
-      roomId
-    });
+    console.error('getCurrentRound error:', error);
     return null;
   }
 }
@@ -471,13 +441,6 @@ export async function submitAnswer(roomId: string, userId: string, answer: strin
     }
     
   } catch (error) {
-    reportError(error, {
-      feature: 'game-answer',
-      action: 'submit-answer',
-      roomId,
-      userId
-    });
-    
     if (error instanceof Error) {
       throw error;
     }
@@ -492,11 +455,7 @@ export async function getRoundAnswers(gameRoundId: string, participants: Array<{
     const { getGameRoundAnswersWithParticipants } = await import('@/lib/gameRoundService');
     return await getGameRoundAnswersWithParticipants(gameRoundId, participants);
   } catch (error) {
-    reportError(error, {
-      feature: 'game-round',
-      action: 'get-round-answers',
-      gameRoundId
-    });
+    console.error('getRoundAnswers error:', error);
     return [];
   }
 }
@@ -522,13 +481,6 @@ export async function submitJudgment(roomId: string, judgment: JudgmentResult): 
     }
     
   } catch (error) {
-    reportError(error, {
-      feature: 'game-judgment',
-      action: 'submit-judgment',
-      roomId,
-      judgment: judgment.result
-    });
-    
     if (error instanceof Error) {
       throw error;
     }
@@ -565,12 +517,6 @@ export async function forceRevealAnswers(roomId: string): Promise<void> {
     });
     
   } catch (error) {
-    reportError(error, {
-      feature: 'game-management',
-      action: 'force-reveal-answers',
-      roomId
-    });
-    
     if (error instanceof Error) {
       throw error;
     }
@@ -636,12 +582,6 @@ export async function startNextRound(roomId: string): Promise<void> {
     });
     
   } catch (error) {
-    reportError(error, {
-      feature: 'game-management',
-      action: 'start-next-round',
-      roomId
-    });
-    
     if (error instanceof Error) {
       throw error;
     }
@@ -682,12 +622,6 @@ export async function changeTopic(roomId: string): Promise<void> {
     }
     
   } catch (error) {
-    reportError(error, {
-      feature: 'game-management',
-      action: 'change-topic',
-      roomId
-    });
-    
     if (error instanceof Error) {
       throw error;
     }
@@ -709,12 +643,6 @@ export async function endGame(roomId: string): Promise<void> {
       status: "ended"
     });
   } catch (error) {
-    reportError(error, {
-      feature: 'game-management',
-      action: 'end-game',
-      roomId
-    });
-    
     if (error instanceof Error) {
       throw error;
     }

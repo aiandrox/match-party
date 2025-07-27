@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { reportError } from '@/lib/errorReporting';
 
 export function useJoinRoomFacade() {
   const [roomCode, setRoomCode] = useState('');
@@ -35,14 +34,6 @@ export function useJoinRoomFacade() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'ルームへの参加に失敗しました';
       setError(errorMessage);
-      
-      // 共通エラー報告関数を使用
-      reportError(err, {
-        feature: 'room-join',
-        action: 'join-room',
-        roomCode,
-        userName
-      });
       
       throw err;
     } finally {
