@@ -112,6 +112,11 @@ export function useRevealingAnswersPresenter({
 
               // 判定結果も更新（重要：リアルタイム同期）
               setHostJudgment(gameRound.judgment || null);
+
+              // ファシリテーション提案も更新
+              if (gameRound.facilitationSuggestions) {
+                setSuggestions(gameRound.facilitationSuggestions as FacilitationSuggestion[]);
+              }
             }
           });
         }
@@ -154,9 +159,17 @@ export function useRevealingAnswersPresenter({
           }
         }
 
-        // 既存のファシリテーション提案を読み込み
-        if (room.facilitationSuggestions) {
-          setSuggestions(room.facilitationSuggestions as FacilitationSuggestion[]);
+        // 既存のファシリテーション提案をGameRoundから読み込み
+        if (room.currentGameRoundId) {
+          const { getDoc, doc } = await import("firebase/firestore");
+          const { db } = await import("@/lib/firebase");
+          const gameRoundDoc = await getDoc(doc(db, "gameRounds", room.currentGameRoundId));
+          if (gameRoundDoc.exists()) {
+            const gameRoundData = gameRoundDoc.data();
+            if (gameRoundData.facilitationSuggestions) {
+              setSuggestions(gameRoundData.facilitationSuggestions as FacilitationSuggestion[]);
+            }
+          }
         }
       } catch (error) {
         console.error("初期データの読み込みに失敗しました:", error);
@@ -276,7 +289,7 @@ export function useRevealingAnswersPresenter({
 
     try {
       const { generateFacilitationSuggestions } = await import('@/lib/facilitationService');
-      const { saveFacilitationSuggestions } = await import('@/lib/roomService');
+      const { saveFacilitationSuggestionsToGameRound } = await import('@/lib/gameRoundService');
       
       const result = await generateFacilitationSuggestions({
         answers: allAnswers,
@@ -287,15 +300,15 @@ export function useRevealingAnswersPresenter({
 
       setSuggestions(result.suggestions);
       
-      // Firestoreに保存
-      await saveFacilitationSuggestions(room.id, result.suggestions);
+      // GameRoundに保存
+      await saveFacilitationSuggestionsToGameRound(room.currentGameRoundId!, result.suggestions);
     } catch (error) {
       console.error('ファシリテーション提案の生成に失敗しました:', error);
       setFacilitationError('提案の生成に失敗しました。もう一度お試しください。');
     } finally {
       setIsFacilitationLoading(false);
     }
-  }, [room.id, room.code, room.currentGameRoundId, allAnswers, currentTopicContent]);
+  }, [room.code, room.currentGameRoundId, allAnswers, currentTopicContent]);
 
   return {
     currentTopicContent,

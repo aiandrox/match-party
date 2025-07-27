@@ -12,7 +12,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { GameRound, JudgmentResult, GameRoundStatus } from "@/types";
+import { GameRound, JudgmentResult, GameRoundStatus, FacilitationSuggestion } from "@/types";
 
 // アクティブなゲームラウンドを作成
 export async function createGameRound(roomId: string, topicContent: string, roundNumber: number): Promise<string> {
@@ -185,4 +185,20 @@ export function subscribeToGameRound(gameRoundId: string, callback: (_gameRound:
     console.error('GameRound subscription error:', error);
     callback(null);
   });
+}
+
+// ファシリテーション提案をゲームラウンドに保存
+export async function saveFacilitationSuggestionsToGameRound(gameRoundId: string, suggestions: FacilitationSuggestion[]): Promise<void> {
+  try {
+    const gameRoundRef = doc(db, 'gameRounds', gameRoundId);
+    
+    await updateDoc(gameRoundRef, {
+      facilitationSuggestions: suggestions
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('ファシリテーション提案の保存に失敗しました');
+  }
 }
