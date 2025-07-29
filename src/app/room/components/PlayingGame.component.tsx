@@ -62,7 +62,7 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
       </div>
 
       <div className="mb-6">
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center mb-1">
           <h3 className="text-lg font-semibold text-gray-900">あなたの回答</h3>
           <button
             onClick={toggleAnswerVisibility}
@@ -88,6 +88,11 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
             </span>
           </button>
         </div>
+
+        {/* ゲーム説明テキスト */}
+        <p className="text-sm text-gray-500 mb-3">
+          他の参加者と同じ回答を目指しましょう！
+        </p>
 
         {hasSubmittedAnswer ? (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
