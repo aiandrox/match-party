@@ -31,6 +31,7 @@ interface UsePlayingGamePresenterReturn {
   canForceReveal: boolean;
   showForceRevealHelp: boolean;
   canChangeTopic: boolean;
+  isLastUnansweredUser: boolean;
 }
 
 export function usePlayingGamePresenter({
@@ -173,10 +174,10 @@ export function usePlayingGamePresenter({
   }, [room.id, isHost, isChangingTopic]);
 
   // 回答統計を計算
-  const answerStatistics: AnswerStatistics = {
+  const answerStatistics: AnswerStatistics = useMemo(() => ({
     answeredCount: room.participants.filter((p) => p.hasAnswered).length,
     totalCount: room.participants.length
-  };
+  }), [room.participants]);
 
   // 問題音を1回だけ再生する関数
   const playQuestionSoundOnce = useCallback(() => {
@@ -224,6 +225,17 @@ export function usePlayingGamePresenter({
     return answerStatistics.answeredCount === 0 && !isChangingTopic;
   }, [answerStatistics.answeredCount, isChangingTopic]);
 
+  // 最後の未回答者かどうかを判定
+  const isLastUnansweredUser = useMemo(() => {
+    const unansweredCount = answerStatistics.totalCount - answerStatistics.answeredCount;
+    const currentUser = room.participants.find((p) => p.id === currentUserId);
+    
+    return (
+      answerStatistics.totalCount >= 2 && // 2人以上の参加者がいる
+      unansweredCount === 1 && // 未回答者が1人のみ
+      currentUser !== undefined && !currentUser.hasAnswered // 現在のユーザーが存在し未回答
+    );
+  }, [answerStatistics, room.participants, currentUserId]);
 
   return {
     currentTopicContent,
@@ -244,6 +256,7 @@ export function usePlayingGamePresenter({
     canForceRevealStyle,
     canForceReveal,
     showForceRevealHelp,
-    canChangeTopic
+    canChangeTopic,
+    isLastUnansweredUser
   };
 }

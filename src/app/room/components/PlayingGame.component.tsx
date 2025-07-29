@@ -28,6 +28,7 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
     canForceReveal,
     showForceRevealHelp,
     canChangeTopic,
+    isLastUnansweredUser,
   } = usePlayingGamePresenter({ room, currentUserId });
 
   const { isAnswerHidden, toggleAnswerVisibility } = useAnswerVisibility();
@@ -105,6 +106,16 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
           </div>
         ) : (
           <div className="space-y-3">
+            {/* 最後の未回答者向けリマインドメッセージ */}
+            {isLastUnansweredUser && (
+              <div className="bg-yellow-50 p-3 rounded-lg mb-3">
+                <div className="flex items-center space-x-2">
+                  <span className="text-yellow-600 text-sm">⚠️</span>
+                  <p className="text-yellow-800 text-sm">回答をお忘れではないですか？</p>
+                </div>
+              </div>
+            )}
+            
             <input
               type="text"
               value={answer}

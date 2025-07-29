@@ -378,4 +378,98 @@ describe('usePlayingGamePresenter', () => {
       consoleSpy.mockRestore();
     });
   });
+
+  describe('最後の未回答者判定', () => {
+    it('参加者が2人以上かつ未回答者が1人のみで現在のユーザーが未回答の場合、最後の未回答者として認識される', () => {
+      const room = createMockRoom([
+        { id: 'user1', isHost: true, hasAnswered: true },   // 回答済み
+        { id: 'user2', isHost: false, hasAnswered: true },  // 回答済み
+        { id: 'user3', isHost: false, hasAnswered: false }, // 未回答（最後の1人）
+      ]);
+
+      const { result } = renderHook(() =>
+        usePlayingGamePresenter({ room, currentUserId: 'user3' })
+      );
+
+      expect(result.current.isLastUnansweredUser).toBe(true);
+    });
+
+    it('参加者が1人の場合は最後の未回答者と判定されない', () => {
+      const room = createMockRoom([
+        { id: 'user1', isHost: true, hasAnswered: false }, // 1人のみ未回答
+      ]);
+
+      const { result } = renderHook(() =>
+        usePlayingGamePresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.isLastUnansweredUser).toBe(false);
+    });
+
+    it('未回答者が2人以上いる場合は最後の未回答者と判定されない', () => {
+      const room = createMockRoom([
+        { id: 'user1', isHost: true, hasAnswered: true },   // 回答済み
+        { id: 'user2', isHost: false, hasAnswered: false }, // 未回答
+        { id: 'user3', isHost: false, hasAnswered: false }, // 未回答
+      ]);
+
+      const { result } = renderHook(() =>
+        usePlayingGamePresenter({ room, currentUserId: 'user2' })
+      );
+
+      expect(result.current.isLastUnansweredUser).toBe(false);
+    });
+
+    it('現在のユーザーが回答済みの場合は最後の未回答者と判定されない', () => {
+      const room = createMockRoom([
+        { id: 'user1', isHost: true, hasAnswered: true },   // 回答済み（現在のユーザー）
+        { id: 'user2', isHost: false, hasAnswered: true },  // 回答済み
+        { id: 'user3', isHost: false, hasAnswered: false }, // 未回答（最後の1人）
+      ]);
+
+      const { result } = renderHook(() =>
+        usePlayingGamePresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.isLastUnansweredUser).toBe(false);
+    });
+
+    it('全員が回答済みの場合は最後の未回答者と判定されない', () => {
+      const room = createMockRoom([
+        { id: 'user1', isHost: true, hasAnswered: true },  // 回答済み
+        { id: 'user2', isHost: false, hasAnswered: true }, // 回答済み
+      ]);
+
+      const { result } = renderHook(() =>
+        usePlayingGamePresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.isLastUnansweredUser).toBe(false);
+    });
+
+    it('参加者状態の変化により最後の未回答者判定が動的に更新される', () => {
+      const initialRoom = createMockRoom([
+        { id: 'user1', isHost: true, hasAnswered: false },  // 未回答
+        { id: 'user2', isHost: false, hasAnswered: false }, // 未回答
+      ]);
+
+      const { result, rerender } = renderHook(
+        ({ room }) => usePlayingGamePresenter({ room, currentUserId: 'user1' }),
+        { initialProps: { room: initialRoom } }
+      );
+
+      // 初期状態では2人とも未回答なので、最後の未回答者ではない
+      expect(result.current.isLastUnansweredUser).toBe(false);
+
+      // user2が回答済みになると、user1が最後の未回答者になる
+      const updatedRoom = createMockRoom([
+        { id: 'user1', isHost: true, hasAnswered: false }, // 未回答（最後の1人）
+        { id: 'user2', isHost: false, hasAnswered: true }, // 回答済み
+      ]);
+
+      rerender({ room: updatedRoom });
+
+      expect(result.current.isLastUnansweredUser).toBe(true);
+    });
+  });
 });
