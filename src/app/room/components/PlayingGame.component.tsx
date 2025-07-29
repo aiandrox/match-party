@@ -89,6 +89,23 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
           </button>
         </div>
 
+        {/* ゲーム説明テキスト */}
+        <div className="bg-blue-50 border-l-4 border-blue-300 p-3 mb-4">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="w-4 h-4 text-blue-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="ml-2">
+              <p className="text-sm text-blue-800 leading-relaxed">
+                <span className="font-medium">ゲームの目的：</span>他の参加者と同じ回答を目指しましょう！<br />
+                相手の立場で考えて、みんなが思い浮かべそうな答えを入力してください。
+              </p>
+            </div>
+          </div>
+        </div>
+
         {hasSubmittedAnswer ? (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
             <p className="text-emerald-800 font-medium">回答済み</p>
