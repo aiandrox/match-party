@@ -174,10 +174,10 @@ export function usePlayingGamePresenter({
   }, [room.id, isHost, isChangingTopic]);
 
   // 回答統計を計算
-  const answerStatistics: AnswerStatistics = {
+  const answerStatistics: AnswerStatistics = useMemo(() => ({
     answeredCount: room.participants.filter((p) => p.hasAnswered).length,
     totalCount: room.participants.length
-  };
+  }), [room.participants]);
 
   // 問題音を1回だけ再生する関数
   const playQuestionSoundOnce = useCallback(() => {
@@ -233,7 +233,7 @@ export function usePlayingGamePresenter({
     return (
       answerStatistics.totalCount >= 2 && // 2人以上の参加者がいる
       unansweredCount === 1 && // 未回答者が1人のみ
-      currentUser && !currentUser.hasAnswered // 現在のユーザーが未回答
+      currentUser !== undefined && !currentUser.hasAnswered // 現在のユーザーが存在し未回答
     );
   }, [answerStatistics, room.participants, currentUserId]);
 
