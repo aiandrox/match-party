@@ -8,10 +8,10 @@
 
 ### 特徴
 - 📱 **スマホ対応**: タブレット・スマートフォンで快適にプレイ
-- 👥 **最大20人**: 大人数でのパーティーゲームに最適
+- 👥 **大人数対応**: パーティーゲームに最適
 - ⚡ **リアルタイム**: 参加者の状況をリアルタイムで同期
 - 🔗 **簡単参加**: ルームコードで簡単に参加可能
-- 🎯 **豊富なお題**: 447個の多様なお題でゲームが飽きない
+- 🎯 **豊富なお題**: 多様なお題でゲームが飽きない
 - 🏗️ **エンタープライズ品質**: MVP + Facade + Container-Component統一アーキテクチャ
 
 ## 🚀 本番サイト
@@ -33,8 +33,8 @@
 - **localStorage**: シンプルな名前ベース認証（Firebase Auth不使用）
 
 ### 開発・運用
-- **GitHub Actions**: 4段階CI/CDパイプライン（テスト→Firestore→Functions→Hosting）
-- **Jest + Testing Library**: 44テスト実装、カバレッジ測定統合
+- **GitHub Actions**: CI/CDパイプライン（テスト→Firestore→Functions→Hosting）
+- **Jest + Testing Library**: 多数のテスト実装、カバレッジ測定統合
 - **Terraform/OpenTofu**: IAM権限のインフラストラクチャ・アズ・コード管理
 - **Firebase Emulator**: 本番データを汚さない開発環境
 - **ESLint + TypeScript**: 型安全性・コード品質保証
