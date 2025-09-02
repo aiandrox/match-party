@@ -117,16 +117,14 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
         </div>
       </div>
 
-      {/* ファシリテーション提案（一致判定前に表示） */}
-      {!hostJudgment && (
-        <FacilitationSuggestions
-          suggestions={suggestions}
-          isLoading={isFacilitationLoading}
-          error={facilitationError}
-          onGenerateSuggestions={handleGenerateFacilitation}
-          isHost={isHost}
-        />
-      )}
+      {/* ファシリテーション提案 */}
+      <FacilitationSuggestions
+        suggestions={suggestions}
+        isLoading={isFacilitationLoading}
+        error={facilitationError}
+        onGenerateSuggestions={handleGenerateFacilitation}
+        isHost={isHost}
+      />
 
       {/* ホストのみに一致判定ボタンを表示 */}
       {isHost && !hostJudgment && (
