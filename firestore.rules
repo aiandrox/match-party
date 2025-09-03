@@ -34,6 +34,14 @@ service cloud.firestore {
       allow delete: if false;
     }
     
+    // お題フィードバックコレクションのルール
+    match /topicFeedbacks/{feedbackId} {
+      allow read: if true; // 統計のために読み取りは許可
+      allow create: if isValidTopicFeedbackCreation();
+      allow update: if false; // フィードバック変更は不可
+      allow delete: if false; // フィードバック削除は不可
+    }
+    
     // その他のコレクションへのアクセス禁止
     match /{document=**} {
       allow read, write: if false;
@@ -204,5 +212,28 @@ service cloud.firestore {
            // hasAnsweredは false → true の一方向のみ許可（リセットはゲーム終了時のみ）
            (data.hasAnswered == existing.hasAnswered || 
             (existing.hasAnswered == false && data.hasAnswered == true));
+  }
+  
+  function isValidTopicFeedbackCreation() {
+    let data = request.resource.data;
+    return data.keys().hasAll(['topicContent', 'userId', 'userName', 'rating', 'createdAt']) &&
+           data.keys().hasOnly(['topicContent', 'userId', 'userName', 'rating', 'createdAt']) &&
+           // お題内容の検証
+           data.topicContent is string &&
+           data.topicContent.size() >= 1 &&
+           data.topicContent.size() <= 100 &&
+           // ユーザーIDの検証
+           data.userId is string &&
+           data.userId.size() > 0 &&
+           // ユーザー名の検証
+           data.userName is string &&
+           data.userName.size() >= 2 &&
+           data.userName.size() <= 20 &&
+           data.userName.matches('^[a-zA-Z0-9ａ-ｚＡ-Ｚ０-９ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠ー]+$') &&
+           // 評価の検証
+           data.rating is string &&
+           data.rating in ['good', 'bad'] &&
+           // タイムスタンプの検証
+           data.createdAt is timestamp;
   }
 }

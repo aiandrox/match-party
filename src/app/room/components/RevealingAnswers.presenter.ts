@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Room, JudgmentResult, FacilitationSuggestion } from "@/types";
+import { Room, JudgmentResult, FacilitationSuggestion, TopicFeedbackRating } from "@/types";
 
 interface UseRevealingAnswersPresenterProps {
   room: Room;
@@ -33,6 +33,9 @@ interface UseRevealingAnswersPresenterReturn {
   isFacilitationLoading: boolean;
   facilitationError: string | null;
   handleGenerateFacilitation: () => Promise<void>;
+  feedbackSent: boolean;
+  isSubmittingFeedback: boolean;
+  submitTopicFeedback: (_rating: TopicFeedbackRating) => Promise<void>;
 }
 
 export function useRevealingAnswersPresenter({
@@ -54,6 +57,8 @@ export function useRevealingAnswersPresenter({
   const [suggestions, setSuggestions] = useState<FacilitationSuggestion[]>([]);
   const [isFacilitationLoading, setIsFacilitationLoading] = useState(false);
   const [facilitationError, setFacilitationError] = useState<string | null>(null);
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   const isHost = room.participants.some((p) => p.id === currentUserId && p.isHost);
 
@@ -64,10 +69,7 @@ export function useRevealingAnswersPresenter({
         return;
       }
       const { getRoundAnswers } = await import("@/lib/roomService");
-      const answers = await getRoundAnswers(
-        roomData.currentGameRoundId,
-        roomData.participants
-      );
+      const answers = await getRoundAnswers(roomData.currentGameRoundId, roomData.participants);
 
       setAllAnswers(answers);
 
@@ -288,27 +290,83 @@ export function useRevealingAnswersPresenter({
     setFacilitationError(null);
 
     try {
-      const { generateFacilitationSuggestions } = await import('@/lib/facilitationService');
-      const { saveFacilitationSuggestionsToGameRound } = await import('@/lib/gameRoundService');
-      
+      const { generateFacilitationSuggestions } = await import("@/lib/facilitationService");
+      const { saveFacilitationSuggestionsToGameRound } = await import("@/lib/gameRoundService");
+
       const result = await generateFacilitationSuggestions({
         answers: allAnswers,
         topicContent: currentTopicContent.content,
         roomCode: room.code,
-        roundNumber: currentTopicContent.round
+        roundNumber: currentTopicContent.round,
       });
 
       setSuggestions(result.suggestions);
-      
+
       // GameRoundに保存
       await saveFacilitationSuggestionsToGameRound(room.currentGameRoundId!, result.suggestions);
     } catch (error) {
-      console.error('ファシリテーション提案の生成に失敗しました:', error);
-      setFacilitationError('提案の生成に失敗しました。もう一度お試しください。');
+      console.error("ファシリテーション提案の生成に失敗しました:", error);
+      setFacilitationError("提案の生成に失敗しました。もう一度お試しください。");
     } finally {
       setIsFacilitationLoading(false);
     }
   }, [room.code, room.currentGameRoundId, allAnswers, currentTopicContent]);
+
+  // お題フィードバック送信
+  const submitTopicFeedback = useCallback(
+    async (rating: TopicFeedbackRating) => {
+      if (!currentTopicContent || !currentUserId || feedbackSent || isSubmittingFeedback) {
+        return;
+      }
+
+      // 現在のユーザー名を取得
+      const currentUser = room.participants.find((p) => p.id === currentUserId);
+      if (!currentUser) {
+        console.error("現在のユーザーが見つかりません");
+        return;
+      }
+
+      setIsSubmittingFeedback(true);
+      try {
+        const { submitTopicFeedback: submitFeedbackService } = await import(
+          "@/lib/topicFeedbackService"
+        );
+        await submitFeedbackService({
+          topicContent: currentTopicContent.content,
+          userId: currentUserId,
+          userName: currentUser.name,
+          rating,
+        });
+        setFeedbackSent(true);
+      } catch (error) {
+        console.error("お題フィードバックの送信に失敗しました:", error);
+      } finally {
+        setIsSubmittingFeedback(false);
+      }
+    },
+    [currentTopicContent, currentUserId, room.participants, feedbackSent, isSubmittingFeedback]
+  );
+
+  // 既存フィードバックの確認とフィードバック状態の初期化
+  useEffect(() => {
+    const checkExistingFeedback = async () => {
+      if (!currentUserId || !currentTopicContent) {
+        setFeedbackSent(false);
+        return;
+      }
+
+      try {
+        const { checkExistingFeedback: checkFeedback } = await import("@/lib/topicFeedbackService");
+        const alreadySubmitted = await checkFeedback(currentUserId, currentTopicContent.content);
+        setFeedbackSent(alreadySubmitted);
+      } catch (error) {
+        console.error("既存フィードバックの確認に失敗しました:", error);
+        setFeedbackSent(false);
+      }
+    };
+
+    checkExistingFeedback();
+  }, [currentUserId, currentTopicContent]);
 
   return {
     currentTopicContent,
@@ -327,5 +385,8 @@ export function useRevealingAnswersPresenter({
     isFacilitationLoading,
     facilitationError,
     handleGenerateFacilitation,
+    feedbackSent,
+    isSubmittingFeedback,
+    submitTopicFeedback,
   };
 }

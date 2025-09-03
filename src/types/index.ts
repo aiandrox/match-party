@@ -19,6 +19,12 @@ export const JudgmentResult = {
 } as const;
 export type JudgmentResult = (typeof JudgmentResult)[keyof typeof JudgmentResult];
 
+export const TopicFeedbackRating = {
+  GOOD: "good",
+  BAD: "bad",
+} as const;
+export type TopicFeedbackRating = (typeof TopicFeedbackRating)[keyof typeof TopicFeedbackRating];
+
 // Game types
 export interface Room {
   id: string;
@@ -71,6 +77,16 @@ export interface GameRound {
     priority: number;
     category: string;
   }>;
+  createdAt: Date;
+}
+
+// Topic feedback types
+export interface TopicFeedback {
+  id: string;
+  topicContent: string;
+  userId: string;
+  userName: string;
+  rating: TopicFeedbackRating;
   createdAt: Date;
 }
 

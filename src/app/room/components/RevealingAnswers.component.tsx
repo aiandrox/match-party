@@ -1,5 +1,5 @@
-import React, { memo } from 'react';
-import { Room } from "@/types";
+import React, { memo } from "react";
+import { Room, TopicFeedbackRating } from "@/types";
 import { useRevealingAnswersPresenter } from "./RevealingAnswers.presenter";
 import { FacilitationSuggestions } from "./FacilitationSuggestions.component";
 import { useFacilitation } from "../hooks/useFacilitation";
@@ -22,6 +22,9 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
     endGame,
     judgmentStyle,
     hasAnimated,
+    feedbackSent,
+    isSubmittingFeedback,
+    submitTopicFeedback,
   } = useRevealingAnswersPresenter({ room, currentUserId });
 
   const {
@@ -29,7 +32,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
     isLoading: isFacilitationLoading,
     error: facilitationError,
     generateSuggestions,
-    clearSuggestions
+    clearSuggestions,
   } = useFacilitation();
 
   const handleGenerateFacilitation = async () => {
@@ -39,7 +42,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
       answers: allAnswers,
       topicContent: currentTopicContent.content,
       roomCode: room.code,
-      roundNumber: currentTopicContent.round
+      roundNumber: currentTopicContent.round,
     });
   };
 
@@ -63,12 +66,56 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <h3 className="text-lg font-medium text-blue-900 mb-2">
-          お題 {currentTopicContent && `(第${currentTopicContent.round}ラウンド)`}
-        </h3>
-        <p className="text-blue-800 text-xl font-semibold">
-          {currentTopicContent ? currentTopicContent.content : "お題を読み込み中..."}
-        </p>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h3 className="text-lg font-medium text-blue-900 mb-2">
+              お題 {currentTopicContent && `(第${currentTopicContent.round}ラウンド)`}
+            </h3>
+            <p className="text-blue-800 text-xl font-semibold">
+              {currentTopicContent ? currentTopicContent.content : "お題を読み込み中..."}
+            </p>
+          </div>
+
+          {/* お題フィードバック */}
+          {currentTopicContent && (
+            <div className="ml-4 text-center">
+              {feedbackSent ? (
+                <div className="flex items-center gap-1 text-gray-500">
+                  <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="text-xs">送信済み</span>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-blue-700 text-xs mb-2">お題の評価</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => submitTopicFeedback(TopicFeedbackRating.GOOD)}
+                      disabled={isSubmittingFeedback}
+                      className="flex items-center justify-center w-8 h-8 rounded-full bg-white/50 hover:bg-white/80 text-green-600 hover:text-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                      title="良いお題でした"
+                    >
+                      👍
+                    </button>
+                    <button
+                      onClick={() => submitTopicFeedback(TopicFeedbackRating.BAD)}
+                      disabled={isSubmittingFeedback}
+                      className="flex items-center justify-center w-8 h-8 rounded-full bg-white/50 hover:bg-white/80 text-red-600 hover:text-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                      title="改善が必要なお題でした"
+                    >
+                      👎
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 判定結果表示 */}
@@ -187,4 +234,4 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
   );
 });
 
-RevealingAnswersView.displayName = 'RevealingAnswersView';
+RevealingAnswersView.displayName = "RevealingAnswersView";
