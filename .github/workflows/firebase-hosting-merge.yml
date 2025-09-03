@@ -31,6 +31,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Functions dependencies
         run: cd functions && npm ci
+      - name: Build Functions
+        run: cd functions && npm run build
       - run: npm ci && npm run build
         env:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
