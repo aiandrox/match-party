@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Room } from "@/types";
 import { getUserIdForRoom } from "@/lib/localStorage";
 
@@ -10,10 +11,12 @@ interface UseRoomDataReturn {
 }
 
 export function useRoomData(roomCode: string): UseRoomDataReturn {
+  const router = useRouter();
   const [room, setRoom] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [needsJoin, setNeedsJoin] = useState(false);
 
   // Get user ID with memoization
   const userId = useMemo(() => {
@@ -34,6 +37,13 @@ export function useRoomData(roomCode: string): UseRoomDataReturn {
     return userId ? roomData.participants.some((p) => p.id === userId) : false;
   }, []);
 
+  // 参加権限がない場合は自動的にjoin-roomにリダイレクト
+  useEffect(() => {
+    if (needsJoin && roomCode) {
+      router.push(`/join-room?code=${roomCode}`);
+    }
+  }, [needsJoin, roomCode, router]);
+
   useEffect(() => {
     if (!roomCode) {
       setError("ルームコードが指定されていません");
@@ -48,9 +58,9 @@ export function useRoomData(roomCode: string): UseRoomDataReturn {
 
     const loadRoom = async () => {
       try {
-        // userIdが取得できない場合はルーム情報を表示しない
+        // userIdが取得できない場合はルーム参加画面にリダイレクト
         if (!userId) {
-          setError("このルームへの参加権限が確認できません");
+          setNeedsJoin(true);
           setIsLoading(false);
           return;
         }
@@ -72,7 +82,7 @@ export function useRoomData(roomCode: string): UseRoomDataReturn {
         }
 
         if (!isValidParticipant(roomData, userId)) {
-          setError("このルームへの参加権限がありません");
+          setNeedsJoin(true);
           setIsLoading(false);
           return;
         }
