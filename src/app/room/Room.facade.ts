@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Room } from "@/types";
 import { getUserIdForRoom } from "@/lib/localStorage";
 
@@ -7,10 +8,10 @@ interface UseRoomDataReturn {
   isLoading: boolean;
   error: string | null;
   currentUserId: string | null;
-  needsJoin: boolean;
 }
 
 export function useRoomData(roomCode: string): UseRoomDataReturn {
+  const router = useRouter();
   const [room, setRoom] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +36,13 @@ export function useRoomData(roomCode: string): UseRoomDataReturn {
   const isValidParticipant = useCallback((roomData: Room, userId: string | null): boolean => {
     return userId ? roomData.participants.some((p) => p.id === userId) : false;
   }, []);
+
+  // 参加権限がない場合は自動的にjoin-roomにリダイレクト
+  useEffect(() => {
+    if (needsJoin && roomCode) {
+      router.push(`/join-room?code=${roomCode}`);
+    }
+  }, [needsJoin, roomCode, router]);
 
   useEffect(() => {
     if (!roomCode) {
@@ -121,5 +129,5 @@ export function useRoomData(roomCode: string): UseRoomDataReturn {
     };
   }, [roomCode, userId, checkRoomExpiration, isValidParticipant]);
 
-  return { room, isLoading, error, currentUserId, needsJoin };
+  return { room, isLoading, error, currentUserId };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRoomData } from "./Room.facade";
 
@@ -34,14 +34,7 @@ function RoomContent() {
   const searchParams = useSearchParams();
   const roomCode = searchParams.get("code") || "";
 
-  const { room, isLoading, error, currentUserId, needsJoin } = useRoomData(roomCode);
-
-  // 参加権限がない場合は自動的にjoin-roomにリダイレクト
-  useEffect(() => {
-    if (needsJoin && roomCode) {
-      router.push(`/join-room?code=${roomCode}`);
-    }
-  }, [needsJoin, roomCode, router]);
+  const { room, isLoading, error, currentUserId } = useRoomData(roomCode);
 
   if (isLoading) {
     return (
