@@ -12,6 +12,14 @@ jest.mock('@/lib/roomService', () => ({
   subscribeToRoom: jest.fn(),
 }));
 
+// next/navigationのモック
+const mockPush = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
+
 describe('useRoomData', () => {
   const mockGetUserIdForRoom = require('@/lib/localStorage').getUserIdForRoom;
   const mockGetRoomByCode = require('@/lib/roomService').getRoomByCode;
@@ -39,6 +47,7 @@ describe('useRoomData', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockPush.mockClear();
     jest.useFakeTimers();
   });
 
@@ -68,13 +77,13 @@ describe('useRoomData', () => {
       });
     });
 
-    it('userIdが取得できない場合は参加権限エラーになる', async () => {
+    it('userIdが取得できない場合はjoin-roomにリダイレクトされる', async () => {
       mockGetUserIdForRoom.mockReturnValue(null);
 
       const { result } = renderHook(() => useRoomData('ABC123DEF456GHI789JK'));
 
       await waitFor(() => {
-        expect(result.current.error).toBe('このルームへの参加権限が確認できません');
+        expect(mockPush).toHaveBeenCalledWith('/join-room?code=ABC123DEF456GHI789JK');
         expect(result.current.isLoading).toBe(false);
         expect(result.current.currentUserId).toBeNull();
       });
@@ -114,7 +123,7 @@ describe('useRoomData', () => {
       });
     });
 
-    it('参加者として登録されていないユーザーはアクセスできない', async () => {
+    it('参加者として登録されていないユーザーはjoin-roomにリダイレクトされる', async () => {
       const mockRoom = createMockRoom({
         participants: [
           {
@@ -134,7 +143,7 @@ describe('useRoomData', () => {
       const { result } = renderHook(() => useRoomData('ABC123DEF456GHI789JK'));
 
       await waitFor(() => {
-        expect(result.current.error).toBe('このルームへの参加権限がありません');
+        expect(mockPush).toHaveBeenCalledWith('/join-room?code=ABC123DEF456GHI789JK');
         expect(result.current.isLoading).toBe(false);
         expect(result.current.room).toBeNull();
       });
