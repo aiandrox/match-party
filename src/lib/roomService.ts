@@ -71,7 +71,6 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
       isHost: true,
       roomId: roomRef.id,
       joinedAt: new Date(),
-      isReady: false,
       hasAnswered: false,
       firebaseUserId: authUser.uid
     };
@@ -90,7 +89,6 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
         isHost: true,
         roomId: roomRef.id,
         joinedAt: Timestamp.now(),
-        isReady: false,
         hasAnswered: false,
         firebaseUserId: authUser.uid
       })
@@ -188,7 +186,6 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
       isHost: false,
       roomId: roomDoc.id,
       joinedAt: new Date(),
-      isReady: false,
       hasAnswered: false,
       firebaseUserId: authUser.uid
     };
@@ -207,7 +204,6 @@ export async function joinRoom(roomCode: string, userName: string): Promise<Join
         isHost: false,
         roomId: roomDoc.id,
         joinedAt: Timestamp.now(),
-        isReady: false,
         hasAnswered: false,
         firebaseUserId: authUser.uid
       })

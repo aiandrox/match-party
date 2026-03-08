@@ -35,7 +35,6 @@ describe('useRevealingAnswersPresenter', () => {
       isHost: p.isHost,
       hasAnswered: true,
       joinedAt: new Date(),
-      isReady: false,
       roomId: 'room123',
       firebaseUserId: 'test-firebase-uid',
     })),

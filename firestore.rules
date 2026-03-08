@@ -176,8 +176,8 @@ service cloud.firestore {
   
   function isValidUserCreation() {
     let data = request.resource.data;
-    return data.keys().hasAll(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered', 'firebaseUserId']) &&
-           data.keys().hasOnly(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered', 'firebaseUserId']) &&
+    return data.keys().hasAll(['name', 'isHost', 'roomId', 'joinedAt', 'hasAnswered', 'firebaseUserId']) &&
+           data.keys().hasOnly(['name', 'isHost', 'roomId', 'joinedAt', 'hasAnswered', 'firebaseUserId']) &&
            data.name is string &&
            data.name.size() >= 2 &&
            data.name.size() <= 20 &&
@@ -186,8 +186,7 @@ service cloud.firestore {
            data.roomId is string &&
            data.roomId.size() > 0 &&
            data.joinedAt is timestamp &&
-           // 作成時は常にfalse（準備状態・回答状態は初期化）
-           data.isReady == false &&
+           // 作成時は常にfalse（回答状態は初期化）
            data.hasAnswered == false &&
            // firebaseUserIdは必須
            data.firebaseUserId is string &&
@@ -197,8 +196,8 @@ service cloud.firestore {
   function isValidUserUpdate() {
     let data = request.resource.data;
     let existing = resource.data;
-    return data.keys().hasAll(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered', 'firebaseUserId']) &&
-           data.keys().hasOnly(['name', 'isHost', 'roomId', 'joinedAt', 'isReady', 'hasAnswered', 'firebaseUserId']) &&
+    return data.keys().hasAll(['name', 'isHost', 'roomId', 'joinedAt', 'hasAnswered', 'firebaseUserId']) &&
+           data.keys().hasOnly(['name', 'isHost', 'roomId', 'joinedAt', 'hasAnswered', 'firebaseUserId']) &&
            // 不変フィールドの保護
            data.name == existing.name &&
            data.isHost == existing.isHost &&
@@ -207,7 +206,6 @@ service cloud.firestore {
            // firebaseUserIdも不変（必須）
            data.firebaseUserId == existing.firebaseUserId &&
            // 状態フィールドのみ更新可能
-           data.isReady is bool &&
            data.hasAnswered is bool &&
            // hasAnsweredは false → true の一方向のみ許可（リセットはゲーム終了時のみ）
            (data.hasAnswered == existing.hasAnswered || 

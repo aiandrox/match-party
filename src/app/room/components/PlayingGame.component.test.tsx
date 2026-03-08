@@ -47,7 +47,6 @@ describe('PlayingGameView', () => {
       isHost: p.isHost,
       hasAnswered: p.hasAnswered,
       joinedAt: new Date(),
-      isReady: false,
       roomId: 'room123',
       firebaseUserId: 'test-firebase-uid',
     })),

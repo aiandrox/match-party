@@ -18,7 +18,6 @@ describe('useGameEndedPresenter', () => {
       isHost: index === 0,
       hasAnswered: false,
       joinedAt: new Date(),
-      isReady: false,
       roomId: 'room123',
       firebaseUserId: 'test-firebase-uid',
     })),

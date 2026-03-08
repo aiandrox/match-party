@@ -42,7 +42,6 @@ export interface User {
   isHost: boolean;
   roomId: string;
   joinedAt: Date;
-  isReady: boolean;
   hasAnswered: boolean;
   firebaseUserId: string; // 匿名認証用のUID
 }

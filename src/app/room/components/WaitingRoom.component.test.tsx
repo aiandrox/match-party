@@ -42,7 +42,6 @@ describe('WaitingRoomView', () => {
       isHost: p.isHost,
       hasAnswered: false,
       joinedAt: new Date(),
-      isReady: false,
       roomId: 'room123',
       firebaseUserId: 'test-firebase-uid',
     })),

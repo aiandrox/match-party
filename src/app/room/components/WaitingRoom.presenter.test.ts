@@ -46,7 +46,6 @@ describe('useWaitingRoomPresenter', () => {
       isHost: p.isHost,
       joinedAt: new Date(),
       hasAnswered: false,
-      isReady: false,
       roomId: 'room123',
       firebaseUserId: 'test-firebase-uid',
     })),
