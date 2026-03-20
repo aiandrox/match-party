@@ -2,7 +2,9 @@ import React, { memo } from "react";
 import { Room, TopicFeedbackRating } from "@/types";
 import { useRevealingAnswersPresenter } from "./RevealingAnswers.presenter";
 import { FacilitationSuggestions } from "./FacilitationSuggestions.component";
+import { ReactionBar } from "./ReactionBar.component";
 import { useFacilitation } from "../hooks/useFacilitation";
+import { useReactions } from "@/hooks/useReactions";
 
 interface RevealingAnswersViewProps {
   room: Room;
@@ -12,6 +14,7 @@ interface RevealingAnswersViewProps {
 export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnswersViewProps) => {
   const {
     currentTopicContent,
+    currentGameRoundId,
     allAnswers,
     hostJudgment,
     isHost,
@@ -34,6 +37,12 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
     generateSuggestions,
     clearSuggestions,
   } = useFacilitation();
+
+  const { displayReactions, sendReaction, cooldown } = useReactions(
+    currentGameRoundId,
+    currentUserId,
+    room.participants.find((p) => p.id === currentUserId)?.name ?? null
+  );
 
   const handleGenerateFacilitation = async () => {
     if (!currentTopicContent || !room.code) return;
@@ -163,6 +172,13 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
           })}
         </div>
       </div>
+
+      {/* リアクション */}
+      <ReactionBar
+        displayReactions={displayReactions}
+        sendReaction={sendReaction}
+        cooldown={cooldown}
+      />
 
       {/* ファシリテーション提案 */}
       <FacilitationSuggestions

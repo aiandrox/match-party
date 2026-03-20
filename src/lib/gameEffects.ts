@@ -265,6 +265,24 @@ export function injectGameAnimations(): void {
     .animate-no-match-text {
       animation: no-match-text-wobble 2s ease-out;
     }
+
+    @keyframes reaction-float {
+      0% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      70% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-200px);
+        opacity: 0;
+      }
+    }
+
+    .animate-reaction-float {
+      animation: reaction-float 5s ease-out forwards;
+    }
   `;
   
   document.head.appendChild(style);

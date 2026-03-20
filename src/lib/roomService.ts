@@ -552,8 +552,11 @@ export async function startNextRound(roomId: string): Promise<void> {
     const nextRound = currentTopic ? currentTopic.round + 1 : 2;
     
     
-    // 前回のゲームラウンドを完了状態に更新
+    // 前回のゲームラウンドを完了状態に更新・リアクション削除
     if (roomData.currentGameRoundId) {
+      const { deleteReactionsForRound } = await import('@/lib/reactionService');
+      await deleteReactionsForRound(roomData.currentGameRoundId);
+
       const { completeGameRound } = await import('@/lib/gameRoundService');
       
       // 現在のゲームラウンドから判定を取得
