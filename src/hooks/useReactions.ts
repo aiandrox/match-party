@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { DisplayReaction } from "@/types";
 
-const REACTION_DISPLAY_DURATION = 3000;
-const COOLDOWN_DURATION = 1500;
+const REACTION_DISPLAY_DURATION = 5000;
+const COOLDOWN_DURATION = 500;
 
 export const REACTION_EMOJIS = ["😂", "👏", "😮", "🔥", "👍"];
 

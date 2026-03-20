@@ -281,7 +281,7 @@ export function injectGameAnimations(): void {
     }
 
     .animate-reaction-float {
-      animation: reaction-float 1.5s ease-out forwards;
+      animation: reaction-float 5s ease-out forwards;
     }
   `;
   
