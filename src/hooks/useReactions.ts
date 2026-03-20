@@ -21,9 +21,12 @@ export function useReactions(
     seenReactionIds.current = new Set();
 
     let unsubscribe: (() => void) | undefined;
+    let isMounted = true;
 
     const setup = async () => {
       const { subscribeToReactions } = await import("@/lib/reactionService");
+      // アンマウント済みの場合はリスナーを登録しない
+      if (!isMounted) return;
       unsubscribe = subscribeToReactions(gameRoundId, (reactions) => {
         reactions.forEach((reaction) => {
           if (seenReactionIds.current.has(reaction.id)) return;
@@ -47,6 +50,7 @@ export function useReactions(
     setup();
 
     return () => {
+      isMounted = false;
       unsubscribe?.();
     };
   }, [gameRoundId]);
