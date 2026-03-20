@@ -16,6 +16,14 @@ service cloud.firestore {
       allow create: if isValidGameRoundCreation();
       allow update: if isValidGameRoundUpdate();
       allow delete: if false;
+
+      // リアクションサブコレクションのルール
+      match /reactions/{reactionId} {
+        allow read: if true;
+        allow create: if isValidReactionCreation();
+        allow delete: if true; // ラウンド終了時のクリーンアップ用
+        allow update: if false;
+      }
     }
     
     // 回答コレクションのルール
@@ -212,6 +220,19 @@ service cloud.firestore {
             (existing.hasAnswered == false && data.hasAnswered == true));
   }
   
+  function isValidReactionCreation() {
+    let data = request.resource.data;
+    return data.keys().hasAll(['emoji', 'fromUserId', 'fromUserName', 'createdAt']) &&
+           data.keys().hasOnly(['emoji', 'fromUserId', 'fromUserName', 'createdAt']) &&
+           data.emoji is string &&
+           data.emoji.size() >= 1 &&
+           data.fromUserId is string &&
+           data.fromUserId.size() > 0 &&
+           data.fromUserName is string &&
+           data.fromUserName.size() >= 1 &&
+           data.createdAt is timestamp;
+  }
+
   function isValidTopicFeedbackCreation() {
     let data = request.resource.data;
     return data.keys().hasAll(['topicContent', 'userId', 'userName', 'rating', 'createdAt']) &&

@@ -79,6 +79,22 @@ export interface GameRound {
   createdAt: Date;
 }
 
+// Reaction types
+export interface Reaction {
+  id: string;
+  emoji: string;
+  fromUserId: string;
+  fromUserName: string;
+  createdAt: Date;
+}
+
+export interface DisplayReaction {
+  displayId: string;
+  emoji: string;
+  fromUserName: string;
+  x: number; // 10〜90の表示位置（%）
+}
+
 // Topic feedback types
 export interface TopicFeedback {
   id: string;
