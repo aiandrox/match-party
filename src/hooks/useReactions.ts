@@ -29,10 +29,14 @@ export function useReactions(
       const { subscribeToReactions } = await import("@/lib/reactionService");
       // アンマウント済みの場合はリスナーを登録しない
       if (!isMounted) return;
+      let isFirstSnapshot = true;
       unsubscribe = subscribeToReactions(gameRoundId, (reactions) => {
         reactions.forEach((reaction) => {
           if (seenReactionIds.current.has(reaction.id)) return;
           seenReactionIds.current.add(reaction.id);
+
+          // 初回スナップショット（ページロード時の既存データ）は表示しない
+          if (isFirstSnapshot) return;
 
           const displayId = `${reaction.id}-${Date.now()}`;
           const x = Math.floor(Math.random() * 80) + 10;
@@ -48,16 +52,18 @@ export function useReactions(
           }, REACTION_DISPLAY_DURATION);
           displayTimeoutsRef.current.add(timeoutId);
         });
+        isFirstSnapshot = false;
       });
     };
 
     setup();
 
+    const displayTimeouts = displayTimeoutsRef.current;
     return () => {
       isMounted = false;
       unsubscribe?.();
-      displayTimeoutsRef.current.forEach(clearTimeout);
-      displayTimeoutsRef.current.clear();
+      displayTimeouts.forEach(clearTimeout);
+      displayTimeouts.clear();
     };
   }, [gameRoundId]);
 
