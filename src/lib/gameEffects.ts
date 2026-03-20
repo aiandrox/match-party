@@ -268,20 +268,20 @@ export function injectGameAnimations(): void {
 
     @keyframes reaction-float {
       0% {
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
         opacity: 1;
       }
       70% {
         opacity: 1;
       }
       100% {
-        transform: translateY(-80px) scale(1.3);
+        transform: translateY(-200px);
         opacity: 0;
       }
     }
 
     .animate-reaction-float {
-      animation: reaction-float 3s ease-out forwards;
+      animation: reaction-float 1.5s ease-out forwards;
     }
   `;
   

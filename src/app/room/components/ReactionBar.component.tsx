@@ -21,7 +21,7 @@ export const ReactionBar = memo(({ displayReactions, sendReaction, cooldown }: R
           >
             <div className="flex flex-col items-center">
               <span className="text-4xl leading-none">{r.emoji}</span>
-              <span className="text-xs text-gray-500 whitespace-nowrap bg-white/60 rounded px-1">{r.fromUserName}</span>
+              <span className="text-[10px] text-gray-500 whitespace-nowrap bg-white/60 rounded px-1">{r.fromUserName}</span>
             </div>
           </div>
         ))}
