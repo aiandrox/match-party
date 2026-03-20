@@ -14,6 +14,8 @@ export function useReactions(
   const [displayReactions, setDisplayReactions] = useState<DisplayReaction[]>([]);
   const [cooldown, setCooldown] = useState(false);
   const seenReactionIds = useRef<Set<string>>(new Set());
+  const displayTimeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const cooldownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!gameRoundId) return;
@@ -40,9 +42,11 @@ export function useReactions(
             { displayId, emoji: reaction.emoji, fromUserName: reaction.fromUserName, x },
           ]);
 
-          setTimeout(() => {
+          const timeoutId = setTimeout(() => {
             setDisplayReactions((prev) => prev.filter((r) => r.displayId !== displayId));
+            displayTimeoutsRef.current.delete(timeoutId);
           }, REACTION_DISPLAY_DURATION);
+          displayTimeoutsRef.current.add(timeoutId);
         });
       });
     };
@@ -52,8 +56,16 @@ export function useReactions(
     return () => {
       isMounted = false;
       unsubscribe?.();
+      displayTimeoutsRef.current.forEach(clearTimeout);
+      displayTimeoutsRef.current.clear();
     };
   }, [gameRoundId]);
+
+  useEffect(() => {
+    return () => {
+      if (cooldownTimeoutRef.current) clearTimeout(cooldownTimeoutRef.current);
+    };
+  }, []);
 
   const sendReaction = useCallback(
     async (emoji: string) => {
@@ -66,7 +78,11 @@ export function useReactions(
       } catch (error) {
         console.error("リアクションの送信に失敗しました:", error);
       } finally {
-        setTimeout(() => setCooldown(false), COOLDOWN_DURATION);
+        if (cooldownTimeoutRef.current) clearTimeout(cooldownTimeoutRef.current);
+        cooldownTimeoutRef.current = setTimeout(() => {
+          setCooldown(false);
+          cooldownTimeoutRef.current = null;
+        }, COOLDOWN_DURATION);
       }
     },
     [gameRoundId, currentUserId, currentUserName, cooldown]
