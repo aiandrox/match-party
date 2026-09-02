@@ -20,7 +20,7 @@ const A = (userName, content) => ({ userName, content, hasAnswered: true });
 
 const scenarios = [
   {
-    label: "惜しい不一致（rex ≈ ティラノサウルス）＋外れ値",
+    label: "名称ゆれ（rex = ティラノサウルス）は一致扱いのはず＋外れ値",
     topic: "恐竜の名前といえば？",
     answers: [
       A("かおる", "ティラノサウルス"),
