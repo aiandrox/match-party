@@ -7,7 +7,8 @@ import { logger } from "firebase-functions";
 export async function callVertexAI(answers: any[], topicContent: string) {
   const projectId = "match-party-findy";
   const location = "us-central1";
-  const modelId = "gemini-2.5-flash-lite";
+  // gemini-2.5-flash-lite は2.5系の退役に伴い移行。低コスト・大量処理向けの後継
+  const modelId = "gemini-3.1-flash-lite";
 
   // Service Account認証
   const googleAuth = new GoogleAuth({
