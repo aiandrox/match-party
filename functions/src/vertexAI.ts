@@ -6,9 +6,14 @@ import { logger } from "firebase-functions";
  */
 export async function callVertexAI(answers: any[], topicContent: string) {
   const projectId = "match-party-findy";
-  const location = "us-central1";
-  // TODO: 2.5系は退役予定。gemini-3.5-flash-lite への移行は可用性確認後に別対応
-  const modelId = "gemini-2.5-flash-lite";
+  // gemini-3系 flash-lite はリージョンエンドポイント（us-central1）未提供のため global を使用
+  const location = "global";
+  // 2.5系は退役予定のため後継の低コスト帯モデルへ移行
+  const modelId = "gemini-3.5-flash-lite";
+  const apiHost =
+    location === "global"
+      ? "aiplatform.googleapis.com"
+      : `${location}-aiplatform.googleapis.com`;
 
   // Service Account認証
   const googleAuth = new GoogleAuth({
@@ -26,7 +31,7 @@ export async function callVertexAI(answers: any[], topicContent: string) {
   const prompt = createFacilitationPrompt(answers, topicContent);
 
   // Vertex AI API呼び出し
-  const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
+  const url = `https://${apiHost}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
 
   const response = await fetch(url, {
     method: "POST",
