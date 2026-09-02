@@ -6,9 +6,14 @@ import { logger } from "firebase-functions";
  */
 export async function callVertexAI(answers: any[], topicContent: string) {
   const projectId = "match-party-findy";
-  const location = "us-central1";
-  // TODO: 2.5系は退役予定。gemini-3.5-flash-lite への移行は可用性確認後に別対応
-  const modelId = "gemini-2.5-flash-lite";
+  // gemini-3系 flash-lite はリージョンエンドポイント（us-central1）未提供のため global を使用
+  const location = "global";
+  // 2.5系は退役予定のため後継の低コスト帯モデルへ移行
+  const modelId = "gemini-3.5-flash-lite";
+  const apiHost =
+    location === "global"
+      ? "aiplatform.googleapis.com"
+      : `${location}-aiplatform.googleapis.com`;
 
   // Service Account認証
   const googleAuth = new GoogleAuth({
@@ -26,7 +31,7 @@ export async function callVertexAI(answers: any[], topicContent: string) {
   const prompt = createFacilitationPrompt(answers, topicContent);
 
   // Vertex AI API呼び出し
-  const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
+  const url = `https://${apiHost}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -154,6 +159,7 @@ ${answersText}
 - **必ず参加者に発言を促す問いかけで終える**（「〜ですか？」「〜教えてください」「〜聞かせてください」など）。事実や感想を述べるだけで終わる文は禁止（例: 「〜が分かれましたね。」「〜代表格ですよね！」はNG）
 - 前半で回答の事実に触れ、後半で問いかける構成にする
 - 必ず実際の回答内容と参加者名を入れる
+- 回答の説明・豆知識を長々と添えない（「背中の板が特徴的な◯◯」のような描写は不要）。回答名はそのまま使う
 - 「それぞれの理由を聞いてみませんか？」のような、どのゲームでも使える当たり障りのない文は禁止。必ずこの回答セット固有の内容に踏み込む
 - 名称の違いだけのペアを「不一致」「惜しい」として扱わない。基本は一致とみなす
 - はい/いいえだけで終わる質問にしない。答えが広がる開かれた聞き方にする
@@ -185,7 +191,7 @@ function parseGeminiResponse(text: string) {
       if (parsed.suggestions && Array.isArray(parsed.suggestions)) {
         return {
           suggestions: parsed.suggestions.map((s: any) => ({
-            id: `fs_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            id: `fs_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
             ...s,
           })),
           analysisTimestamp: new Date(),
@@ -204,7 +210,7 @@ function parseGeminiResponse(text: string) {
     return {
       suggestions: [
         {
-          id: `fs_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `fs_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
           type: "group",
           message: "回答について詳しく聞いてみませんか？",
           priority: 3,
