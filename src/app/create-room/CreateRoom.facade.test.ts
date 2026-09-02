@@ -6,6 +6,20 @@ jest.mock('@/lib/roomService', () => ({
   createRoom: jest.fn(),
 }));
 
+jest.mock('@/lib/localStorage', () => {
+  let store: Record<string, string> = {};
+  return {
+    saveUserIdForRoom: jest.fn(),
+    saveUserName: jest.fn((name: string) => {
+      store['userName'] = name;
+    }),
+    getUserName: jest.fn(() => store['userName'] ?? ''),
+    __reset: () => {
+      store = {};
+    },
+  };
+});
+
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
 }));
@@ -14,9 +28,11 @@ describe('useCreateRoomFacade', () => {
   const mockCreateRoom = require('@/lib/roomService').createRoom;
   const mockPush = jest.fn();
   const mockUseRouter = require('next/navigation').useRouter;
+  const mockLocalStorage = require('@/lib/localStorage');
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLocalStorage.__reset();
     mockUseRouter.mockReturnValue({
       push: mockPush,
     });
@@ -30,6 +46,20 @@ describe('useCreateRoomFacade', () => {
       expect(result.current.error).toBeNull();
       expect(typeof result.current.createRoom).toBe('function');
       expect(typeof result.current.navigateToHome).toBe('function');
+    });
+
+    it('前回入力した名前が保存されていない場合、initialHostNameは空文字', () => {
+      const { result } = renderHook(() => useCreateRoomFacade());
+
+      expect(result.current.initialHostName).toBe('');
+    });
+
+    it('前回入力した名前が保存されている場合、initialHostNameに復元される', () => {
+      mockLocalStorage.saveUserName('たろう');
+
+      const { result } = renderHook(() => useCreateRoomFacade());
+
+      expect(result.current.initialHostName).toBe('たろう');
     });
   });
 
@@ -51,6 +81,37 @@ describe('useCreateRoomFacade', () => {
       expect(mockPush).toHaveBeenCalledWith('/room?code=ABC123DEF456GHI789JK');
       expect(result.current.isLoading).toBe(false);
       expect(result.current.error).toBeNull();
+    });
+
+    it('ルーム作成が成功した場合、入力した名前が次回のために保存される', async () => {
+      mockCreateRoom.mockResolvedValue({
+        roomCode: 'ABC123DEF456GHI789JK',
+        hostUserId: 'user123',
+      });
+
+      const { result } = renderHook(() => useCreateRoomFacade());
+
+      await act(async () => {
+        await result.current.createRoom('テストホスト');
+      });
+
+      expect(mockLocalStorage.saveUserName).toHaveBeenCalledWith('テストホスト');
+    });
+
+    it('ルーム作成が失敗した場合、名前は保存されない', async () => {
+      mockCreateRoom.mockRejectedValue(new Error('ルーム作成に失敗しました'));
+
+      const { result } = renderHook(() => useCreateRoomFacade());
+
+      await act(async () => {
+        try {
+          await result.current.createRoom('テストホスト');
+        } catch {
+          // エラーは期待されるので無視
+        }
+      });
+
+      expect(mockLocalStorage.saveUserName).not.toHaveBeenCalled();
     });
 
     it('ルーム作成中はローディング状態になる', async () => {

@@ -7,6 +7,7 @@ import { useJoinRoomFacade } from './JoinRoom.facade';
 function JoinRoomPageContent() {
   const {
     initialRoomCode,
+    initialUserName,
     isLoading,
     error,
     joinRoom,
@@ -16,6 +17,7 @@ function JoinRoomPageContent() {
   return (
     <JoinRoomView
       initialRoomCode={initialRoomCode}
+      initialUserName={initialUserName}
       onSubmit={joinRoom}
       onBack={navigateToHome}
       globalError={error}

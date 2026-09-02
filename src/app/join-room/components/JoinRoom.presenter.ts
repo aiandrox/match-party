@@ -3,6 +3,7 @@ import { validateUserName, validateRoomCode } from '@/lib/utils';
 
 interface JoinRoomPresenterProps {
   initialRoomCode: string;
+  initialUserName?: string;
   onSubmit: (_roomCode: string, _userName: string) => Promise<void>;
   onBack: () => void;
   globalError: string | null;
@@ -11,19 +12,28 @@ interface JoinRoomPresenterProps {
 
 export function useJoinRoomPresenter({
   initialRoomCode,
+  initialUserName = '',
   onSubmit,
   onBack,
   globalError,
   isGlobalLoading
 }: JoinRoomPresenterProps) {
   const [roomCode, setRoomCode] = useState(initialRoomCode);
-  const [userName, setUserName] = useState('');
+  const [userName, setUserName] = useState(initialUserName);
+  const [isUserNameDirty, setIsUserNameDirty] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // initialRoomCodeが変更された場合に更新
   React.useEffect(() => {
     setRoomCode(initialRoomCode);
   }, [initialRoomCode]);
+
+  // 前回入力した名前が非同期で復元された場合に反映（ユーザー未編集時のみ）
+  React.useEffect(() => {
+    if (!isUserNameDirty) {
+      setUserName(initialUserName);
+    }
+  }, [initialUserName, isUserNameDirty]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +71,7 @@ export function useJoinRoomPresenter({
 
   const handleUserNameChange = useCallback((name: string) => {
     setUserName(name);
+    setIsUserNameDirty(true);
     if (validationError) {
       setValidationError(null); // バリデーションエラーをクリア
     }

@@ -2,17 +2,19 @@ import React, { memo } from 'react';
 import { useCreateRoomPresenter } from './CreateRoom.presenter';
 
 interface CreateRoomViewProps {
+  initialHostName?: string;
   onSubmit: (_hostName: string) => Promise<void>;
   onBack: () => void;
   globalError: string | null;
   isGlobalLoading: boolean;
 }
 
-export const CreateRoomView = memo(({ 
-  onSubmit, 
-  onBack, 
+export const CreateRoomView = memo(({
+  initialHostName,
+  onSubmit,
+  onBack,
   globalError,
-  isGlobalLoading 
+  isGlobalLoading
 }: CreateRoomViewProps) => {
   const {
     hostName,
@@ -21,11 +23,12 @@ export const CreateRoomView = memo(({
     handleSubmit,
     handleBack,
     handleHostNameChange,
-  } = useCreateRoomPresenter({ 
-    onSubmit, 
-    onBack, 
+  } = useCreateRoomPresenter({
+    initialHostName,
+    onSubmit,
+    onBack,
     globalError,
-    isGlobalLoading 
+    isGlobalLoading
   });
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">

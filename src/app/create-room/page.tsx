@@ -5,6 +5,7 @@ import { useCreateRoomFacade } from './CreateRoom.facade';
 
 export default function CreateRoomPage() {
   const {
+    initialHostName,
     isLoading,
     error,
     createRoom,
@@ -13,6 +14,7 @@ export default function CreateRoomPage() {
 
   return (
     <CreateRoomView
+      initialHostName={initialHostName}
       onSubmit={createRoom}
       onBack={navigateToHome}
       globalError={error}
