@@ -64,6 +64,16 @@ const scenarios = [
       A("D", "有言実行"),
     ],
   },
+  {
+    label: "平凡・ほぼ一致（横展開の話題が出るか）",
+    topic: "好きなアーティストといえば？",
+    answers: [
+      A("けん", "Mrs. GREEN APPLE"),
+      A("まい", "Mrs. GREEN APPLE"),
+      A("そう", "米津玄師"),
+      A("ゆい", "Mrs. GREEN APPLE"),
+    ],
+  },
 ];
 
 const only = process.argv[2] != null ? Number(process.argv[2]) : null;
