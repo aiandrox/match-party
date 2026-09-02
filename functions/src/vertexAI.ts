@@ -7,8 +7,8 @@ import { logger } from "firebase-functions";
 export async function callVertexAI(answers: any[], topicContent: string) {
   const projectId = "match-party-findy";
   const location = "us-central1";
-  // gemini-2.5-flash-lite は2.5系の退役に伴い移行。低コスト・大量処理向けの後継
-  const modelId = "gemini-3.1-flash-lite";
+  // TODO: 2.5系は退役予定。gemini-3.5-flash-lite への移行は可用性確認後に別対応
+  const modelId = "gemini-2.5-flash-lite";
 
   // Service Account認証
   const googleAuth = new GoogleAuth({
@@ -50,6 +50,8 @@ export async function callVertexAI(answers: any[], topicContent: string) {
             suggestions: {
               type: "array",
               description: "主催者が使える話題振りの提案リスト",
+              minItems: 3,
+              maxItems: 5,
               items: {
                 type: "object",
                 description: "個別の話題振り提案",
@@ -85,7 +87,7 @@ export async function callVertexAI(answers: any[], topicContent: string) {
           },
           required: ["suggestions"],
         },
-        temperature: 0.7,
+        temperature: 0.5,
         maxOutputTokens: 1536,
       },
     }),
@@ -108,7 +110,7 @@ export async function callVertexAI(answers: any[], topicContent: string) {
 /**
  * ファシリテーション用プロンプト生成
  */
-function createFacilitationPrompt(answers: any[], topicContent: string): string {
+export function createFacilitationPrompt(answers: any[], topicContent: string): string {
   const respondents = answers.filter((a) => a.hasAnswered);
   const answersText = respondents
     .map((a) => `${a.userName}: ${a.content}`)
@@ -117,37 +119,55 @@ function createFacilitationPrompt(answers: any[], topicContent: string): string 
 
   return `
 あなたはチームビルディングゲームのファシリテーターです。
-このゲームは参加者が同じお題に回答し、その一致を目指す協力ゲームです。勝敗より、参加者同士が知り合い結束を深めることが目的です。今はお題「${topicContent}」への回答が公開され、主催者が一致判定をする前の交流タイムです。
+参加者は同じお題に回答し、一致を目指す協力ゲームです。勝敗より、参加者同士が知り合い結束を深めるのが目的。今はお題「${topicContent}」への回答が公開され、主催者が一致判定をする前の交流タイムです。
 
-重要: 参加者は「自分の好み」ではなく「他の人と一致しそうだと考えた回答」を選んでいます。つまり回答は"読み合い"の結果です。本当の好みや、誰の何を意識して寄せたのかを引き出す話題振りを作ってください。
+重要な前提: 参加者は「自分の好み」ではなく「他の人と一致しそうな回答」を選んでいます。回答は"読み合い"の結果です。本当の好みや、誰の何を意識して寄せたのかを引き出す話題振りを作ってください。
 
 参加者の回答（回答者${respondentCount}人）:
 ${answersText}
 
-## 手順1: まず回答の分布を分析する（出力はしない）
-- クラスタ: 同じ／ほぼ同じ回答をした人のかたまり
+## まず分析する（出力はしない）
+- 名称の統一: 略称・英語/カタカナ・愛称・表記ゆれの違いだけのものは「一致」とみなし、同じクラスタにまとめる（例:「rex」＝「ティラノサウルス」、「マック」＝「マクドナルド」、「たまごやき」＝「卵焼き」）。これらは不一致・惜しい差として扱わない
+- クラスタ: 実質同じ回答をした人のかたまり
 - 外れ値: 1人だけ違う回答をした人
-- 惜しい不一致: 意味は近いのに表記・種類がわずかに違うペア
-- 割れの軸: なぜ割れたか（世代・地域・家庭の習慣・知識量・職業など）を仮説する
+- 惜しい不一致: 名称ではなく中身が実際に別物で、かつ意味が近いペア（例:「ラーメン」と「うどん」）
+- 割れの軸: 世代・地域・家庭の習慣・知識量・職業などで仮説を立てる
 
-## 手順2: 分析をもとに話題振りを3〜5個作る
-**タイプ**: individual（特定の1人へ。targetに正確な参加者名が必須）/ group（全体へ）/ comparison（2人以上を並べて比較）
-**カテゴリ**: common（共通点）/ unique（個性・外れ値）/ interesting（面白さ・意外性）/ follow_up（追加質問）
+## 提案を作る
+- 必ず3〜5個。うち最低1個は individual（特定の1人向け）
+- 分析で見つけた「話題の芯」を優先度5〜4で埋める:
+  - 5: 外れ値がいる / きれいに票が割れた / 全員一致 → 理由や背景を掘る
+  - 5: 世代・地域・家庭差が疑われる割れ → 「これは世代で違うのかも？」と振る
+  - 4: 寄せの読み合い（誰が言いそうと思って選んだか）/ 中身が別物の惜しい不一致ペア
+- **回答が平凡・全員一致でも、回答内容そのものから会話を広げる提案を必ず1〜2個入れる（priority 3〜4）。以下のパターンを使う:**
+  - 個人の思い出: 「〇〇さん、△△（回答）にまつわる思い出やエピソードはありますか？」
+  - 全体への呼びかけ: 「△△（回答）で忘れられない出来事がある人、いますか？」
+  - 回答がアーティスト・作者・ブランド・ジャンル等なら1段掘る: 「△△の中で特に好きな□□（曲・作品・商品など）は？」
+  - 回答が特定の曲・作品・場所等なら分岐を渡す: 「△△は今も一番のお気に入りですか？それとも他に□□はありますか？」
+  - 選び方・きっかけ: 「△△を最初に知った・好きになったきっかけは？」
+- 呼び方・略称・表記の違いそのものを話題にした提案は、全体で最大1個かつ priority 2 以下。上記の話題を先に埋めること
+- type: individual（targetに正確な参加者名が必須）/ group / comparison（2人以上を並べる）
+- category: common / unique / interesting / follow_up
 
-狙うフックと優先度の目安:
-- 5: 外れ値が1人いる / きれいに票が割れた / 全員一致した → 理由や背景を掘る
-- 5: 世代・地域・家庭差が疑われる割れ → 「これって世代で違うのかも？」と振る
-- 4: 寄せの読み合い（「誰が言いそうだと思って選んだ？」）/ 惜しい不一致のペア
-- 3: 一般的な深掘り質問 / 2-1: 補助的な小ネタ
+## message のルール（厳守）
+- 主催者がそのまま読み上げる。日本語で1〜2文、60字程度まで
+- **必ず参加者に発言を促す問いかけで終える**（「〜ですか？」「〜教えてください」「〜聞かせてください」など）。事実や感想を述べるだけで終わる文は禁止（例: 「〜が分かれましたね。」「〜代表格ですよね！」はNG）
+- 前半で回答の事実に触れ、後半で問いかける構成にする
+- 必ず実際の回答内容と参加者名を入れる
+- 「それぞれの理由を聞いてみませんか？」のような、どのゲームでも使える当たり障りのない文は禁止。必ずこの回答セット固有の内容に踏み込む
+- 名称の違いだけのペアを「不一致」「惜しい」として扱わない。基本は一致とみなす
+- はい/いいえだけで終わる質問にしない。答えが広がる開かれた聞き方にする
+- 外れ値の人を「間違い」扱いしない。好奇心で拾う
+- 回答者が2〜3人なら「1人だけ」強調や comparison は避け、全員に均等に振る
 
-## メッセージのルール
-- 主催者がそのまま読み上げる想定。日本語で1〜2文、60字程度まで
-- 実際の回答内容と参加者名を具体的に入れる。はい/いいえで終わらない開かれた聞き方にする
-- 協力ゲームなので、外れ値の人を「間違い」扱いせず、あくまで好奇心で拾う
-- 回答者が2〜3人のときは comparison や「1人だけ」の強調を避け、全員に均等に振る
-
-## 出力例（形式の参考。内容はコピーしない）
-{"type":"individual","target":"たろう","message":"たろうさんだけ『きしめん』でしたね。ご当地の味だったりします？","priority":5,"category":"unique"}
+## 出力例（形式と踏み込み方の参考。名前・内容はダミー。コピーしない）
+お題「国民的アニメといえば？」／太郎:サザエさん、花子:サザエさん、次郎:ドラえもん、桜:サザエさん の場合:
+[
+  {"type":"individual","target":"次郎","message":"次郎さんだけ『ドラえもん』でしたね。ひみつ道具で今いちばん欲しいものは何ですか？","priority":5,"category":"unique"},
+  {"type":"group","message":"太郎さん・花子さん・桜さんは『サザエさん』。日曜の夕方に見ていた思い出、ありますか？","priority":4,"category":"common"},
+  {"type":"individual","target":"太郎","message":"太郎さん、『サザエさん』の登場人物で一番好きなのは誰ですか？","priority":3,"category":"interesting"},
+  {"type":"group","message":"『ドラえもん』の映画で泣いた経験がある人、いますか？","priority":3,"category":"interesting"}
+]
 
 参加者が互いの考えを知り合える、効果的な話題振りを提案してください。
 `;
