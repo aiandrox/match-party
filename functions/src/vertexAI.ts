@@ -159,6 +159,7 @@ ${answersText}
 - **必ず参加者に発言を促す問いかけで終える**（「〜ですか？」「〜教えてください」「〜聞かせてください」など）。事実や感想を述べるだけで終わる文は禁止（例: 「〜が分かれましたね。」「〜代表格ですよね！」はNG）
 - 前半で回答の事実に触れ、後半で問いかける構成にする
 - 必ず実際の回答内容と参加者名を入れる
+- 回答の説明・豆知識を長々と添えない（「背中の板が特徴的な◯◯」のような描写は不要）。回答名はそのまま使う
 - 「それぞれの理由を聞いてみませんか？」のような、どのゲームでも使える当たり障りのない文は禁止。必ずこの回答セット固有の内容に踏み込む
 - 名称の違いだけのペアを「不一致」「惜しい」として扱わない。基本は一致とみなす
 - はい/いいえだけで終わる質問にしない。答えが広がる開かれた聞き方にする
@@ -190,7 +191,7 @@ function parseGeminiResponse(text: string) {
       if (parsed.suggestions && Array.isArray(parsed.suggestions)) {
         return {
           suggestions: parsed.suggestions.map((s: any) => ({
-            id: `fs_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            id: `fs_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
             ...s,
           })),
           analysisTimestamp: new Date(),
@@ -209,7 +210,7 @@ function parseGeminiResponse(text: string) {
     return {
       suggestions: [
         {
-          id: `fs_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `fs_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
           type: "group",
           message: "回答について詳しく聞いてみませんか？",
           priority: 3,

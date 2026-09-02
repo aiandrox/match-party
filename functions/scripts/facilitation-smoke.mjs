@@ -18,60 +18,110 @@ import { callVertexAI } from "../lib/vertexAI.js";
 
 const A = (userName, content) => ({ userName, content, hasAnswered: true });
 
+// サンプル名（ダミー）
+const [taro, hanako, jiro, sakura, kenta, misaki, daisuke, yuki] = [
+  "太郎",
+  "花子",
+  "次郎",
+  "さくら",
+  "健太",
+  "美咲",
+  "大輔",
+  "ゆき",
+];
+
 const scenarios = [
   {
     label: "名称ゆれ（rex = ティラノサウルス）は一致扱いのはず＋外れ値",
     topic: "恐竜の名前といえば？",
     answers: [
-      A("かおる", "ティラノサウルス"),
-      A("るんるん", "ステゴサウルス"),
-      A("さふぁり", "rex"),
-      A("しーくれっと", "トリケラトプス"),
+      A(taro, "ティラノサウルス"),
+      A(hanako, "ステゴサウルス"),
+      A(jiro, "rex"),
+      A(sakura, "トリケラトプス"),
     ],
   },
   {
-    label: "2対2のクラスタ",
+    label: "きれいな2対2",
     topic: "朝ごはんのおかずといえば？",
-    answers: [A("A", "納豆"), A("B", "納豆"), A("C", "卵焼き"), A("D", "焼き鮭")],
+    answers: [
+      A(taro, "納豆"),
+      A(hanako, "納豆"),
+      A(jiro, "卵焼き"),
+      A(sakura, "卵焼き"),
+    ],
   },
   {
-    label: "世代で割れる想定",
+    label: "世代で割れる想定（4人バラバラ）",
     topic: "伝説のポケモンといえば？",
     answers: [
-      A("父", "ミュウツー"),
-      A("母", "ミュウ"),
-      A("娘", "レックウザ"),
-      A("息子", "アルセウス"),
+      A(taro, "ミュウツー"),
+      A(hanako, "ミュウ"),
+      A(jiro, "レックウザ"),
+      A(sakura, "アルセウス"),
     ],
   },
   {
     label: "略称ゆれ（セブン / セブンイレブン）＋少人数",
     topic: "コンビニといえば？",
-    answers: [A("A", "セブンイレブン"), A("B", "セブン"), A("C", "ローソン")],
+    answers: [
+      A(taro, "セブンイレブン"),
+      A(hanako, "セブン"),
+      A(jiro, "ローソン"),
+    ],
   },
   {
-    label: "全員一致",
+    label: "完全に全員一致（同一表記）",
     topic: "赤い果物といえば？",
-    answers: [A("A", "いちご"), A("B", "いちご"), A("C", "いちご"), A("D", "いちご")],
+    answers: [
+      A(taro, "いちご"),
+      A(hanako, "いちご"),
+      A(jiro, "いちご"),
+      A(sakura, "いちご"),
+    ],
+  },
+  {
+    label: "全員一致だが表記だけバラバラ（一致として扱えるか）",
+    topic: "ファストフードの店といえば？",
+    answers: [
+      A(taro, "マクドナルド"),
+      A(hanako, "マック"),
+      A(jiro, "マクド"),
+      A(sakura, "McDonald's"),
+    ],
   },
   {
     label: "全員バラバラ",
-    topic: "好きな四字熟語といえば？",
+    topic: "四字熟語といえば？",
     answers: [
-      A("A", "一期一会"),
-      A("B", "臨機応変"),
-      A("C", "温故知新"),
-      A("D", "有言実行"),
+      A(taro, "一期一会"),
+      A(hanako, "臨機応変"),
+      A(jiro, "温故知新"),
+      A(sakura, "有言実行"),
     ],
   },
   {
     label: "平凡・ほぼ一致（横展開の話題が出るか）",
     topic: "米津玄師の曲といえば？",
     answers: [
-      A("けん", "Lemon"),
-      A("まい", "Lemon"),
-      A("そう", "KICK BACK"),
-      A("ゆい", "Lemon"),
+      A(taro, "Lemon"),
+      A(hanako, "Lemon"),
+      A(jiro, "KICK BACK"),
+      A(sakura, "Lemon"),
+    ],
+  },
+  {
+    label: "大人数（8人・複数クラスタ＋少数派）",
+    topic: "日本の有名な観光地といえば？",
+    answers: [
+      A(taro, "京都"),
+      A(hanako, "京都"),
+      A(jiro, "京都"),
+      A(sakura, "東京"),
+      A(kenta, "東京"),
+      A(misaki, "北海道"),
+      A(daisuke, "沖縄"),
+      A(yuki, "大阪"),
     ],
   },
 ];
