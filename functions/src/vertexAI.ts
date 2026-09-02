@@ -161,12 +161,12 @@ ${answersText}
 - 回答者が2〜3人なら「1人だけ」強調や comparison は避け、全員に均等に振る
 
 ## 出力例（形式と踏み込み方の参考。名前・内容はダミー。コピーしない）
-お題「好きなアーティストといえば？」／太郎:B'z、花子:B'z、次郎:B'z、桜:あいみょん の場合:
+お題「国民的アニメといえば？」／太郎:サザエさん、花子:サザエさん、次郎:ドラえもん、桜:サザエさん の場合:
 [
-  {"type":"individual","target":"桜","message":"桜さんだけ『あいみょん』でしたね。好きになったきっかけの曲はありますか？","priority":5,"category":"unique"},
-  {"type":"group","message":"太郎さん・花子さん・次郎さんは『B'z』で一致。3人が最初に思い浮かべた曲は同じでしょうか、それぞれ聞いてみたいです。","priority":4,"category":"common"},
-  {"type":"individual","target":"太郎","message":"太郎さん、B'zで初めてハマった曲やライブの思い出はありますか？","priority":3,"category":"interesting"},
-  {"type":"group","message":"『B'z』のカラオケ十八番がある人、いますか？","priority":3,"category":"interesting"}
+  {"type":"individual","target":"次郎","message":"次郎さんだけ『ドラえもん』でしたね。ひみつ道具で今いちばん欲しいものは何ですか？","priority":5,"category":"unique"},
+  {"type":"group","message":"太郎さん・花子さん・桜さんは『サザエさん』。日曜の夕方に見ていた思い出、ありますか？","priority":4,"category":"common"},
+  {"type":"individual","target":"太郎","message":"太郎さん、『サザエさん』の登場人物で一番好きなのは誰ですか？","priority":3,"category":"interesting"},
+  {"type":"group","message":"『ドラえもん』の映画で泣いた経験がある人、いますか？","priority":3,"category":"interesting"}
 ]
 
 参加者が互いの考えを知り合える、効果的な話題振りを提案してください。

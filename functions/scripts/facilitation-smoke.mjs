@@ -66,12 +66,12 @@ const scenarios = [
   },
   {
     label: "平凡・ほぼ一致（横展開の話題が出るか）",
-    topic: "好きなアーティストといえば？",
+    topic: "米津玄師の曲といえば？",
     answers: [
-      A("けん", "Mrs. GREEN APPLE"),
-      A("まい", "Mrs. GREEN APPLE"),
-      A("そう", "米津玄師"),
-      A("ゆい", "Mrs. GREEN APPLE"),
+      A("けん", "Lemon"),
+      A("まい", "Lemon"),
+      A("そう", "KICK BACK"),
+      A("ゆい", "Lemon"),
     ],
   },
 ];
