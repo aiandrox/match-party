@@ -7,7 +7,8 @@ import { logger } from "firebase-functions";
 export async function callVertexAI(answers: any[], topicContent: string) {
   const projectId = "match-party-findy";
   const location = "us-central1";
-  const modelId = "gemini-2.5-flash-lite";
+  // gemini-2.5-flash-lite は2.5系の退役に伴い移行。低コスト・大量処理向けの後継
+  const modelId = "gemini-3.1-flash-lite";
 
   // Service Account認証
   const googleAuth = new GoogleAuth({
@@ -85,7 +86,7 @@ export async function callVertexAI(answers: any[], topicContent: string) {
           required: ["suggestions"],
         },
         temperature: 0.7,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 1536,
       },
     }),
   });
@@ -108,32 +109,47 @@ export async function callVertexAI(answers: any[], topicContent: string) {
  * ファシリテーション用プロンプト生成
  */
 function createFacilitationPrompt(answers: any[], topicContent: string): string {
-  const answersText = answers
-    .filter((a) => a.hasAnswered)
+  const respondents = answers.filter((a) => a.hasAnswered);
+  const answersText = respondents
     .map((a) => `${a.userName}: ${a.content}`)
     .join("\n");
+  const respondentCount = respondents.length;
 
   return `
 あなたはチームビルディングゲームのファシリテーターです。
-このゲームは参加者が同じお題に回答し、その一致を目指す協力ゲームです。勝敗より参加者同士が知り合い、チームの結束を深めることが目的です。現在、お題「${topicContent}」への回答が公開され、主催者が一致判定する前の交流タイムです。
+このゲームは参加者が同じお題に回答し、その一致を目指す協力ゲームです。勝敗より、参加者同士が知り合い結束を深めることが目的です。今はお題「${topicContent}」への回答が公開され、主催者が一致判定をする前の交流タイムです。
 
-参加者は自分の好みではなく、他の人と一致しそうだと考えた回答を選んでいます。そのことを念頭に置き、回答の理由や本当の好みも引き出せるような話題振りを提案してください。
+重要: 参加者は「自分の好み」ではなく「他の人と一致しそうだと考えた回答」を選んでいます。つまり回答は"読み合い"の結果です。本当の好みや、誰の何を意識して寄せたのかを引き出す話題振りを作ってください。
 
-参加者の回答:
+参加者の回答（回答者${respondentCount}人）:
 ${answersText}
 
-## 提案ルール
-**タイプ**: individual（個人質問、targetに名前必須）/ group（全体向け）/ comparison（比較）
-**カテゴリ**: common（共通点）/ unique（個性）/ interesting（面白さ）/ follow_up（追加質問）
+## 手順1: まず回答の分布を分析する（出力はしない）
+- クラスタ: 同じ／ほぼ同じ回答をした人のかたまり
+- 外れ値: 1人だけ違う回答をした人
+- 惜しい不一致: 意味は近いのに表記・種類がわずかに違うペア
+- 割れの軸: なぜ割れたか（世代・地域・家庭の習慣・知識量・職業など）を仮説する
 
-## 作成指針
-- 自然で親しみやすい口調
-- 実際の回答を具体的に言及
-- ユニークに感じる回答が存在する場合はそれを取り上げる
-- 優先度: 5（盛り上がる話題）> 4（共通点・比較）> 3（一般質問）> 2-1（補助）
-- 3〜5個、質重視
+## 手順2: 分析をもとに話題振りを3〜5個作る
+**タイプ**: individual（特定の1人へ。targetに正確な参加者名が必須）/ group（全体へ）/ comparison（2人以上を並べて比較）
+**カテゴリ**: common（共通点）/ unique（個性・外れ値）/ interesting（面白さ・意外性）/ follow_up（追加質問）
 
-参加者が互いの考えを知り合えるような効果的な話題振りを提案してください。
+狙うフックと優先度の目安:
+- 5: 外れ値が1人いる / きれいに票が割れた / 全員一致した → 理由や背景を掘る
+- 5: 世代・地域・家庭差が疑われる割れ → 「これって世代で違うのかも？」と振る
+- 4: 寄せの読み合い（「誰が言いそうだと思って選んだ？」）/ 惜しい不一致のペア
+- 3: 一般的な深掘り質問 / 2-1: 補助的な小ネタ
+
+## メッセージのルール
+- 主催者がそのまま読み上げる想定。日本語で1〜2文、60字程度まで
+- 実際の回答内容と参加者名を具体的に入れる。はい/いいえで終わらない開かれた聞き方にする
+- 協力ゲームなので、外れ値の人を「間違い」扱いせず、あくまで好奇心で拾う
+- 回答者が2〜3人のときは comparison や「1人だけ」の強調を避け、全員に均等に振る
+
+## 出力例（形式の参考。内容はコピーしない）
+{"type":"individual","target":"たろう","message":"たろうさんだけ『きしめん』でしたね。ご当地の味だったりします？","priority":5,"category":"unique"}
+
+参加者が互いの考えを知り合える、効果的な話題振りを提案してください。
 `;
 }
 
