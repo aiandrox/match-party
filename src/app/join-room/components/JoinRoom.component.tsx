@@ -3,6 +3,7 @@ import { useJoinRoomPresenter } from './JoinRoom.presenter';
 
 interface JoinRoomViewProps {
   initialRoomCode: string;
+  initialUserName?: string;
   onSubmit: (_roomCode: string, _userName: string) => Promise<void>;
   onBack: () => void;
   globalError: string | null;
@@ -11,6 +12,7 @@ interface JoinRoomViewProps {
 
 export const JoinRoomView = memo(({
   initialRoomCode,
+  initialUserName,
   onSubmit,
   onBack,
   globalError,
@@ -27,6 +29,7 @@ export const JoinRoomView = memo(({
     handleUserNameChange,
   } = useJoinRoomPresenter({
     initialRoomCode,
+    initialUserName,
     onSubmit,
     onBack,
     globalError,

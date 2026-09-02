@@ -2,6 +2,8 @@ import {
   saveUserIdForRoom,
   getUserIdForRoom,
   removeUserIdForRoom,
+  saveUserName,
+  getUserName,
 } from './localStorage';
 
 const USER_ID_PREFIX = 'userId_';
@@ -241,6 +243,50 @@ describe('localStorage utilities', () => {
       const result = getAllStoredRoomCodes();
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('saveUserName / getUserName', () => {
+    it('前回入力した名前が保存される', () => {
+      saveUserName('たろう');
+
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('userName', 'たろう');
+      expect(storage['userName']).toBe('たろう');
+    });
+
+    it('保存されている名前が取得される', () => {
+      storage['userName'] = 'はなこ';
+
+      expect(getUserName()).toBe('はなこ');
+    });
+
+    it('名前が保存されていない場合は空文字が返される', () => {
+      expect(getUserName()).toBe('');
+    });
+
+    it('保存時にlocalStorageでエラーが発生した場合はエラーログが出力される', () => {
+      localStorageMock.setItem.mockImplementation(() => {
+        throw new Error('LocalStorage error');
+      });
+
+      saveUserName('たろう');
+
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to save userName to localStorage:',
+        expect.any(Error)
+      );
+    });
+
+    it('取得時にlocalStorageでエラーが発生した場合は空文字が返される', () => {
+      localStorageMock.getItem.mockImplementation(() => {
+        throw new Error('LocalStorage error');
+      });
+
+      expect(getUserName()).toBe('');
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to get userName from localStorage:',
+        expect.any(Error)
+      );
     });
   });
 

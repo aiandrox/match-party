@@ -1,10 +1,17 @@
 import { useRouter } from 'next/navigation';
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { getUserName, saveUserName } from '@/lib/localStorage';
 
 export function useCreateRoomFacade() {
+  const [initialHostName, setInitialHostName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  // 前回入力した名前を復元
+  useEffect(() => {
+    setInitialHostName(getUserName());
+  }, []);
 
   const createRoom = useCallback(async (hostName: string) => {
     setIsLoading(true);
@@ -18,7 +25,10 @@ export function useCreateRoomFacade() {
       // userIdをlocalStorageに保存
       const { saveUserIdForRoom } = await import('@/lib/localStorage');
       saveUserIdForRoom(result.roomCode, result.hostUserId);
-      
+
+      // 次回のために名前を保存
+      saveUserName(hostName);
+
       // ルーム作成成功時にルームページへリダイレクト
       router.push(`/room?code=${result.roomCode}`);
     } catch (err) {
@@ -34,6 +44,7 @@ export function useCreateRoomFacade() {
   }, [router]);
 
   return {
+    initialHostName,
     isLoading,
     error,
     createRoom,

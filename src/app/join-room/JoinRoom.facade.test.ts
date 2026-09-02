@@ -6,6 +6,20 @@ jest.mock('@/lib/roomService', () => ({
   joinRoom: jest.fn(),
 }));
 
+jest.mock('@/lib/localStorage', () => {
+  let store: Record<string, string> = {};
+  return {
+    saveUserIdForRoom: jest.fn(),
+    saveUserName: jest.fn((name: string) => {
+      store['userName'] = name;
+    }),
+    getUserName: jest.fn(() => store['userName'] ?? ''),
+    __reset: () => {
+      store = {};
+    },
+  };
+});
+
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
   useSearchParams: jest.fn(),
@@ -17,9 +31,11 @@ describe('useJoinRoomFacade', () => {
   const mockGet = jest.fn();
   const mockUseRouter = require('next/navigation').useRouter;
   const mockUseSearchParams = require('next/navigation').useSearchParams;
+  const mockLocalStorage = require('@/lib/localStorage');
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLocalStorage.__reset();
     mockUseRouter.mockReturnValue({
       push: mockPush,
     });
@@ -57,6 +73,23 @@ describe('useJoinRoomFacade', () => {
       expect(typeof result.current.initialRoomCode).toBe('string');
       expect(typeof result.current.isLoading).toBe('boolean');
     });
+
+    it('前回入力した名前が保存されていない場合、initialUserNameは空文字', () => {
+      mockGet.mockReturnValue(null);
+
+      const { result } = renderHook(() => useJoinRoomFacade());
+
+      expect(result.current.initialUserName).toBe('');
+    });
+
+    it('前回入力した名前が保存されている場合、initialUserNameに復元される', () => {
+      mockGet.mockReturnValue(null);
+      mockLocalStorage.saveUserName('たろう');
+
+      const { result } = renderHook(() => useJoinRoomFacade());
+
+      expect(result.current.initialUserName).toBe('たろう');
+    });
   });
 
   describe('ルーム参加機能', () => {
@@ -81,6 +114,37 @@ describe('useJoinRoomFacade', () => {
       expect(mockPush).toHaveBeenCalledWith('/room?code=ABC123DEF456GHI789JK');
       expect(result.current.isLoading).toBe(false);
       expect(result.current.error).toBeNull();
+    });
+
+    it('ルーム参加が成功した場合、入力した名前が次回のために保存される', async () => {
+      mockJoinRoom.mockResolvedValue({
+        roomCode: 'ABC123DEF456GHI789JK',
+        userId: 'user123',
+      });
+
+      const { result } = renderHook(() => useJoinRoomFacade());
+
+      await act(async () => {
+        await result.current.joinRoom('ABC123DEF456GHI789JK', 'テストユーザー');
+      });
+
+      expect(mockLocalStorage.saveUserName).toHaveBeenCalledWith('テストユーザー');
+    });
+
+    it('ルーム参加が失敗した場合、名前は保存されない', async () => {
+      mockJoinRoom.mockRejectedValue(new Error('ルームが見つかりません'));
+
+      const { result } = renderHook(() => useJoinRoomFacade());
+
+      await act(async () => {
+        try {
+          await result.current.joinRoom('INVALID', 'テストユーザー');
+        } catch {
+          // エラーは期待されるので無視
+        }
+      });
+
+      expect(mockLocalStorage.saveUserName).not.toHaveBeenCalled();
     });
 
     it('ルーム参加中はローディング状態になる', async () => {
