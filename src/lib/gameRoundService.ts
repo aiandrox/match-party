@@ -12,7 +12,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { GameRound, JudgmentResult, GameRoundStatus, FacilitationSuggestion } from "@/types";
+import { GameRound, JudgmentResult, GameRoundStatus, FacilitationSuggestion, RoundAnswer, User } from "@/types";
 
 // アクティブなゲームラウンドを作成
 export async function createGameRound(roomId: string, topicContent: string, roundNumber: number): Promise<string> {
@@ -44,7 +44,7 @@ export async function completeGameRound(
 ): Promise<void> {
   try {
     const gameRoundRef = doc(db, "gameRounds", gameRoundId);
-    const updateData: any = {
+    const updateData: Pick<GameRound, "status"> & Partial<Pick<GameRound, "judgment">> = {
       status: GameRoundStatus.COMPLETED,
     };
 
@@ -127,8 +127,8 @@ export async function getGameRoundsByRoomId(roomId: string): Promise<Array<GameR
 // 特定のゲームラウンドの回答を取得（未回答者も含む）
 export async function getGameRoundAnswersWithParticipants(
   gameRoundId: string,
-  participants: Array<{ name: string; [key: string]: any }>
-): Promise<Array<{ content: string; userName: string; submittedAt: Date | null; hasAnswered: boolean }>> {
+  participants: Array<Pick<User, "name">>
+): Promise<RoundAnswer[]> {
   try {
     // 回答データを取得
     const answersQuery = query(

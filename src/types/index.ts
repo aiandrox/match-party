@@ -61,6 +61,14 @@ export interface JoinRoomResponse {
 
 // Game History types
 
+// ラウンドの回答（未回答者も含む）
+export interface RoundAnswer {
+  content: string;
+  userName: string;
+  submittedAt: Date | null;
+  hasAnswered: boolean;
+}
+
 export interface GameRound {
   id: string;
   roomId: string;
