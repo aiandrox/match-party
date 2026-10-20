@@ -32,6 +32,10 @@ interface UseRevealingAnswersPresenterReturn {
   isFacilitationLoading: boolean;
   facilitationError: string | null;
   generateFacilitation: () => Promise<void>;
+  // AI の会話のヒントを使えるモードか（不一致モードでは使わない）
+  isFacilitationAvailable: boolean;
+  // AI ヒントの代わりに表示する固定文（使えるモードでは null）
+  facilitationFallbackText: string | null;
   feedbackSent: boolean;
   isSubmittingFeedback: boolean;
   submitTopicFeedback: (_rating: TopicFeedbackRating) => Promise<void>;
@@ -67,6 +71,8 @@ export function useRevealingAnswersPresenter({
 
   // 現在のゲームモード（未設定は一致モード）
   const gameMode = getGameModeDefinition(room.mode);
+  const isFacilitationAvailable = gameMode.isFacilitationAvailable;
+  const facilitationFallbackText = gameMode.facilitationFallbackText;
 
   // 回答データの読み込み
   const loadAnswersForRevealing = useCallback(async (roomData: Room) => {
@@ -256,7 +262,8 @@ export function useRevealingAnswersPresenter({
 
   // ファシリテーション提案（会話のヒント）の生成
   const generateFacilitation = useCallback(async () => {
-    if (allAnswers.length === 0 || !currentTopicContent) {
+    // 使えないモードでは Cloud Functions（Vertex AI）を呼ばない
+    if (!isFacilitationAvailable || allAnswers.length === 0 || !currentTopicContent) {
       return;
     }
 
@@ -266,7 +273,7 @@ export function useRevealingAnswersPresenter({
       roomCode: room.code,
       roundNumber: currentTopicContent.round,
     });
-  }, [room.code, allAnswers, currentTopicContent, generateSuggestions]);
+  }, [room.code, allAnswers, currentTopicContent, generateSuggestions, isFacilitationAvailable]);
 
   // お題フィードバック送信
   const submitTopicFeedback = useCallback(
@@ -342,6 +349,8 @@ export function useRevealingAnswersPresenter({
     isFacilitationLoading,
     facilitationError,
     generateFacilitation,
+    isFacilitationAvailable,
+    facilitationFallbackText,
     feedbackSent,
     isSubmittingFeedback,
     submitTopicFeedback,
