@@ -156,6 +156,46 @@ describe('useGameEndedPresenter', () => {
     });
   });
 
+  describe('ゲームモード', () => {
+    it('モード未設定のルームは一致モードの定義が返る', () => {
+      const room = createMockRoom('ended', [{ id: 'user1' }]);
+
+      const { result } = renderHook(() =>
+        useGameEndedPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.gameMode.mode).toBe('match');
+      expect(result.current.gameMode.successCountLabel).toBe('一致回数');
+    });
+
+    it('不一致モードのルームでは被りなしのラウンドが成功として集計される', async () => {
+      const { getGameRoundsByRoomId } = await import('@/lib/gameRoundService');
+      (getGameRoundsByRoomId as jest.Mock).mockResolvedValue([
+        createMockGameRound({ id: 'round1', roundNumber: 1, judgment: 'no-duplicate' }),
+        createMockGameRound({ id: 'round2', roundNumber: 2, judgment: 'has-duplicate' }),
+        createMockGameRound({ id: 'round3', roundNumber: 3, judgment: 'no-duplicate' }),
+      ]);
+
+      const room = { ...createMockRoom('ended', [{ id: 'user1' }]), mode: 'mismatch' as const };
+
+      const { result } = renderHook(() =>
+        useGameEndedPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      expect(result.current.gameMode.mode).toBe('mismatch');
+      expect(result.current.gameMode.successCountLabel).toBe('被りなし回数');
+      expect(result.current.gameStatistics).toEqual({
+        totalRounds: 3,
+        successRounds: 2,
+        successRate: 67,
+      });
+    });
+  });
+
   describe('基本機能の提供', () => {
     it('必要な状態と機能がすべて提供される', () => {
       const room = createMockRoom('ended', [{ id: 'user1' }]);
@@ -173,7 +213,7 @@ describe('useGameEndedPresenter', () => {
   });
 
   describe('統計情報', () => {
-    it('一致したラウンド数と一致率が集計される', async () => {
+    it('成功したラウンド数と成功率が集計される', async () => {
       const { getGameRoundsByRoomId } = await import('@/lib/gameRoundService');
       const mockGetGameRounds = getGameRoundsByRoomId as jest.Mock;
       mockGetGameRounds.mockResolvedValue([
@@ -194,12 +234,12 @@ describe('useGameEndedPresenter', () => {
 
       expect(result.current.gameStatistics).toEqual({
         totalRounds: 3,
-        matchedRounds: 2,
-        matchRate: 67,
+        successRounds: 2,
+        successRate: 67,
       });
     });
 
-    it('判定なしのラウンドは一致として数えない', async () => {
+    it('判定なしのラウンドは成功として数えない', async () => {
       const { getGameRoundsByRoomId } = await import('@/lib/gameRoundService');
       const mockGetGameRounds = getGameRoundsByRoomId as jest.Mock;
       mockGetGameRounds.mockResolvedValue([
@@ -219,8 +259,8 @@ describe('useGameEndedPresenter', () => {
 
       expect(result.current.gameStatistics).toEqual({
         totalRounds: 2,
-        matchedRounds: 1,
-        matchRate: 50,
+        successRounds: 1,
+        successRate: 50,
       });
     });
 

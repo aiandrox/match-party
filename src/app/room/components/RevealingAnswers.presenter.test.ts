@@ -98,6 +98,57 @@ describe('useRevealingAnswersPresenter', () => {
     });
   });
 
+  describe('ゲームモード', () => {
+    it('モード未設定のルームは一致モードの定義が返る', () => {
+      const room = createMockRoom([{ id: 'user1', isHost: true }]);
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.gameMode.mode).toBe('match');
+      expect(result.current.gameMode.successJudgment).toBe('match');
+    });
+
+    it('不一致モードのルームは不一致モードの定義が返る', () => {
+      const room = { ...createMockRoom([{ id: 'user1', isHost: true }]), mode: 'mismatch' as const };
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.gameMode.mode).toBe('mismatch');
+      expect(result.current.gameMode.successJudgment).toBe('no-duplicate');
+      expect(result.current.gameMode.failureJudgment).toBe('has-duplicate');
+    });
+
+    it('不一致モードの判定もそのまま保存される', async () => {
+      const { submitJudgment, getTopicByRoomId, getRoundAnswers } = await import('@/lib/roomService');
+      (submitJudgment as jest.Mock).mockResolvedValue(undefined);
+      (getTopicByRoomId as jest.Mock).mockResolvedValue({ id: 'round123', content: 'テストお題', round: 1 });
+      (getRoundAnswers as jest.Mock).mockResolvedValue([]);
+      const { getDoc } = await import('firebase/firestore');
+      (getDoc as jest.Mock).mockResolvedValue({ exists: () => false });
+
+      const room = { ...createMockRoom([{ id: 'user1', isHost: true }]), mode: 'mismatch' as const };
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await result.current.submitJudgment('no-duplicate');
+      });
+
+      expect(submitJudgment).toHaveBeenCalledWith('room123', 'no-duplicate');
+      expect(result.current.hostJudgment).toBe('no-duplicate');
+    });
+  });
+
   describe('判定送信機能', () => {
     it('submitJudgment関数が提供される', () => {
       const room = createMockRoom([

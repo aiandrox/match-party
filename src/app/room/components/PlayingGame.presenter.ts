@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Room } from "@/types";
+import { getGameModeDefinition } from "@/lib/gameMode";
 
 interface UsePlayingGamePresenterProps {
   room: Room;
@@ -32,6 +33,7 @@ interface UsePlayingGamePresenterReturn {
   showForceRevealHelp: boolean;
   canChangeTopic: boolean;
   isLastUnansweredUser: boolean;
+  answerHint: string;
 }
 
 export function usePlayingGamePresenter({
@@ -49,6 +51,9 @@ export function usePlayingGamePresenter({
   const hasPlayedQuestionSound = useRef(false);
 
   const isHost = room.participants.some((p) => p.id === currentUserId && p.isHost);
+
+  // モードに応じた回答のヒント（未設定は一致モード）
+  const answerHint = getGameModeDefinition(room.mode).answerHint;
 
   // GameRoundのリアルタイム監視（統合版 - 1つのサブスクリプションで両方のケースを処理）
   useEffect(() => {
@@ -257,6 +262,7 @@ export function usePlayingGamePresenter({
     canForceReveal,
     showForceRevealHelp,
     canChangeTopic,
-    isLastUnansweredUser
+    isLastUnansweredUser,
+    answerHint,
   };
 }
