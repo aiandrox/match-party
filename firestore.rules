@@ -70,10 +70,17 @@ service cloud.firestore {
   }
   
   // バリデーション関数
+  // ゲームモードの値チェック（未設定は許容し、クライアント側で match として扱う）
+  function isValidGameMode(data) {
+    return !data.keys().hasAny(['mode']) ||
+           (data.mode is string && data.mode in ['match', 'mismatch']);
+  }
+
   function isValidRoomCreation() {
     let data = request.resource.data;
     return data.keys().hasAll(['code', 'status', 'participants', 'createdAt', 'expiresAt']) &&
-           data.keys().hasOnly(['code', 'status', 'participants', 'createdAt', 'expiresAt']) &&
+           data.keys().hasOnly(['code', 'status', 'participants', 'createdAt', 'expiresAt', 'mode']) &&
+           isValidGameMode(data) &&
            // ルームコードは20文字の英数字
            data.code is string &&
            data.code.size() == 20 &&
@@ -98,11 +105,16 @@ service cloud.firestore {
     let data = request.resource.data;
     let existing = resource.data;
     return data.keys().hasAll(['code', 'status', 'participants', 'createdAt', 'expiresAt']) &&
-           data.keys().hasOnly(['code', 'status', 'participants', 'createdAt', 'expiresAt', 'currentGameRoundId']) &&
+           data.keys().hasOnly(['code', 'status', 'participants', 'createdAt', 'expiresAt', 'currentGameRoundId', 'mode']) &&
            // 不変フィールドの保護
            data.code == existing.code &&
            data.createdAt == existing.createdAt &&
            data.expiresAt == existing.expiresAt &&
+           // ゲームモードは待機中のみ変更可。それ以外は実効値（未設定は match）が不変。
+           // フィールド削除による回避を防ぐため、キーの有無ではなく実効値で比較する
+           isValidGameMode(data) &&
+           (existing.status == 'waiting' ||
+            data.get('mode', 'match') == existing.get('mode', 'match')) &&
            // 状態遷移の制約
            isValidRoomStatusTransition(existing.status, data.status) &&
            data.participants is list &&
@@ -158,7 +170,8 @@ service cloud.firestore {
             isValidGameRoundStatusTransition(existing.status, data.status)) &&
            // judgmentフィールドの更新制約（存在する場合のみチェック）
            (!data.keys().hasAny(['judgment']) || 
-            (data.judgment is string && data.judgment in ['match', 'no-match']));
+            (data.judgment is string &&
+             data.judgment in ['match', 'no-match', 'no-duplicate', 'has-duplicate']));
   }
   
   function isValidAnswerCreation() {

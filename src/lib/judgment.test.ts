@@ -19,6 +19,16 @@ describe("judgment ヘルパー", () => {
       expect(isFailureJudgment(JudgmentResult.NO_MATCH)).toBe(true);
     });
 
+    it("被りなしは成功として扱われる", () => {
+      expect(isSuccessJudgment(JudgmentResult.NO_DUPLICATE)).toBe(true);
+      expect(isFailureJudgment(JudgmentResult.NO_DUPLICATE)).toBe(false);
+    });
+
+    it("被りありは失敗として扱われる", () => {
+      expect(isSuccessJudgment(JudgmentResult.HAS_DUPLICATE)).toBe(false);
+      expect(isFailureJudgment(JudgmentResult.HAS_DUPLICATE)).toBe(true);
+    });
+
     it("判定前（null / undefined）は成功でも失敗でもない", () => {
       expect(isSuccessJudgment(null)).toBe(false);
       expect(isFailureJudgment(null)).toBe(false);
@@ -34,6 +44,11 @@ describe("judgment ヘルパー", () => {
 
     it("不一致は「不一致」と表示される", () => {
       expect(getJudgmentLabel(JudgmentResult.NO_MATCH)).toBe("不一致");
+    });
+
+    it("被りなしは「被りなし」、被りありは「被りあり」と表示される", () => {
+      expect(getJudgmentLabel(JudgmentResult.NO_DUPLICATE)).toBe("被りなし");
+      expect(getJudgmentLabel(JudgmentResult.HAS_DUPLICATE)).toBe("被りあり");
     });
 
     it("判定前は「判定なし」と表示される", () => {
@@ -57,6 +72,15 @@ describe("judgment ヘルパー", () => {
         textColor: "text-rose-900",
       });
       expect(getJudgmentBadgeStyle(JudgmentResult.NO_MATCH)).toBe("bg-rose-100 text-rose-800");
+    });
+
+    it("不一致モードの判定も成功・失敗で同じ配色になる", () => {
+      expect(getJudgmentStyle(JudgmentResult.NO_DUPLICATE)).toEqual(
+        getJudgmentStyle(JudgmentResult.MATCH)
+      );
+      expect(getJudgmentStyle(JudgmentResult.HAS_DUPLICATE)).toEqual(
+        getJudgmentStyle(JudgmentResult.NO_MATCH)
+      );
     });
 
     it("判定前はグレーの配色になる", () => {

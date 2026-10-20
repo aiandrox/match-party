@@ -1,5 +1,6 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
+import { GameMode } from '@/types';
 import { getUserName, saveUserName } from '@/lib/localStorage';
 
 export function useCreateRoomFacade() {
@@ -13,14 +14,14 @@ export function useCreateRoomFacade() {
     setInitialHostName(getUserName());
   }, []);
 
-  const createRoom = useCallback(async (hostName: string) => {
+  const createRoom = useCallback(async (hostName: string, mode: GameMode) => {
     setIsLoading(true);
     setError(null);
 
     try {
       // 動的インポートでFirebase初期化を避ける
       const { createRoom } = await import('@/lib/roomService');
-      const result = await createRoom(hostName);
+      const result = await createRoom(hostName, mode);
       
       // userIdをlocalStorageに保存
       const { saveUserIdForRoom } = await import('@/lib/localStorage');
