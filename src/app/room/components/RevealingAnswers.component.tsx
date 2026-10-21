@@ -4,7 +4,6 @@ import { isSuccessJudgment } from "@/lib/judgment";
 import { useRevealingAnswersPresenter } from "./RevealingAnswers.presenter";
 import { FacilitationSuggestions } from "./FacilitationSuggestions.component";
 import { ReactionBar } from "./ReactionBar.component";
-import { useFacilitation } from "../hooks/useFacilitation";
 import { useReactions } from "@/hooks/useReactions";
 
 interface RevealingAnswersViewProps {
@@ -26,45 +25,20 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
     endGame,
     judgmentStyle,
     hasAnimated,
+    suggestions,
+    isFacilitationLoading,
+    facilitationError,
+    generateFacilitation,
     feedbackSent,
     isSubmittingFeedback,
     submitTopicFeedback,
   } = useRevealingAnswersPresenter({ room, currentUserId });
-
-  const {
-    suggestions,
-    isLoading: isFacilitationLoading,
-    error: facilitationError,
-    generateSuggestions,
-    clearSuggestions,
-  } = useFacilitation();
 
   const { displayReactions, sendReaction, cooldown } = useReactions(
     currentGameRoundId,
     currentUserId,
     room.participants.find((p) => p.id === currentUserId)?.name ?? null
   );
-
-  const handleGenerateFacilitation = async () => {
-    if (!currentTopicContent || !room.code) return;
-
-    await generateSuggestions({
-      answers: allAnswers,
-      topicContent: currentTopicContent.content,
-      roomCode: room.code,
-      roundNumber: currentTopicContent.round,
-    });
-  };
-
-  const handleStartNextRound = () => {
-    clearSuggestions(); // 次のラウンド開始時に提案をクリア
-    startNextRound();
-  };
-
-  const handleEndGame = () => {
-    clearSuggestions(); // ゲーム終了時に提案をクリア
-    endGame();
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -186,7 +160,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
         suggestions={suggestions}
         isLoading={isFacilitationLoading}
         error={facilitationError}
-        onGenerateSuggestions={handleGenerateFacilitation}
+        onGenerateSuggestions={generateFacilitation}
         isHost={isHost}
       />
 
@@ -216,7 +190,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
         <div className="text-center space-y-4">
           <div className="flex justify-center gap-4">
             <button
-              onClick={handleStartNextRound}
+              onClick={startNextRound}
               disabled={isStartingNextRound}
               className={`px-6 py-3 rounded-lg font-medium transition-colors ${
                 !isStartingNextRound
@@ -227,7 +201,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
               {isStartingNextRound ? "開始中..." : "次のラウンド"}
             </button>
             <button
-              onClick={handleEndGame}
+              onClick={endGame}
               disabled={isEndingGame}
               className={`px-6 py-3 rounded-lg font-medium transition-colors ${
                 !isEndingGame

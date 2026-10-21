@@ -32,6 +32,13 @@ describe('RevealingAnswersView', () => {
       textColor: 'text-gray-900'
     },
     hasAnimated: false,
+    suggestions: [],
+    isFacilitationLoading: false,
+    facilitationError: null,
+    generateFacilitation: jest.fn(),
+    feedbackSent: false,
+    isSubmittingFeedback: false,
+    submitTopicFeedback: jest.fn(),
   };
 
   const createMockRoom = (): Room => ({
@@ -298,6 +305,70 @@ describe('RevealingAnswersView', () => {
       render(<RevealingAnswersView room={room} currentUserId="user1" />);
 
       expect(screen.getByRole('button', { name: '終了中...' })).toBeDisabled();
+    });
+  });
+
+  describe('会話のヒント', () => {
+    it('ホストには会話のヒント領域が表示される', () => {
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: true,
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText('会話のヒント')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '生成する' })).toBeInTheDocument();
+    });
+
+    it('生成するボタンクリック時にPresenterのgenerateFacilitationが呼ばれる', () => {
+      const generateFacilitation = jest.fn();
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: true,
+        generateFacilitation,
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      fireEvent.click(screen.getByRole('button', { name: '生成する' }));
+
+      expect(generateFacilitation).toHaveBeenCalled();
+    });
+
+    it('Presenterが保持する提案がそのまま表示される', () => {
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: true,
+        suggestions: [
+          {
+            id: 's1',
+            type: 'group',
+            message: 'みなさんの回答について詳しく聞いてみませんか？',
+            priority: 3,
+            category: 'common',
+          },
+        ],
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText('みなさんの回答について詳しく聞いてみませんか？')).toBeInTheDocument();
+    });
+
+    it('ゲストには会話のヒント領域が表示されない', () => {
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: false,
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      expect(screen.queryByText('会話のヒント')).not.toBeInTheDocument();
     });
   });
 
