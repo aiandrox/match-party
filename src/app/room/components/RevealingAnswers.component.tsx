@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { Room, TopicFeedbackRating, JudgmentResult } from "@/types";
+import { Room, TopicFeedbackRating } from "@/types";
 import { isSuccessJudgment } from "@/lib/judgment";
 import { useRevealingAnswersPresenter } from "./RevealingAnswers.presenter";
 import { FacilitationSuggestions } from "./FacilitationSuggestions.component";
@@ -17,6 +17,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
     currentGameRoundId,
     allAnswers,
     hostJudgment,
+    gameMode,
     isHost,
     isStartingNextRound,
     isEndingGame,
@@ -111,7 +112,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
                 !hasAnimated ? "animate-match-text" : ""
               }`}
             >
-              🎉✨ 全員一致 ✨🎉
+              {gameMode.successHeading}
             </h3>
           ) : (
             <h3
@@ -119,7 +120,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
                 !hasAnimated ? "animate-no-match-text" : ""
               }`}
             >
-              💥 全員一致ならず 💥
+              {gameMode.failureHeading}
             </h3>
           )}
         </div>
@@ -164,22 +165,22 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
         isHost={isHost}
       />
 
-      {/* ホストのみに一致判定ボタンを表示 */}
+      {/* ホストのみに判定ボタンを表示（文言・判定値はモード定義に従う） */}
       {isHost && !hostJudgment && (
         <div className="text-center mb-6">
-          <p className="text-gray-700 font-medium mb-4">回答の一致を判定してください</p>
+          <p className="text-gray-700 font-medium mb-4">{gameMode.judgmentPrompt}</p>
           <div className="flex justify-center gap-4">
             <button
-              onClick={() => submitJudgment(JudgmentResult.MATCH)}
+              onClick={() => submitJudgment(gameMode.successJudgment)}
               className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
             >
-              全員一致
+              {gameMode.successButtonLabel}
             </button>
             <button
-              onClick={() => submitJudgment(JudgmentResult.NO_MATCH)}
+              onClick={() => submitJudgment(gameMode.failureJudgment)}
               className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium transition-colors"
             >
-              全員一致ならず
+              {gameMode.failureButtonLabel}
             </button>
           </div>
         </div>

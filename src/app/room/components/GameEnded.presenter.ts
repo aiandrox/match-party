@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { GameRound, Room, RoomStatus, RoundAnswer } from "@/types";
 import { JudgmentStyle, getJudgmentStyle, isSuccessJudgment } from "@/lib/judgment";
+import { GameModeDefinition, getGameModeDefinition } from "@/lib/gameMode";
 
 interface UseGameEndedPresenterProps {
   room: Room;
   currentUserId: string | null;
 }
 
+// 成功 = 一致モードでは「一致」、不一致モードでは「被りなし」
 interface GameStatistics {
   totalRounds: number;
-  matchedRounds: number;
-  matchRate: number;
+  successRounds: number;
+  successRate: number;
 }
 
 interface UseGameEndedPresenterReturn {
@@ -21,6 +23,7 @@ interface UseGameEndedPresenterReturn {
   loadRoundAnswers: (_gameRound: GameRound) => Promise<void>;
   gameStatistics: GameStatistics;
   answerStyle: JudgmentStyle;
+  gameMode: GameModeDefinition;
 }
 
 export function useGameEndedPresenter({
@@ -30,6 +33,9 @@ export function useGameEndedPresenter({
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [selectedRound, setSelectedRound] = useState<GameRound | null>(null);
   const [roundAnswers, setRoundAnswers] = useState<RoundAnswer[]>([]);
+
+  // 現在のゲームモード（未設定は一致モード）
+  const gameMode = getGameModeDefinition(room.mode);
 
   // ゲーム履歴の読み込み
   const loadGameRounds = useCallback(async () => {
@@ -70,11 +76,11 @@ export function useGameEndedPresenter({
   // 統計情報を計算
   const gameStatistics: GameStatistics = useMemo(() => {
     const totalRounds = gameRounds.length;
-    const matchedRounds = gameRounds.filter((round) => isSuccessJudgment(round.judgment)).length;
+    const successRounds = gameRounds.filter((round) => isSuccessJudgment(round.judgment)).length;
     return {
       totalRounds,
-      matchedRounds,
-      matchRate: totalRounds > 0 ? Math.round((matchedRounds / totalRounds) * 100) : 0,
+      successRounds,
+      successRate: totalRounds > 0 ? Math.round((successRounds / totalRounds) * 100) : 0,
     };
   }, [gameRounds]);
 
@@ -92,5 +98,6 @@ export function useGameEndedPresenter({
     loadRoundAnswers,
     gameStatistics,
     answerStyle,
+    gameMode,
   };
 }

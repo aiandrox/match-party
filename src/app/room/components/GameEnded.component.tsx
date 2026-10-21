@@ -17,6 +17,7 @@ export const GameEndedView = memo(({ room, currentUserId }: GameEndedViewProps) 
     loadRoundAnswers,
     gameStatistics,
     answerStyle,
+    gameMode,
   } = useGameEndedPresenter({ room, currentUserId });
 
   return (
@@ -37,14 +38,18 @@ export const GameEndedView = memo(({ room, currentUserId }: GameEndedViewProps) 
               <div className="text-3xl font-bold text-blue-900">{gameStatistics.totalRounds}</div>
             </div>
             <div className="bg-emerald-50 rounded-lg p-4">
-              <div className="text-emerald-600 text-sm font-medium mb-1">一致回数</div>
+              <div className="text-emerald-600 text-sm font-medium mb-1">
+                {gameMode.successCountLabel}
+              </div>
               <div className="text-3xl font-bold text-emerald-900">
-                {gameStatistics.matchedRounds}
+                {gameStatistics.successRounds}
               </div>
             </div>
             <div className="bg-amber-50 rounded-lg p-4">
-              <div className="text-amber-600 text-sm font-medium mb-1">一致率</div>
-              <div className="text-3xl font-bold text-amber-900">{gameStatistics.matchRate}%</div>
+              <div className="text-amber-600 text-sm font-medium mb-1">
+                {gameMode.successRateLabel}
+              </div>
+              <div className="text-3xl font-bold text-amber-900">{gameStatistics.successRate}%</div>
             </div>
           </div>
         )}

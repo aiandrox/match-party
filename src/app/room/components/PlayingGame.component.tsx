@@ -29,6 +29,7 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
     showForceRevealHelp,
     canChangeTopic,
     isLastUnansweredUser,
+    answerHint,
   } = usePlayingGamePresenter({ room, currentUserId });
 
   const { isAnswerHidden, toggleAnswerVisibility } = useAnswerVisibility();
@@ -90,10 +91,8 @@ export const PlayingGameView = memo(({ room, currentUserId }: PlayingGameViewPro
           </button>
         </div>
 
-        {/* ゲーム説明テキスト */}
-        <p className="text-sm text-gray-500 mb-3">
-          他の参加者と同じ回答を目指しましょう！
-        </p>
+        {/* ゲーム説明テキスト（モードに応じて切り替え） */}
+        <p className="text-sm text-gray-500 mb-3">{answerHint}</p>
 
         {hasSubmittedAnswer ? (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">

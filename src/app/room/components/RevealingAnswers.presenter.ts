@@ -6,6 +6,7 @@ import {
   isFailureJudgment,
   isSuccessJudgment,
 } from "@/lib/judgment";
+import { GameModeDefinition, getGameModeDefinition } from "@/lib/gameMode";
 import { useFacilitation } from "../hooks/useFacilitation";
 
 interface UseRevealingAnswersPresenterProps {
@@ -18,6 +19,7 @@ interface UseRevealingAnswersPresenterReturn {
   currentGameRoundId: string | null;
   allAnswers: RoundAnswer[];
   hostJudgment: JudgmentResult | null;
+  gameMode: GameModeDefinition;
   isHost: boolean;
   isStartingNextRound: boolean;
   isEndingGame: boolean;
@@ -62,6 +64,9 @@ export function useRevealingAnswersPresenter({
   } = useFacilitation();
 
   const isHost = room.participants.some((p) => p.id === currentUserId && p.isHost);
+
+  // 現在のゲームモード（未設定は一致モード）
+  const gameMode = getGameModeDefinition(room.mode);
 
   // 回答データの読み込み
   const loadAnswersForRevealing = useCallback(async (roomData: Room) => {
@@ -324,6 +329,7 @@ export function useRevealingAnswersPresenter({
     currentGameRoundId,
     allAnswers,
     hostJudgment,
+    gameMode,
     isHost,
     isStartingNextRound,
     isEndingGame,
