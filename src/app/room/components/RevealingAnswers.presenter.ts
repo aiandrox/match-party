@@ -1,26 +1,22 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Room, JudgmentResult, FacilitationSuggestion, TopicFeedbackRating } from "@/types";
+import { Room, JudgmentResult, FacilitationSuggestion, TopicFeedbackRating, RoundAnswer } from "@/types";
+import {
+  JudgmentStyle,
+  getJudgmentStyle,
+  isFailureJudgment,
+  isSuccessJudgment,
+} from "@/lib/judgment";
 
 interface UseRevealingAnswersPresenterProps {
   room: Room;
   currentUserId: string | null;
 }
 
-interface JudgmentStyle {
-  bgColor: string;
-  textColor: string;
-}
-
 interface UseRevealingAnswersPresenterReturn {
   currentTopicContent: { content: string; round: number } | null;
   currentGameRoundId: string | null;
-  allAnswers: Array<{
-    content: string;
-    userName: string;
-    submittedAt: Date | null;
-    hasAnswered: boolean;
-  }>;
-  hostJudgment: "match" | "no-match" | null;
+  allAnswers: RoundAnswer[];
+  hostJudgment: JudgmentResult | null;
   isHost: boolean;
   isStartingNextRound: boolean;
   isEndingGame: boolean;
@@ -47,10 +43,8 @@ export function useRevealingAnswersPresenter({
     round: number;
   } | null>(null);
   const [currentGameRoundId, setCurrentGameRoundId] = useState<string | null>(null);
-  const [allAnswers, setAllAnswers] = useState<
-    Array<{ content: string; userName: string; submittedAt: Date | null; hasAnswered: boolean }>
-  >([]);
-  const [hostJudgment, setHostJudgment] = useState<"match" | "no-match" | null>(null);
+  const [allAnswers, setAllAnswers] = useState<RoundAnswer[]>([]);
+  const [hostJudgment, setHostJudgment] = useState<JudgmentResult | null>(null);
   const [isStartingNextRound, setIsStartingNextRound] = useState(false);
   const [isEndingGame, setIsEndingGame] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
@@ -227,28 +221,12 @@ export function useRevealingAnswersPresenter({
     }
   }, [room, isHost]);
 
-  // 判定結果に基づく色設定を返す関数
-  const judgmentStyle = useMemo((): JudgmentStyle => {
-    if (hostJudgment === "match") {
-      return {
-        bgColor: "bg-emerald-100 border-emerald-300",
-        textColor: "text-emerald-900",
-      };
-    } else if (hostJudgment === "no-match") {
-      return {
-        bgColor: "bg-rose-100 border-rose-300",
-        textColor: "text-rose-900",
-      };
-    }
-    return {
-      bgColor: "bg-gray-50 border-gray-200",
-      textColor: "text-gray-900",
-    };
-  }, [hostJudgment]);
+  // 判定結果に基づく色設定
+  const judgmentStyle = useMemo((): JudgmentStyle => getJudgmentStyle(hostJudgment), [hostJudgment]);
 
   // 判定結果に応じた効果音・エフェクト再生
-  const playJudgmentEffects = useCallback((judgment: "match" | "no-match" | null) => {
-    if (judgment === "match") {
+  const playJudgmentEffects = useCallback((judgment: JudgmentResult | null) => {
+    if (isSuccessJudgment(judgment)) {
       import("@/lib/gameEffects").then(async ({ playMatchSound, createConfettiEffect }) => {
         await playMatchSound();
         createConfettiEffect();
@@ -257,7 +235,7 @@ export function useRevealingAnswersPresenter({
           setHasAnimated(true);
         }, 2000);
       });
-    } else if (judgment === "no-match") {
+    } else if (isFailureJudgment(judgment)) {
       import("@/lib/gameEffects").then(async ({ playNoMatchSound }) => {
         await playNoMatchSound();
         // アニメーションを2秒後に停止

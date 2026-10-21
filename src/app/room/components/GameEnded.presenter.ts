@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Room } from "@/types";
+import { GameRound, Room, RoomStatus, RoundAnswer } from "@/types";
+import { JudgmentStyle, getJudgmentStyle, isSuccessJudgment } from "@/lib/judgment";
 
 interface UseGameEndedPresenterProps {
   room: Room;
@@ -12,32 +13,27 @@ interface GameStatistics {
   matchRate: number;
 }
 
-interface AnswerStyle {
-  bgColor: string;
-  textColor: string;
-}
-
 interface UseGameEndedPresenterReturn {
-  gameRounds: any[];
+  gameRounds: GameRound[];
   isLoadingHistory: boolean;
-  selectedRound: any;
-  roundAnswers: any[];
-  loadRoundAnswers: (_gameRound: any) => Promise<void>;
+  selectedRound: GameRound | null;
+  roundAnswers: RoundAnswer[];
+  loadRoundAnswers: (_gameRound: GameRound) => Promise<void>;
   gameStatistics: GameStatistics;
-  answerStyle: AnswerStyle;
+  answerStyle: JudgmentStyle;
 }
 
 export function useGameEndedPresenter({
   room,
 }: UseGameEndedPresenterProps): UseGameEndedPresenterReturn {
-  const [gameRounds, setGameRounds] = useState<any[]>([]);
+  const [gameRounds, setGameRounds] = useState<GameRound[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [selectedRound, setSelectedRound] = useState<any>(null);
-  const [roundAnswers, setRoundAnswers] = useState<any[]>([]);
+  const [selectedRound, setSelectedRound] = useState<GameRound | null>(null);
+  const [roundAnswers, setRoundAnswers] = useState<RoundAnswer[]>([]);
 
   // ゲーム履歴の読み込み
   const loadGameRounds = useCallback(async () => {
-    if (!room || room.status !== "ended") return;
+    if (!room || room.status !== RoomStatus.ENDED) return;
 
     setIsLoadingHistory(true);
     try {
@@ -53,12 +49,12 @@ export function useGameEndedPresenter({
 
   // 特定のラウンドの回答を読み込み
   const loadRoundAnswers = useCallback(
-    async (_gameRound: any) => {
+    async (gameRound: GameRound) => {
       try {
         const { getGameRoundAnswersWithParticipants } = await import("@/lib/gameRoundService");
-        const answers = await getGameRoundAnswersWithParticipants(_gameRound.id, room.participants);
+        const answers = await getGameRoundAnswersWithParticipants(gameRound.id, room.participants);
         setRoundAnswers(answers);
-        setSelectedRound(_gameRound);
+        setSelectedRound(gameRound);
       } catch (error) {
         console.error("ラウンド回答の読み込みに失敗しました:", error);
       }
@@ -72,36 +68,21 @@ export function useGameEndedPresenter({
   }, [loadGameRounds]);
 
   // 統計情報を計算
-  const gameStatistics: GameStatistics = {
-    totalRounds: gameRounds.length,
-    matchedRounds: gameRounds.filter((round) => round.judgment === "match").length,
-    matchRate:
-      gameRounds.length > 0
-        ? Math.round(
-            (gameRounds.filter((round) => round.judgment === "match").length / gameRounds.length) *
-              100
-          )
-        : 0,
-  };
-
-  // 判定結果に基づく色設定を返す関数
-  const answerStyle: AnswerStyle = useMemo(() => {
-    if (selectedRound?.judgment === "match") {
-      return {
-        bgColor: "bg-emerald-100 border-emerald-300",
-        textColor: "text-emerald-900",
-      };
-    } else if (selectedRound?.judgment === "no-match") {
-      return {
-        bgColor: "bg-rose-100 border-rose-300",
-        textColor: "text-rose-900",
-      };
-    }
+  const gameStatistics: GameStatistics = useMemo(() => {
+    const totalRounds = gameRounds.length;
+    const matchedRounds = gameRounds.filter((round) => isSuccessJudgment(round.judgment)).length;
     return {
-      bgColor: "bg-gray-50 border-gray-200",
-      textColor: "text-gray-900",
+      totalRounds,
+      matchedRounds,
+      matchRate: totalRounds > 0 ? Math.round((matchedRounds / totalRounds) * 100) : 0,
     };
-  }, [selectedRound]);
+  }, [gameRounds]);
+
+  // 選択中ラウンドの判定結果に基づく色設定
+  const answerStyle: JudgmentStyle = useMemo(
+    () => getJudgmentStyle(selectedRound?.judgment),
+    [selectedRound]
+  );
 
   return {
     gameRounds,

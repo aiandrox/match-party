@@ -1,5 +1,6 @@
 import React, { memo } from "react";
-import { Room, TopicFeedbackRating } from "@/types";
+import { Room, TopicFeedbackRating, JudgmentResult } from "@/types";
+import { isSuccessJudgment } from "@/lib/judgment";
 import { useRevealingAnswersPresenter } from "./RevealingAnswers.presenter";
 import { FacilitationSuggestions } from "./FacilitationSuggestions.component";
 import { ReactionBar } from "./ReactionBar.component";
@@ -130,7 +131,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
       {/* 判定結果表示 */}
       {hostJudgment && (
         <div className="mb-6 text-center">
-          {hostJudgment === "match" ? (
+          {isSuccessJudgment(hostJudgment) ? (
             <h3
               className={`text-3xl font-bold text-green-800 mb-2 ${
                 !hasAnimated ? "animate-match-text" : ""
@@ -195,13 +196,13 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
           <p className="text-gray-700 font-medium mb-4">回答の一致を判定してください</p>
           <div className="flex justify-center gap-4">
             <button
-              onClick={() => submitJudgment("match")}
+              onClick={() => submitJudgment(JudgmentResult.MATCH)}
               className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
             >
               全員一致
             </button>
             <button
-              onClick={() => submitJudgment("no-match")}
+              onClick={() => submitJudgment(JudgmentResult.NO_MATCH)}
               className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium transition-colors"
             >
               全員一致ならず

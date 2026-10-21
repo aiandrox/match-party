@@ -13,7 +13,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Room, User, CreateRoomResponse, JoinRoomResponse, GameRound } from '@/types';
+import { Room, User, CreateRoomResponse, JoinRoomResponse, GameRound, RoundAnswer } from '@/types';
 import { RoomStatus, JudgmentResult } from '@/types';
 import { generateRoomCode, createExpirationTime, MAX_PARTICIPANTS } from './utils';
 import { getRandomTopic } from './topicService';
@@ -457,7 +457,7 @@ export async function submitAnswer(roomId: string, userId: string, answer: strin
 
 
 // 特定のゲームラウンドの全回答を取得（未回答者も含む）
-export async function getRoundAnswers(gameRoundId: string, participants: Array<{ name: string; [key: string]: any }>): Promise<Array<{ content: string; userName: string; submittedAt: Date | null; hasAnswered: boolean }>> {
+export async function getRoundAnswers(gameRoundId: string, participants: Array<Pick<User, 'name'>>): Promise<RoundAnswer[]> {
   try {
     const { getGameRoundAnswersWithParticipants } = await import('@/lib/gameRoundService');
     return await getGameRoundAnswersWithParticipants(gameRoundId, participants);

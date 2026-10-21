@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
-import { Room, JudgmentResult } from "@/types";
+import { Room } from "@/types";
+import { getJudgmentBadgeStyle, getJudgmentLabel } from "@/lib/judgment";
 import { useGameEndedPresenter } from "./GameEnded.presenter";
 
 interface GameEndedViewProps {
@@ -70,19 +71,11 @@ export const GameEndedView = memo(({ room, currentUserId }: GameEndedViewProps) 
                     <div className="flex justify-between items-start mb-2">
                       <div className="font-medium text-gray-900">第{round.roundNumber}ラウンド</div>
                       <div
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          round.judgment === JudgmentResult.MATCH
-                            ? "bg-emerald-100 text-emerald-800"
-                            : round.judgment === JudgmentResult.NO_MATCH
-                            ? "bg-rose-100 text-rose-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getJudgmentBadgeStyle(
+                          round.judgment
+                        )}`}
                       >
-                        {round.judgment === JudgmentResult.MATCH
-                          ? "一致"
-                          : round.judgment === JudgmentResult.NO_MATCH
-                          ? "不一致"
-                          : "判定なし"}
+                        {getJudgmentLabel(round.judgment)}
                       </div>
                     </div>
                     <div className="text-gray-700 mb-2 font-bold">{round.topicContent}</div>
