@@ -13,14 +13,18 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Room, User, CreateRoomResponse, JoinRoomResponse, GameRound, RoundAnswer } from '@/types';
+import { Room, User, CreateRoomResponse, JoinRoomResponse, GameRound, RoundAnswer, GameMode } from '@/types';
 import { RoomStatus, JudgmentResult } from '@/types';
 import { generateRoomCode, createExpirationTime, MAX_PARTICIPANTS } from './utils';
+import { DEFAULT_GAME_MODE } from './gameMode';
 import { getRandomTopic } from './topicService';
 import { ensureAnonymousAuth } from './authService';
 
 // ルーム作成
-export async function createRoom(hostName: string): Promise<CreateRoomResponse> {
+export async function createRoom(
+  hostName: string,
+  mode: GameMode = DEFAULT_GAME_MODE
+): Promise<CreateRoomResponse> {
   try {
     // ルームコード生成（重複チェック付き）
     let roomCode = generateRoomCode();
@@ -50,6 +54,7 @@ export async function createRoom(hostName: string): Promise<CreateRoomResponse> 
     const roomData: Omit<Room, 'id'> = {
       code: roomCode,
       status: RoomStatus.WAITING,
+      mode,
       participants: [],
       createdAt: new Date(),
       expiresAt: createExpirationTime()
@@ -277,6 +282,31 @@ export function subscribeToRoom(roomId: string, callback: (_room: Room | null) =
     console.error('Firestore subscription error:', error);
     callback(null);
   });
+}
+
+// ゲームモード変更（待機中のみ・主催者操作）
+export async function changeRoomMode(roomId: string, mode: GameMode): Promise<void> {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+
+    if (!roomDoc.exists()) {
+      throw new Error('ルームが見つかりません');
+    }
+
+    const roomData = roomDoc.data() as Room;
+
+    if (roomData.status !== RoomStatus.WAITING) {
+      throw new Error('ゲーム開始後はモードを変更できません');
+    }
+
+    await updateDoc(roomRef, { mode });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('モードの変更に失敗しました');
+  }
 }
 
 // ゲーム開始

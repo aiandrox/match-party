@@ -8,17 +8,21 @@ export interface JudgmentStyle {
 // 「成功」として扱う判定値
 const SUCCESS_JUDGMENTS: ReadonlySet<JudgmentResult> = new Set<JudgmentResult>([
   JudgmentResult.MATCH,
+  JudgmentResult.NO_DUPLICATE,
 ]);
 
 // 「失敗」として扱う判定値
 const FAILURE_JUDGMENTS: ReadonlySet<JudgmentResult> = new Set<JudgmentResult>([
   JudgmentResult.NO_MATCH,
+  JudgmentResult.HAS_DUPLICATE,
 ]);
 
 // 判定値ごとの履歴表示用ラベル
 const JUDGMENT_LABELS: Record<JudgmentResult, string> = {
   [JudgmentResult.MATCH]: "一致",
   [JudgmentResult.NO_MATCH]: "不一致",
+  [JudgmentResult.NO_DUPLICATE]: "被りなし",
+  [JudgmentResult.HAS_DUPLICATE]: "被りあり",
 };
 
 const NO_JUDGMENT_LABEL = "判定なし";

@@ -171,7 +171,7 @@ describe('useCreateRoomPresenter', () => {
       });
 
       expect(result.current.error).toBeNull();
-      expect(mockOnSubmit).toHaveBeenCalledWith('田中太郎');
+      expect(mockOnSubmit).toHaveBeenCalledWith('田中太郎', 'match');
     });
 
     it('should accept valid alphanumeric name', () => {
@@ -193,7 +193,46 @@ describe('useCreateRoomPresenter', () => {
       });
 
       expect(result.current.error).toBeNull();
-      expect(mockOnSubmit).toHaveBeenCalledWith('Player123');
+      expect(mockOnSubmit).toHaveBeenCalledWith('Player123', 'match');
+    });
+  });
+
+  describe('ゲームモード選択', () => {
+    it('初期状態では一致モードが選択されている', () => {
+      const { result } = renderHook(() =>
+        useCreateRoomPresenter({
+          onSubmit: mockOnSubmit,
+          onBack: mockOnBack,
+          globalError: null,
+          isGlobalLoading: false,
+        })
+      );
+
+      expect(result.current.mode).toBe('match');
+      expect(result.current.modeOptions.map((option) => option.mode)).toEqual(['match', 'mismatch']);
+    });
+
+    it('不一致モードを選ぶと、選んだモードでルーム作成が呼ばれる', () => {
+      const { result } = renderHook(() =>
+        useCreateRoomPresenter({
+          onSubmit: mockOnSubmit,
+          onBack: mockOnBack,
+          globalError: null,
+          isGlobalLoading: false,
+        })
+      );
+
+      act(() => {
+        result.current.handleHostNameChange('田中太郎');
+        result.current.handleModeChange('mismatch');
+      });
+
+      act(() => {
+        result.current.handleSubmit({ preventDefault: jest.fn() } as unknown as React.FormEvent);
+      });
+
+      expect(result.current.mode).toBe('mismatch');
+      expect(mockOnSubmit).toHaveBeenCalledWith('田中太郎', 'mismatch');
     });
   });
 

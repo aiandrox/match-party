@@ -1,5 +1,6 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { CreateRoomView } from './CreateRoom.component';
+import { GAME_MODE_OPTIONS } from '@/lib/gameMode';
 
 jest.mock('./CreateRoom.presenter', () => ({
   useCreateRoomPresenter: jest.fn(),
@@ -9,11 +10,14 @@ describe('CreateRoomView', () => {
   const mockUseCreateRoomPresenter = require('./CreateRoom.presenter').useCreateRoomPresenter;
   const defaultPresenterReturn = {
     hostName: '',
+    mode: 'match',
+    modeOptions: GAME_MODE_OPTIONS,
     isLoading: false,
     error: null,
     handleSubmit: jest.fn(),
     handleBack: jest.fn(),
     handleHostNameChange: jest.fn(),
+    handleModeChange: jest.fn(),
   };
 
   const defaultProps = {
@@ -47,6 +51,42 @@ describe('CreateRoomView', () => {
       expect(input).toHaveAttribute('type', 'text');
       expect(input).toHaveAttribute('maxLength', '20');
       expect(input).toHaveAttribute('id', 'hostName');
+    });
+  });
+
+  describe('ゲームモード選択', () => {
+    it('一致モードと不一致モードの選択肢が表示される', () => {
+      render(<CreateRoomView {...defaultProps} />);
+
+      expect(screen.getByText('ゲームモード')).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: /みんなで一致を目指す/ })).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: /みんなとズラす/ })).toBeInTheDocument();
+    });
+
+    it('Presenterが保持するモードが選択状態として表示される', () => {
+      mockUseCreateRoomPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        mode: 'mismatch',
+      });
+
+      render(<CreateRoomView {...defaultProps} />);
+
+      expect(screen.getByRole('radio', { name: /みんなとズラす/ })).toBeChecked();
+      expect(screen.getByRole('radio', { name: /みんなで一致を目指す/ })).not.toBeChecked();
+    });
+
+    it('モードを選ぶとPresenterのhandleModeChangeが呼ばれる', () => {
+      const handleModeChange = jest.fn();
+      mockUseCreateRoomPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        handleModeChange,
+      });
+
+      render(<CreateRoomView {...defaultProps} />);
+
+      fireEvent.click(screen.getByRole('radio', { name: /みんなとズラす/ }));
+
+      expect(handleModeChange).toHaveBeenCalledWith('mismatch');
     });
   });
 
@@ -121,6 +161,7 @@ describe('CreateRoomView', () => {
 
       expect(screen.getByText('作成中...')).toBeInTheDocument();
       expect(screen.getByLabelText('あなたの名前')).toBeDisabled();
+      expect(screen.getByRole('radio', { name: /みんなで一致を目指す/ })).toBeDisabled();
       expect(screen.getByRole('button', { name: '作成中...' })).toBeDisabled();
     });
 
