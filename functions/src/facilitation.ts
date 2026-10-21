@@ -51,6 +51,19 @@ export const generateFacilitationSuggestions = onCall(
         );
       }
 
+      // ゲームモードチェック: クライアントの申告ではなくサーバーが読んだルームの状態で判断する。
+      // 会話のヒントを使うのは一致モード（match / 未設定）のみ。それ以外は Vertex AI を呼ぶ前に拒否して
+      // コストを遮断する（fail-closed。モードが増えても意図せず通らない）。
+      // （クライアント側 src/lib/gameMode.ts の isFacilitationAvailable と対になる意図的な二重定義）
+      const roomMode = roomDoc.docs[0].data().mode ?? "match";
+      if (roomMode !== "match") {
+        throw new HttpsError(
+          "failed-precondition",
+          "Facilitation suggestions are not available in this game mode",
+          { reason: "unsupported-game-mode", mode: roomMode }
+        );
+      }
+
       // Vertex AI呼び出し
       const vertexResult = await callVertexAI(answers, topicContent);
 

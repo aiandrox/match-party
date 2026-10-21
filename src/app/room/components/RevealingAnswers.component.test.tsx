@@ -38,6 +38,8 @@ describe('RevealingAnswersView', () => {
     isFacilitationLoading: false,
     facilitationError: null,
     generateFacilitation: jest.fn(),
+    isFacilitationAvailable: true,
+    facilitationFallbackText: null,
     feedbackSent: false,
     isSubmittingFeedback: false,
     submitTopicFeedback: jest.fn(),
@@ -419,6 +421,38 @@ describe('RevealingAnswersView', () => {
       render(<RevealingAnswersView room={room} currentUserId="user1" />);
 
       expect(screen.getByText('みなさんの回答について詳しく聞いてみませんか？')).toBeInTheDocument();
+    });
+
+    it('不一致モードでは会話のヒント領域が表示されず、固定の案内文が表示される', () => {
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: true,
+        gameMode: getGameModeDefinition('mismatch'),
+        isFacilitationAvailable: false,
+        facilitationFallbackText: '気になる回答の人に理由を聞いてみましょう',
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      expect(screen.queryByText('会話のヒント')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '生成する' })).not.toBeInTheDocument();
+      expect(screen.getByText(/気になる回答の人に理由を聞いてみましょう/)).toBeInTheDocument();
+    });
+
+    it('不一致モードの固定の案内文はゲストにも表示される', () => {
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: false,
+        gameMode: getGameModeDefinition('mismatch'),
+        isFacilitationAvailable: false,
+        facilitationFallbackText: '気になる回答の人に理由を聞いてみましょう',
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText(/気になる回答の人に理由を聞いてみましょう/)).toBeInTheDocument();
     });
 
     it('ゲストには会話のヒント領域が表示されない', () => {

@@ -341,6 +341,53 @@ describe('useRevealingAnswersPresenter', () => {
       expect(result.current.facilitationError).toBeNull();
     });
 
+    it('一致モードでは会話のヒントが利用できる', () => {
+      const room = createMockRoom([{ id: 'user1', isHost: true }]);
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.isFacilitationAvailable).toBe(true);
+      expect(result.current.facilitationFallbackText).toBeNull();
+    });
+
+    it('不一致モードでは会話のヒントが利用できず、固定の案内文が返る', () => {
+      const room = { ...createMockRoom([{ id: 'user1', isHost: true }]), mode: 'mismatch' as const };
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.isFacilitationAvailable).toBe(false);
+      expect(result.current.facilitationFallbackText).toBe('気になる回答の人に理由を聞いてみましょう');
+    });
+
+    it('不一致モードではお題と回答が揃っていても会話のヒントを生成しない', async () => {
+      await setupRevealedRound();
+      const { generateFacilitationSuggestions } = await import('@/lib/facilitationService');
+
+      const room = {
+        ...createMockRoom([{ id: 'user1', isHost: true }, { id: 'user2', isHost: false }]),
+        mode: 'mismatch' as const,
+      };
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await result.current.generateFacilitation();
+      });
+
+      expect(generateFacilitationSuggestions).not.toHaveBeenCalled();
+      expect(result.current.suggestions).toEqual([]);
+    });
+
     it('お題が読み込まれていない間は会話のヒントを生成しない', async () => {
       const { generateFacilitationSuggestions } = await import('@/lib/facilitationService');
 

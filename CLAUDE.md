@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-リアルタイムお題回答一致ゲームのWebアプリケーション。プレイヤーは同じお題に回答し、回答の一致を目指すゲームです。WebSocketを使用してリアルタイム同期を実現し、主催者・参加者モデルで動作します。
+リアルタイムお題回答一致ゲームのWebアプリケーション。プレイヤーは同じお題に回答し、回答の一致を目指すゲームです。ルーム単位で「一致モード（全員一致を目指す）」と「不一致モード（被らない回答を目指す）」を選べます。WebSocketを使用してリアルタイム同期を実現し、主催者・参加者モデルで動作します。
 
 ## アーキテクチャ
 
@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### データモデル
 以下の主要エンティティを管理：
-- **Room**: ステータス（待機/プレイ中/公開中/終了）、参加者、現在のお題
+- **Room**: ステータス（待機/プレイ中/公開中/終了）、ゲームモード（`match` / `mismatch`、未設定は `match`）、参加者、現在のお題
 - **User**: 名前、主催者フラグ、ルーム関連付け
 - **Topic**: お題内容とルームへの割り当て
 - **Answer**: 特定のお題に対するユーザーの回答
@@ -48,8 +48,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 全参加者への同時お題表示
 - 回答送信とステータス追跡（回答済み/未回答）
 - 回答公開トリガー（全員回答完了 OR 主催者強制公開）
-- 一致/不一致判定と音声・視覚フィードバック
+- 一致/不一致判定と音声・視覚フィードバック（不一致モードでは「被りなし / 被りあり」判定）
 - ラウンド進行またはゲーム終了
+
+### ゲームモード
+- `match`（一致モード）: 全員一致を目指す。判定は `match` / `no-match`。AI の会話のヒントを利用可
+- `mismatch`（不一致モード）: 被らない回答を目指す。判定は `no-duplicate` / `has-duplicate`。AI の会話のヒントは使わず固定文を表示
+- モードごとの文言・判定値・集計ラベル・AI ヒント可否は `src/lib/gameMode.ts` に一元定義し、View はモードの知識を持たない
+- Cloud Functions 側（`functions/src/facilitation.ts`）はルームの `mode` をサーバーで読み、不一致モードなら Vertex AI 呼び出し前に `failed-precondition` で拒否する（クライアントと対になる意図的な二重定義）
 
 ### ユーザーエクスペリエンス
 - モバイル対応レスポンシブデザイン
@@ -285,6 +291,14 @@ it('isHost returns true when user.isHost is true', () => {
 - ✅ テスト戦略ドキュメント整備
 - ✅ 最重要技術的負債「テスト欠如」完全解決
 
+**Phase 8（ゲームモード追加）**
+- ✅ Room に `mode`（`match` / `mismatch`）を追加。未設定は `match` として後方互換
+- ✅ 判定値に `no-duplicate` / `has-duplicate` を追加し、判定ヘルパー（`src/lib/judgment.ts`）に集約
+- ✅ モード定義の一元化（`src/lib/gameMode.ts`）とルーム作成・待機ルームでのモード選択
+- ✅ 4画面（待機・回答入力・回答発表・ゲーム終了）の文言・判定ボタン・集計をモード対応
+- ✅ 不一致モードでの AI ヒント非表示 ＋ Cloud Functions 側ガード（`failed-precondition`）
+- ✅ Firestore ルール: `mode` の値制限・待機中のみ変更可、`judgment` 許容値の拡張
+
 ### URL構造
 - ホーム: `/`
 - ルーム作成: `/create-room`
@@ -304,6 +318,7 @@ it('isHost returns true when user.isHost is true', () => {
 - **開発環境分離**: Firebase Emulatorで本番データを保護
 - **アーキテクチャパターン**: MVP + Facade + Container-Component パターン採用
 - **モジュラー設計**: 1,092行モノリス→8ファイル分散による保守性向上
+- **ゲームモードの単一定義**: モード依存の文言・判定値は `src/lib/gameMode.ts` に集約。AI コスト遮断はクライアント（表示・呼び出し）とサーバー（Functions）の二重防御
 
 ### 開発環境の設定
 

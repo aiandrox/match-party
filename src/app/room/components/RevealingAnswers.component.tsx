@@ -30,6 +30,8 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
     isFacilitationLoading,
     facilitationError,
     generateFacilitation,
+    isFacilitationAvailable,
+    facilitationFallbackText,
     feedbackSent,
     isSubmittingFeedback,
     submitTopicFeedback,
@@ -156,14 +158,22 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
         cooldown={cooldown}
       />
 
-      {/* ファシリテーション提案 */}
-      <FacilitationSuggestions
-        suggestions={suggestions}
-        isLoading={isFacilitationLoading}
-        error={facilitationError}
-        onGenerateSuggestions={generateFacilitation}
-        isHost={isHost}
-      />
+      {/* ファシリテーション提案（AI の会話のヒント）。使わないモードでは固定文を表示 */}
+      {isFacilitationAvailable ? (
+        <FacilitationSuggestions
+          suggestions={suggestions}
+          isLoading={isFacilitationLoading}
+          error={facilitationError}
+          onGenerateSuggestions={generateFacilitation}
+          isHost={isHost}
+        />
+      ) : (
+        facilitationFallbackText && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 text-center">
+            <p className="text-gray-700 text-sm">💬 {facilitationFallbackText}</p>
+          </div>
+        )
+      )}
 
       {/* ホストのみに判定ボタンを表示（文言・判定値はモード定義に従う） */}
       {isHost && !hostJudgment && (
