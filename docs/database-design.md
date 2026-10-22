@@ -71,15 +71,17 @@ Match PartyアプリケーションはFirebase Firestoreを使用し、リアル
 ### 4. `gameAnswers` コレクション
 **目的**: 特定のゲームラウンドにリンクしたユーザー回答を管理（作成のみ・更新不可）
 
+**ドキュメントID**: `{gameRoundId}_{userId}`（1ラウンド1ユーザー1回答を保証。`submitAnswer()` が rooms の回答状態更新と同一トランザクションで作成し、既に存在する場合は作成しない。導入前の回答は自動生成ID）
+
 | フィールド | 型 | 説明 | 使用箇所 |
 |-----------|-----|-----|----------|
-| `id` | String | Firestoreドキュメント自動生成ID | `gameAnswerService.ts` |
+| `id` | String | `{gameRoundId}_{userId}` | `roomService.ts` `submitAnswer()` |
 | `gameRoundId` | String | ゲームラウンドID（外部キー） | `getGameRoundAnswersWithParticipants()` |
 | `userId` | String | 回答者ID（外部キー） | `getUserAnswerForGameRound()` |
 | `userName` | String | ユーザー表示名（非正規化） | 回答発表・履歴の回答者名表示 |
 | `content` | String | 回答内容（1-100文字） | 回答発表・履歴の回答表示 |
 | `submittedAt` | Timestamp | 回答送信時刻 | 回答の並び順 |
-| `createdAt` | Timestamp? | レコード作成時刻（`submittedAt` と5秒以内） | `gameAnswerService.ts` |
+| `createdAt` | Timestamp? | レコード作成時刻（`submittedAt` と5秒以内） | `roomService.ts` `submitAnswer()` |
 
 ### 5. `topicFeedbacks` コレクション
 **目的**: お題に対する参加者の評価（👍 / 👎）を収集（作成のみ）
@@ -118,7 +120,7 @@ topicFeedbacks はお題文字列で紐付く（ルーム・ラウンドへの�
 - **rooms**: `createRoom()` - 新しいゲームルーム（モード指定・デフォルトは `match`）
 - **users**: `createRoom()`, `joinRoom()` - ホスト・参加者ユーザー
 - **gameRounds**: `createGameRound()` - ラウンドレコード（`startGame()`, `startNextRound()` から）
-- **gameAnswers**: `createGameAnswer()` - 回答データ保存（`submitAnswer()` から）
+- **gameAnswers**: `submitAnswer()` - 回答データ保存（rooms の回答状態更新とトランザクションで一括実行）
 - **reactions**: `sendReaction()` - スタンプリアクション
 - **topicFeedbacks**: `submitTopicFeedback()` - お題評価
 
