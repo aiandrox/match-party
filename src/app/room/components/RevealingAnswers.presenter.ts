@@ -1,26 +1,25 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Room, JudgmentResult, FacilitationSuggestion, TopicFeedbackRating } from "@/types";
+import { Room, JudgmentResult, FacilitationSuggestion, TopicFeedbackRating, RoundAnswer } from "@/types";
+import {
+  JudgmentStyle,
+  getJudgmentStyle,
+  isFailureJudgment,
+  isSuccessJudgment,
+} from "@/lib/judgment";
+import { GameModeDefinition, getGameModeDefinition } from "@/lib/gameMode";
+import { useFacilitation } from "../hooks/useFacilitation";
 
 interface UseRevealingAnswersPresenterProps {
   room: Room;
   currentUserId: string | null;
 }
 
-interface JudgmentStyle {
-  bgColor: string;
-  textColor: string;
-}
-
 interface UseRevealingAnswersPresenterReturn {
   currentTopicContent: { content: string; round: number } | null;
   currentGameRoundId: string | null;
-  allAnswers: Array<{
-    content: string;
-    userName: string;
-    submittedAt: Date | null;
-    hasAnswered: boolean;
-  }>;
-  hostJudgment: "match" | "no-match" | null;
+  allAnswers: RoundAnswer[];
+  hostJudgment: JudgmentResult | null;
+  gameMode: GameModeDefinition;
   isHost: boolean;
   isStartingNextRound: boolean;
   isEndingGame: boolean;
@@ -32,7 +31,11 @@ interface UseRevealingAnswersPresenterReturn {
   suggestions: FacilitationSuggestion[];
   isFacilitationLoading: boolean;
   facilitationError: string | null;
-  handleGenerateFacilitation: () => Promise<void>;
+  generateFacilitation: () => Promise<void>;
+  // AI の会話のヒントを使えるモードか（不一致モードでは使わない）
+  isFacilitationAvailable: boolean;
+  // AI ヒントの代わりに表示する固定文（使えるモードでは null）
+  facilitationFallbackText: string | null;
   feedbackSent: boolean;
   isSubmittingFeedback: boolean;
   submitTopicFeedback: (_rating: TopicFeedbackRating) => Promise<void>;
@@ -47,20 +50,29 @@ export function useRevealingAnswersPresenter({
     round: number;
   } | null>(null);
   const [currentGameRoundId, setCurrentGameRoundId] = useState<string | null>(null);
-  const [allAnswers, setAllAnswers] = useState<
-    Array<{ content: string; userName: string; submittedAt: Date | null; hasAnswered: boolean }>
-  >([]);
-  const [hostJudgment, setHostJudgment] = useState<"match" | "no-match" | null>(null);
+  const [allAnswers, setAllAnswers] = useState<RoundAnswer[]>([]);
+  const [hostJudgment, setHostJudgment] = useState<JudgmentResult | null>(null);
   const [isStartingNextRound, setIsStartingNextRound] = useState(false);
   const [isEndingGame, setIsEndingGame] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
-  const [suggestions, setSuggestions] = useState<FacilitationSuggestion[]>([]);
-  const [isFacilitationLoading, setIsFacilitationLoading] = useState(false);
-  const [facilitationError, setFacilitationError] = useState<string | null>(null);
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
+  // ファシリテーション提案（AI の会話のヒント）の状態
+  const {
+    suggestions,
+    isLoading: isFacilitationLoading,
+    error: facilitationError,
+    generateSuggestions,
+    clearSuggestions,
+  } = useFacilitation();
+
   const isHost = room.participants.some((p) => p.id === currentUserId && p.isHost);
+
+  // 現在のゲームモード（未設定は一致モード）
+  const gameMode = getGameModeDefinition(room.mode);
+  const isFacilitationAvailable = gameMode.isFacilitationAvailable;
+  const facilitationFallbackText = gameMode.facilitationFallbackText;
 
   // 回答データの読み込み
   const loadAnswersForRevealing = useCallback(async (roomData: Room) => {
@@ -114,11 +126,6 @@ export function useRevealingAnswersPresenter({
 
               // 判定結果も更新（重要：リアルタイム同期）
               setHostJudgment(gameRound.judgment || null);
-
-              // ファシリテーション提案も更新
-              if (gameRound.facilitationSuggestions) {
-                setSuggestions(gameRound.facilitationSuggestions as FacilitationSuggestion[]);
-              }
             }
           });
         }
@@ -160,19 +167,6 @@ export function useRevealingAnswersPresenter({
             }
           }
         }
-
-        // 既存のファシリテーション提案をGameRoundから読み込み
-        if (room.currentGameRoundId) {
-          const { getDoc, doc } = await import("firebase/firestore");
-          const { db } = await import("@/lib/firebase");
-          const gameRoundDoc = await getDoc(doc(db, "gameRounds", room.currentGameRoundId));
-          if (gameRoundDoc.exists()) {
-            const gameRoundData = gameRoundDoc.data();
-            if (gameRoundData.facilitationSuggestions) {
-              setSuggestions(gameRoundData.facilitationSuggestions as FacilitationSuggestion[]);
-            }
-          }
-        }
       } catch (error) {
         console.error("初期データの読み込みに失敗しました:", error);
       }
@@ -203,15 +197,16 @@ export function useRevealingAnswersPresenter({
     try {
       const { startNextRound: startNextRoundService } = await import("@/lib/roomService");
       await startNextRoundService(room.id);
-      // 状態をリセット（リアルタイム更新で新しいお題が設定される）
+      // 状態をリセット（リアルタイム更新で新しいお題が設定される）。前ラウンドの会話のヒントは持ち越さない
       setHostJudgment(null);
       setAllAnswers([]);
+      clearSuggestions();
     } catch (error) {
       console.error("次のラウンドの開始に失敗しました:", error);
     } finally {
       setIsStartingNextRound(false);
     }
-  }, [room, isHost]);
+  }, [room, isHost, clearSuggestions]);
 
   const endGame = useCallback(async () => {
     if (!room || !isHost) return;
@@ -220,35 +215,20 @@ export function useRevealingAnswersPresenter({
     try {
       const { endGame: endGameService } = await import("@/lib/roomService");
       await endGameService(room.id);
+      clearSuggestions();
     } catch (error) {
       console.error("ゲーム終了に失敗しました:", error);
     } finally {
       setIsEndingGame(false);
     }
-  }, [room, isHost]);
+  }, [room, isHost, clearSuggestions]);
 
-  // 判定結果に基づく色設定を返す関数
-  const judgmentStyle = useMemo((): JudgmentStyle => {
-    if (hostJudgment === "match") {
-      return {
-        bgColor: "bg-emerald-100 border-emerald-300",
-        textColor: "text-emerald-900",
-      };
-    } else if (hostJudgment === "no-match") {
-      return {
-        bgColor: "bg-rose-100 border-rose-300",
-        textColor: "text-rose-900",
-      };
-    }
-    return {
-      bgColor: "bg-gray-50 border-gray-200",
-      textColor: "text-gray-900",
-    };
-  }, [hostJudgment]);
+  // 判定結果に基づく色設定
+  const judgmentStyle = useMemo((): JudgmentStyle => getJudgmentStyle(hostJudgment), [hostJudgment]);
 
   // 判定結果に応じた効果音・エフェクト再生
-  const playJudgmentEffects = useCallback((judgment: "match" | "no-match" | null) => {
-    if (judgment === "match") {
+  const playJudgmentEffects = useCallback((judgment: JudgmentResult | null) => {
+    if (isSuccessJudgment(judgment)) {
       import("@/lib/gameEffects").then(async ({ playMatchSound, createConfettiEffect }) => {
         await playMatchSound();
         createConfettiEffect();
@@ -257,7 +237,7 @@ export function useRevealingAnswersPresenter({
           setHasAnimated(true);
         }, 2000);
       });
-    } else if (judgment === "no-match") {
+    } else if (isFailureJudgment(judgment)) {
       import("@/lib/gameEffects").then(async ({ playNoMatchSound }) => {
         await playNoMatchSound();
         // アニメーションを2秒後に停止
@@ -280,37 +260,20 @@ export function useRevealingAnswersPresenter({
     playJudgmentEffects(hostJudgment);
   }, [hostJudgment, playJudgmentEffects]);
 
-  // ファシリテーション提案生成
-  const handleGenerateFacilitation = useCallback(async () => {
-    if (!room.currentGameRoundId || allAnswers.length === 0 || !currentTopicContent) {
+  // ファシリテーション提案（会話のヒント）の生成
+  const generateFacilitation = useCallback(async () => {
+    // 使えないモードでは Cloud Functions（Vertex AI）を呼ばない
+    if (!isFacilitationAvailable || allAnswers.length === 0 || !currentTopicContent) {
       return;
     }
 
-    setIsFacilitationLoading(true);
-    setFacilitationError(null);
-
-    try {
-      const { generateFacilitationSuggestions } = await import("@/lib/facilitationService");
-      const { saveFacilitationSuggestionsToGameRound } = await import("@/lib/gameRoundService");
-
-      const result = await generateFacilitationSuggestions({
-        answers: allAnswers,
-        topicContent: currentTopicContent.content,
-        roomCode: room.code,
-        roundNumber: currentTopicContent.round,
-      });
-
-      setSuggestions(result.suggestions);
-
-      // GameRoundに保存
-      await saveFacilitationSuggestionsToGameRound(room.currentGameRoundId!, result.suggestions);
-    } catch (error) {
-      console.error("ファシリテーション提案の生成に失敗しました:", error);
-      setFacilitationError("提案の生成に失敗しました。もう一度お試しください。");
-    } finally {
-      setIsFacilitationLoading(false);
-    }
-  }, [room.code, room.currentGameRoundId, allAnswers, currentTopicContent]);
+    await generateSuggestions({
+      answers: allAnswers,
+      topicContent: currentTopicContent.content,
+      roomCode: room.code,
+      roundNumber: currentTopicContent.round,
+    });
+  }, [room.code, allAnswers, currentTopicContent, generateSuggestions, isFacilitationAvailable]);
 
   // お題フィードバック送信
   const submitTopicFeedback = useCallback(
@@ -373,6 +336,7 @@ export function useRevealingAnswersPresenter({
     currentGameRoundId,
     allAnswers,
     hostJudgment,
+    gameMode,
     isHost,
     isStartingNextRound,
     isEndingGame,
@@ -384,7 +348,9 @@ export function useRevealingAnswersPresenter({
     suggestions,
     isFacilitationLoading,
     facilitationError,
-    handleGenerateFacilitation,
+    generateFacilitation,
+    isFacilitationAvailable,
+    facilitationFallbackText,
     feedbackSent,
     isSubmittingFeedback,
     submitTopicFeedback,

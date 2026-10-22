@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { WaitingRoomView } from './WaitingRoom.component';
 import { Room } from '@/types';
+import { GAME_MODE_OPTIONS, getGameModeDefinition } from '@/lib/gameMode';
 
 jest.mock('./WaitingRoom.presenter', () => ({
   useWaitingRoomPresenter: jest.fn(),
@@ -30,6 +31,10 @@ describe('WaitingRoomView', () => {
     copyInviteUrl: jest.fn(),
     inviteUrl: 'http://localhost:3000/join-room?code=ABC123DEF456GHI789JK',
     isCurrentUser: jest.fn((id: string) => id === 'user1'),
+    gameMode: getGameModeDefinition('match'),
+    modeOptions: GAME_MODE_OPTIONS,
+    isChangingMode: false,
+    changeMode: jest.fn(),
   };
 
   const createMockRoom = (participants: Array<{ id: string; name: string; isHost: boolean }> = []): Room => ({
@@ -99,6 +104,79 @@ describe('WaitingRoomView', () => {
       render(<WaitingRoomView room={room} currentUserId="user1" />);
 
       expect(screen.getByText('2/20人')).toBeInTheDocument();
+    });
+  });
+
+  describe('ゲームモード表示', () => {
+    it('現在のモードがバッジで表示される', () => {
+      const room = createMockRoom([{ id: 'user1', name: 'ホスト', isHost: true }]);
+
+      render(<WaitingRoomView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText('一致モード')).toBeInTheDocument();
+    });
+
+    it('不一致モードのルームでは不一致モードのバッジが表示される', () => {
+      mockUseWaitingRoomPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        gameMode: getGameModeDefinition('mismatch'),
+      });
+      const room = createMockRoom([{ id: 'user1', name: 'ホスト', isHost: true }]);
+
+      render(<WaitingRoomView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText('不一致モード')).toBeInTheDocument();
+      expect(screen.queryByText('一致モード')).not.toBeInTheDocument();
+    });
+
+    it('ホストにはモード切り替えボタンが表示され、選ぶとPresenterのchangeModeが呼ばれる', () => {
+      const changeMode = jest.fn();
+      mockUseWaitingRoomPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: true,
+        changeMode,
+      });
+      const room = createMockRoom([{ id: 'user1', name: 'ホスト', isHost: true }]);
+
+      render(<WaitingRoomView room={room} currentUserId="user1" />);
+
+      const mismatchButton = screen.getByRole('button', { name: /みんなとズラす/ });
+      expect(screen.getByRole('button', { name: /みんなで一致を目指す/ })).toHaveAttribute('aria-pressed', 'true');
+      expect(mismatchButton).toHaveAttribute('aria-pressed', 'false');
+
+      fireEvent.click(mismatchButton);
+
+      expect(changeMode).toHaveBeenCalledWith('mismatch');
+    });
+
+    it('ゲストにはモード切り替えボタンは表示されず、現在のモードの説明だけが表示される', () => {
+      mockUseWaitingRoomPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: false,
+      });
+      const room = createMockRoom([
+        { id: 'user1', name: 'ホスト', isHost: true },
+        { id: 'user2', name: 'ゲスト', isHost: false },
+      ]);
+
+      render(<WaitingRoomView room={room} currentUserId="user2" />);
+
+      expect(screen.queryByRole('button', { name: /みんなとズラす/ })).not.toBeInTheDocument();
+      expect(screen.getByText('みんなで一致を目指す')).toBeInTheDocument();
+    });
+
+    it('モード変更中は切り替えボタンが無効化される', () => {
+      mockUseWaitingRoomPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: true,
+        isChangingMode: true,
+      });
+      const room = createMockRoom([{ id: 'user1', name: 'ホスト', isHost: true }]);
+
+      render(<WaitingRoomView room={room} currentUserId="user1" />);
+
+      expect(screen.getByRole('button', { name: /みんなとズラす/ })).toBeDisabled();
+      expect(screen.getByText('変更中...')).toBeInTheDocument();
     });
   });
 

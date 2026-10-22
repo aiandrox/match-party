@@ -52,6 +52,12 @@ export async function generateFacilitationSuggestions(
       throw new Error('この機能は主催者のみ利用できます。');
     } else if (error.code === 'functions/not-found') {
       throw new Error('指定されたルームが見つかりません。');
+    } else if (error.code === 'functions/failed-precondition') {
+      // サーバー側がルームの状態を確認して拒否したケース。理由は details.reason で区別する
+      if (error.details?.reason === 'unsupported-game-mode') {
+        throw new Error('このゲームモードでは会話のヒントは利用できません。');
+      }
+      throw new Error('現在のルームの状態では会話のヒントを利用できません。');
     }
     
     // ネットワークエラー等の場合はローカルフォールバック

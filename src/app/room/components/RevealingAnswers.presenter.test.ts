@@ -23,6 +23,11 @@ jest.mock('@/lib/firebase', () => ({
   db: {},
 }));
 
+jest.mock('@/lib/topicFeedbackService', () => ({
+  checkExistingFeedback: jest.fn().mockResolvedValue(false),
+  submitTopicFeedback: jest.fn(),
+}));
+
 describe('useRevealingAnswersPresenter', () => {
   // テスト用モックデータ作成
   const createMockRoom = (participants: Array<{ id: string; isHost: boolean }> = []): Room => ({
@@ -90,6 +95,57 @@ describe('useRevealingAnswersPresenter', () => {
       expect(typeof result.current.submitJudgment).toBe('function');
       expect(typeof result.current.startNextRound).toBe('function');
       expect(typeof result.current.endGame).toBe('function');
+    });
+  });
+
+  describe('ゲームモード', () => {
+    it('モード未設定のルームは一致モードの定義が返る', () => {
+      const room = createMockRoom([{ id: 'user1', isHost: true }]);
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.gameMode.mode).toBe('match');
+      expect(result.current.gameMode.successJudgment).toBe('match');
+    });
+
+    it('不一致モードのルームは不一致モードの定義が返る', () => {
+      const room = { ...createMockRoom([{ id: 'user1', isHost: true }]), mode: 'mismatch' as const };
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.gameMode.mode).toBe('mismatch');
+      expect(result.current.gameMode.successJudgment).toBe('no-duplicate');
+      expect(result.current.gameMode.failureJudgment).toBe('has-duplicate');
+    });
+
+    it('不一致モードの判定もそのまま保存される', async () => {
+      const { submitJudgment, getTopicByRoomId, getRoundAnswers } = await import('@/lib/roomService');
+      (submitJudgment as jest.Mock).mockResolvedValue(undefined);
+      (getTopicByRoomId as jest.Mock).mockResolvedValue({ id: 'round123', content: 'テストお題', round: 1 });
+      (getRoundAnswers as jest.Mock).mockResolvedValue([]);
+      const { getDoc } = await import('firebase/firestore');
+      (getDoc as jest.Mock).mockResolvedValue({ exists: () => false });
+
+      const room = { ...createMockRoom([{ id: 'user1', isHost: true }]), mode: 'mismatch' as const };
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await result.current.submitJudgment('no-duplicate');
+      });
+
+      expect(submitJudgment).toHaveBeenCalledWith('room123', 'no-duplicate');
+      expect(result.current.hostJudgment).toBe('no-duplicate');
     });
   });
 
@@ -223,6 +279,155 @@ describe('useRevealingAnswersPresenter', () => {
       });
 
       expect(result.current.isEndingGame).toBe(false); // 完了後
+    });
+  });
+
+  describe('会話のヒント（ファシリテーション提案）', () => {
+    const setupRevealedRound = async () => {
+      const { getTopicByRoomId, getRoundAnswers } = await import('@/lib/roomService');
+      (getTopicByRoomId as jest.Mock).mockResolvedValue({
+        id: 'round123',
+        content: 'テストお題',
+        round: 1,
+      });
+      (getRoundAnswers as jest.Mock).mockResolvedValue([
+        { content: '回答1', userName: 'User 1', hasAnswered: true, submittedAt: new Date() },
+        { content: '回答2', userName: 'User 2', hasAnswered: true, submittedAt: new Date() },
+      ]);
+      const { getDoc } = await import('firebase/firestore');
+      (getDoc as jest.Mock).mockResolvedValue({ exists: () => false });
+    };
+
+    it('初期状態では提案は空で、読み込み中でもエラーでもない', () => {
+      const room = createMockRoom([{ id: 'user1', isHost: true }]);
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.suggestions).toEqual([]);
+      expect(result.current.isFacilitationLoading).toBe(false);
+      expect(result.current.facilitationError).toBeNull();
+    });
+
+    it('お題と回答が揃っていれば会話のヒントを生成できる', async () => {
+      await setupRevealedRound();
+      const { generateFacilitationSuggestions } = await import('@/lib/facilitationService');
+
+      const room = createMockRoom([{ id: 'user1', isHost: true }, { id: 'user2', isHost: false }]);
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await result.current.generateFacilitation();
+      });
+
+      expect(generateFacilitationSuggestions).toHaveBeenCalledWith({
+        answers: [
+          expect.objectContaining({ content: '回答1', userName: 'User 1' }),
+          expect.objectContaining({ content: '回答2', userName: 'User 2' }),
+        ],
+        topicContent: 'テストお題',
+        roomCode: 'ABC123DEF456GHI789JK',
+        roundNumber: 1,
+      });
+      expect(result.current.suggestions).toHaveLength(1);
+      expect(result.current.facilitationError).toBeNull();
+    });
+
+    it('一致モードでは会話のヒントが利用できる', () => {
+      const room = createMockRoom([{ id: 'user1', isHost: true }]);
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.isFacilitationAvailable).toBe(true);
+      expect(result.current.facilitationFallbackText).toBeNull();
+    });
+
+    it('不一致モードでは会話のヒントが利用できず、固定の案内文が返る', () => {
+      const room = { ...createMockRoom([{ id: 'user1', isHost: true }]), mode: 'mismatch' as const };
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.isFacilitationAvailable).toBe(false);
+      expect(result.current.facilitationFallbackText).toBe('気になる回答の人に理由を聞いてみましょう');
+    });
+
+    it('不一致モードではお題と回答が揃っていても会話のヒントを生成しない', async () => {
+      await setupRevealedRound();
+      const { generateFacilitationSuggestions } = await import('@/lib/facilitationService');
+
+      const room = {
+        ...createMockRoom([{ id: 'user1', isHost: true }, { id: 'user2', isHost: false }]),
+        mode: 'mismatch' as const,
+      };
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await act(async () => {
+        await result.current.generateFacilitation();
+      });
+
+      expect(generateFacilitationSuggestions).not.toHaveBeenCalled();
+      expect(result.current.suggestions).toEqual([]);
+    });
+
+    it('お題が読み込まれていない間は会話のヒントを生成しない', async () => {
+      const { generateFacilitationSuggestions } = await import('@/lib/facilitationService');
+
+      const room = createMockRoom([{ id: 'user1', isHost: true }]);
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await result.current.generateFacilitation();
+      });
+
+      expect(generateFacilitationSuggestions).not.toHaveBeenCalled();
+    });
+
+    it('次のラウンドを開始すると前ラウンドの会話のヒントはクリアされる', async () => {
+      await setupRevealedRound();
+      const { startNextRound } = await import('@/lib/roomService');
+      (startNextRound as jest.Mock).mockResolvedValue(undefined);
+
+      const room = createMockRoom([{ id: 'user1', isHost: true }, { id: 'user2', isHost: false }]);
+
+      const { result } = renderHook(() =>
+        useRevealingAnswersPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      await act(async () => {
+        await result.current.generateFacilitation();
+      });
+      expect(result.current.suggestions).toHaveLength(1);
+
+      await act(async () => {
+        await result.current.startNextRound();
+      });
+
+      expect(result.current.suggestions).toEqual([]);
     });
   });
 

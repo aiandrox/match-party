@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
-import { Room } from "@/types";
+import { GameMode, Room } from "@/types";
+import { GAME_MODE_OPTIONS, GameModeDefinition, getGameModeDefinition } from "@/lib/gameMode";
 
 interface UseWaitingRoomPresenterProps {
   room: Room;
@@ -12,6 +13,10 @@ interface UseWaitingRoomPresenterReturn {
   isHost: boolean;
   canStartGame: boolean;
   startGame: () => Promise<void>;
+  gameMode: GameModeDefinition;
+  modeOptions: readonly GameModeDefinition[];
+  isChangingMode: boolean;
+  changeMode: (_mode: GameMode) => Promise<void>;
   copyInviteUrl: () => Promise<void>;
   inviteUrl?: string;
   isCurrentUser: (_participantId: string) => boolean;
@@ -31,6 +36,10 @@ export function useWaitingRoomPresenter({
 }: UseWaitingRoomPresenterProps): UseWaitingRoomPresenterReturn {
   const [isStartingGame, setIsStartingGame] = useState(false);
   const [inviteUrlCopySuccess, setInviteUrlCopySuccess] = useState(false);
+  const [isChangingMode, setIsChangingMode] = useState(false);
+
+  // 現在のゲームモード（未設定は一致モード）
+  const gameMode = getGameModeDefinition(room.mode);
 
   // メモ化された参加者リスト（パフォーマンス最適化）
   const participantList = useMemo(() => 
@@ -70,6 +79,24 @@ export function useWaitingRoomPresenter({
       setIsStartingGame(false);
     }
   }, [room.id, isHost, canStartGame, isStartingGame]);
+
+  // ゲームモード変更（主催者・待機中のみ）
+  const changeMode = useCallback(
+    async (mode: GameMode) => {
+      if (!isHost || isChangingMode || isStartingGame || mode === gameMode.mode) return;
+
+      setIsChangingMode(true);
+      try {
+        const { changeRoomMode } = await import("@/lib/roomService");
+        await changeRoomMode(room.id, mode);
+      } catch (error) {
+        console.error("ゲームモードの変更に失敗しました:", error);
+      } finally {
+        setIsChangingMode(false);
+      }
+    },
+    [room.id, isHost, isChangingMode, isStartingGame, gameMode.mode]
+  );
 
   // 招待URL生成
   const inviteUrl =
@@ -113,6 +140,10 @@ export function useWaitingRoomPresenter({
     isHost,
     canStartGame,
     startGame,
+    gameMode,
+    modeOptions: GAME_MODE_OPTIONS,
+    isChangingMode,
+    changeMode,
     copyInviteUrl,
     inviteUrl,
     isCurrentUser,
