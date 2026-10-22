@@ -10,7 +10,8 @@ import {
   arrayUnion,
   serverTimestamp,
   Timestamp,
-  getDoc
+  getDoc,
+  runTransaction
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Room, User, CreateRoomResponse, JoinRoomResponse, GameRound } from '@/types';
@@ -401,52 +402,51 @@ export async function getTopicByRoomId(roomId: string): Promise<{ id: string; co
 }
 
 // 回答を送信
+// participants配列の更新が同時回答で上書きされないよう、トランザクションで読み書きする
 export async function submitAnswer(roomId: string, userId: string, answer: string): Promise<void> {
   try {
-
-    // ルーム情報を取得して参加者の回答状態を更新
     const roomRef = doc(db, 'rooms', roomId);
-    const roomDoc = await getDoc(roomRef);
-    
-    if (!roomDoc.exists()) {
-      throw new Error('ルームが見つかりません');
-    }
-    
-    const roomData = roomDoc.data() as Room;
-    
-    // 参加者の回答状態を更新
-    const updatedParticipants = roomData.participants.map(p => 
-      p.id === userId ? { ...p, hasAnswered: true } : p
-    );
-    
-    await updateDoc(roomRef, {
-      participants: updatedParticipants
-    });
-    
-    // ゲーム履歴に回答を保存
-    if (roomData.currentGameRoundId) {
-      const { createGameAnswer } = await import('@/lib/gameAnswerService');
-      const user = roomData.participants.find(p => p.id === userId);
-      if (user) {
-        await createGameAnswer(
-          roomData.currentGameRoundId,
-          userId,
-          user.name,
-          answer.trim(),
-          new Date()
-        );
+
+    await runTransaction(db, async (transaction) => {
+      const roomDoc = await transaction.get(roomRef);
+
+      if (!roomDoc.exists()) {
+        throw new Error('ルームが見つかりません');
       }
-    }
-    
-    // 全員回答したかチェック
-    const allAnswered = updatedParticipants.every(p => p.hasAnswered);
-    if (allAnswered) {
-      // 自動的にrevealingステータスに移行
-      await updateDoc(roomRef, {
-        status: RoomStatus.REVEALING
+
+      const roomData = roomDoc.data() as Room;
+      const user = roomData.participants.find(p => p.id === userId);
+
+      // ゲーム履歴の回答はラウンド×ユーザーで一意なIDにし、再送信時は保存しない
+      const answerRef = roomData.currentGameRoundId && user
+        ? doc(db, 'gameAnswers', `${roomData.currentGameRoundId}_${userId}`)
+        : null;
+      const answerDoc = answerRef ? await transaction.get(answerRef) : null;
+
+      // 参加者の回答状態を更新
+      const updatedParticipants = roomData.participants.map(p =>
+        p.id === userId ? { ...p, hasAnswered: true } : p
+      );
+
+      // 全員回答したら自動的にrevealingステータスに移行
+      const allAnswered = updatedParticipants.every(p => p.hasAnswered);
+      transaction.update(roomRef, {
+        participants: updatedParticipants,
+        ...(allAnswered && roomData.status === RoomStatus.PLAYING && { status: RoomStatus.REVEALING })
       });
-    }
-    
+
+      if (answerRef && user && !answerDoc?.exists()) {
+        transaction.set(answerRef, {
+          gameRoundId: roomData.currentGameRoundId,
+          userId,
+          userName: user.name,
+          content: answer.trim(),
+          submittedAt: Timestamp.fromDate(new Date()),
+          createdAt: serverTimestamp(),
+        });
+      }
+    }, { maxAttempts: 10 });
+
   } catch (error) {
     if (error instanceof Error) {
       throw error;
@@ -454,7 +454,6 @@ export async function submitAnswer(roomId: string, userId: string, answer: strin
     throw new Error('回答の送信に失敗しました');
   }
 }
-
 
 // 特定のゲームラウンドの全回答を取得（未回答者も含む）
 export async function getRoundAnswers(gameRoundId: string, participants: Array<{ name: string; [key: string]: any }>): Promise<Array<{ content: string; userName: string; submittedAt: Date | null; hasAnswered: boolean }>> {

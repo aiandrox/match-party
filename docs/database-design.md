@@ -74,14 +74,16 @@ Match PartyアプリケーションはFirebase Firestoreを使用し、リアル
 ### 6. `gameAnswers` コレクション
 **目的**: 特定のゲームラウンドにリンクしたユーザー回答を履歴として管理
 
+**ドキュメントID**: `{gameRoundId}_{userId}`（1ラウンド1ユーザー1回答を保証。`submitAnswer()` がroomsの更新と同一トランザクションで作成し、既に存在する場合は作成しない）
+
 | フィールド | 型 | 説明 | 使用箇所 |
 |-----------|-----|-----|----------|
-| `id` | String | Firestoreドキュメント自動生成ID | `gameHistoryService.ts` 全関数, `room/page.tsx` 回答識別 |
+| `id` | String | `{gameRoundId}_{userId}` | `roomService.ts` `submitAnswer()`, `room/page.tsx` 回答識別 |
 | `gameRoundId` | String | ゲームラウンドID（外部キー） | `gameHistoryService.ts` `getGameRoundAnswers()`, `room/page.tsx` ラウンド関連付け |
-| `userName` | String | ユーザー表示名（非正規化） | `gameHistoryService.ts` `createGameAnswer()`, `room/page.tsx` 回答者名表示 |
-| `content` | String | 回答内容 | `gameHistoryService.ts` `createGameAnswer()`, `room/page.tsx` 回答内容表示 |
-| `submittedAt` | Timestamp | 回答送信時刻 | `gameHistoryService.ts` `createGameAnswer()`, `room/page.tsx` 送信時刻表示 |
-| `createdAt` | Timestamp | レコード作成時刻 | `gameHistoryService.ts` `createGameAnswer()`, `room/page.tsx` 作成時刻表示 |
+| `userName` | String | ユーザー表示名（非正規化） | `roomService.ts` `submitAnswer()`, `room/page.tsx` 回答者名表示 |
+| `content` | String | 回答内容 | `roomService.ts` `submitAnswer()`, `room/page.tsx` 回答内容表示 |
+| `submittedAt` | Timestamp | 回答送信時刻 | `roomService.ts` `submitAnswer()`, `room/page.tsx` 送信時刻表示 |
+| `createdAt` | Timestamp | レコード作成時刻 | `roomService.ts` `submitAnswer()`, `room/page.tsx` 作成時刻表示 |
 
 
 ## 静的データ
@@ -111,7 +113,7 @@ users (1) ←→ (n) answers (userId外部キー、現在のゲーム進行)
 - **topics**: `startGame()`, `startNextRound()` - ラウンド用お題
 - **answers**: `submitAnswer()` - ユーザー回答（現在のゲーム進行）
 - **gameRounds**: `createGameRound()` - ラウンドレコード
-- **gameAnswers**: `createGameAnswer()` - 回答データ保存
+- **gameAnswers**: `submitAnswer()` - 回答データ保存（roomsの回答状態更新とトランザクションで一括実行）
 
 ### 読み取り（Read）
 - **rooms**: `getRoomByCode()`, `subscribeToRoom()` - リアルタイムルーム監視
