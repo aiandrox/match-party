@@ -1,9 +1,10 @@
 import React, { memo } from 'react';
+import { GameMode } from '@/types';
 import { useCreateRoomPresenter } from './CreateRoom.presenter';
 
 interface CreateRoomViewProps {
   initialHostName?: string;
-  onSubmit: (_hostName: string) => Promise<void>;
+  onSubmit: (_hostName: string, _mode: GameMode) => Promise<void>;
   onBack: () => void;
   globalError: string | null;
   isGlobalLoading: boolean;
@@ -18,11 +19,14 @@ export const CreateRoomView = memo(({
 }: CreateRoomViewProps) => {
   const {
     hostName,
+    mode,
+    modeOptions,
     isLoading,
     error,
     handleSubmit,
     handleBack,
     handleHostNameChange,
+    handleModeChange,
   } = useCreateRoomPresenter({
     initialHostName,
     onSubmit,
@@ -61,6 +65,39 @@ export const CreateRoomView = memo(({
                 2-20文字（日本語、英数字のみ）
               </p>
             </div>
+
+            <fieldset>
+              <legend className="block text-sm font-medium text-gray-700 mb-2">ゲームモード</legend>
+              <div className="space-y-2">
+                {modeOptions.map((option) => {
+                  const isSelected = option.mode === mode;
+                  return (
+                    <label
+                      key={option.mode}
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'border-slate-500 bg-slate-50'
+                          : 'border-gray-300 hover:border-gray-400'
+                      } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="gameMode"
+                        value={option.mode}
+                        checked={isSelected}
+                        onChange={() => handleModeChange(option.mode)}
+                        disabled={isLoading}
+                        className="mt-1 accent-slate-600"
+                      />
+                      <span className="flex-1">
+                        <span className="block font-medium text-gray-900">{option.label}</span>
+                        <span className="block text-sm text-gray-500">{option.description}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
 
             {error && (
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg">

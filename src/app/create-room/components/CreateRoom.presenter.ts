@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { GameMode } from '@/types';
 import { validateUserName } from '@/lib/utils';
+import { DEFAULT_GAME_MODE, GAME_MODE_OPTIONS, GameModeDefinition } from '@/lib/gameMode';
 
 interface CreateRoomPresenterProps {
   initialHostName?: string;
-  onSubmit: (_hostName: string) => Promise<void>;
+  onSubmit: (_hostName: string, _mode: GameMode) => Promise<void>;
   onBack: () => void;
   globalError: string | null;
   isGlobalLoading: boolean;
@@ -18,6 +20,7 @@ export function useCreateRoomPresenter({
 }: CreateRoomPresenterProps) {
   const [hostName, setHostName] = useState(initialHostName);
   const [isHostNameDirty, setIsHostNameDirty] = useState(false);
+  const [mode, setMode] = useState<GameMode>(DEFAULT_GAME_MODE);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // 前回入力した名前が非同期で復元された場合に反映（ユーザー未編集時のみ）
@@ -41,8 +44,12 @@ export function useCreateRoomPresenter({
     }
 
     setValidationError(null);
-    await onSubmit(hostName);
-  }, [hostName, onSubmit]);
+    await onSubmit(hostName, mode);
+  }, [hostName, mode, onSubmit]);
+
+  const handleModeChange = useCallback((nextMode: GameMode) => {
+    setMode(nextMode);
+  }, []);
 
   const handleHostNameChange = useCallback((name: string) => {
     setHostName(name);
@@ -58,12 +65,17 @@ export function useCreateRoomPresenter({
     [globalError, validationError]
   );
 
+  const modeOptions: readonly GameModeDefinition[] = GAME_MODE_OPTIONS;
+
   return {
     hostName,
+    mode,
+    modeOptions,
     isLoading: isGlobalLoading,
     error: displayError,
     handleSubmit,
     handleBack: onBack,
     handleHostNameChange,
+    handleModeChange,
   };
 }

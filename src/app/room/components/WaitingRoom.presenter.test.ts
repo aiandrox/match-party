@@ -5,6 +5,7 @@ import { Room } from '@/types';
 // Mock roomService
 jest.mock('@/lib/roomService', () => ({
   startGame: jest.fn(),
+  changeRoomMode: jest.fn(),
 }));
 
 // ブラウザAPI環境のセットアップ（実際のブラウザ環境に近づける）
@@ -101,6 +102,105 @@ describe('useWaitingRoomPresenter', () => {
       );
 
       expect(result.current.isHost).toBe(false);
+    });
+  });
+
+  describe('ゲームモード', () => {
+    it('モード未設定のルームは一致モードとして表示される', () => {
+      const room = createMockRoom([{ id: 'user1', isHost: true }]);
+
+      const { result } = renderHook(() =>
+        useWaitingRoomPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.gameMode.mode).toBe('match');
+      expect(result.current.gameMode.badgeLabel).toBe('一致モード');
+      expect(result.current.modeOptions.map((option) => option.mode)).toEqual(['match', 'mismatch']);
+    });
+
+    it('不一致モードのルームは不一致モードとして表示される', () => {
+      const room = { ...createMockRoom([{ id: 'user1', isHost: true }]), mode: 'mismatch' as const };
+
+      const { result } = renderHook(() =>
+        useWaitingRoomPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.gameMode.mode).toBe('mismatch');
+      expect(result.current.gameMode.badgeLabel).toBe('不一致モード');
+    });
+
+    it('ホストはモードを変更できる', async () => {
+      const { changeRoomMode } = await import('@/lib/roomService');
+      (changeRoomMode as jest.Mock).mockResolvedValue(undefined);
+
+      const room = createMockRoom([{ id: 'user1', isHost: true }]);
+
+      const { result } = renderHook(() =>
+        useWaitingRoomPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await result.current.changeMode('mismatch');
+      });
+
+      expect(changeRoomMode).toHaveBeenCalledWith('room123', 'mismatch');
+      expect(result.current.isChangingMode).toBe(false);
+    });
+
+    it('ゲストはモードを変更できない', async () => {
+      const { changeRoomMode } = await import('@/lib/roomService');
+
+      const room = createMockRoom([
+        { id: 'user1', isHost: true },
+        { id: 'user2', isHost: false },
+      ]);
+
+      const { result } = renderHook(() =>
+        useWaitingRoomPresenter({ room, currentUserId: 'user2' })
+      );
+
+      await act(async () => {
+        await result.current.changeMode('mismatch');
+      });
+
+      expect(changeRoomMode).not.toHaveBeenCalled();
+    });
+
+    it('現在と同じモードを選んでも変更は行われない', async () => {
+      const { changeRoomMode } = await import('@/lib/roomService');
+
+      const room = createMockRoom([{ id: 'user1', isHost: true }]);
+
+      const { result } = renderHook(() =>
+        useWaitingRoomPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await result.current.changeMode('match');
+      });
+
+      expect(changeRoomMode).not.toHaveBeenCalled();
+    });
+
+    it('モード変更エラー時もアプリケーションが正常に動作する', async () => {
+      const { changeRoomMode } = await import('@/lib/roomService');
+      (changeRoomMode as jest.Mock).mockRejectedValue(new Error('Network error'));
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      const room = createMockRoom([{ id: 'user1', isHost: true }]);
+
+      const { result } = renderHook(() =>
+        useWaitingRoomPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await result.current.changeMode('mismatch');
+      });
+
+      expect(consoleSpy).toHaveBeenCalledWith('ゲームモードの変更に失敗しました:', expect.any(Error));
+      expect(result.current.isChangingMode).toBe(false);
+
+      consoleSpy.mockRestore();
     });
   });
 

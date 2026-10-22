@@ -80,6 +80,31 @@ describe('usePlayingGamePresenter', () => {
     });
   });
 
+  describe('回答のヒント', () => {
+    it('モード未設定のルームでは一致モードのヒントが返る', () => {
+      const room = createMockRoom([{ id: 'user1', isHost: true, hasAnswered: false }]);
+
+      const { result } = renderHook(() =>
+        usePlayingGamePresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.answerHint).toBe('他の参加者と同じ回答を目指しましょう！');
+    });
+
+    it('不一致モードのルームでは不一致モードのヒントが返る', () => {
+      const room = {
+        ...createMockRoom([{ id: 'user1', isHost: true, hasAnswered: false }]),
+        mode: 'mismatch' as const,
+      };
+
+      const { result } = renderHook(() =>
+        usePlayingGamePresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.answerHint).toBe('他の人と被らない、あなたらしい回答を入力しましょう！');
+    });
+  });
+
   describe('回答送信機能', () => {
     it('有効な回答を送信できる', async () => {
       const { submitAnswer } = await import('@/lib/roomService');

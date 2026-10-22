@@ -35,6 +35,8 @@ describe('PlayingGameView', () => {
     canForceReveal: false,
     showForceRevealHelp: true,
     canChangeTopic: false,
+    isLastUnansweredUser: false,
+    answerHint: '他の参加者と同じ回答を目指しましょう！',
   };
 
   const createMockRoom = (participants: Array<{ id: string; name: string; isHost: boolean; hasAnswered: boolean }> = []): Room => ({
@@ -99,6 +101,28 @@ describe('PlayingGameView', () => {
       render(<PlayingGameView room={room} currentUserId="user1" />);
 
       expect(screen.getByText('お題を読み込み中...')).toBeInTheDocument();
+    });
+  });
+
+  describe('回答のヒント', () => {
+    it('Presenterから受け取ったモードに応じたヒントが表示される', () => {
+      const room = createMockRoom([{ id: 'user1', name: 'プレイヤー1', isHost: false, hasAnswered: false }]);
+      render(<PlayingGameView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText('他の参加者と同じ回答を目指しましょう！')).toBeInTheDocument();
+    });
+
+    it('不一致モードのヒントもそのまま表示される', () => {
+      mockUsePlayingGamePresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        answerHint: '他の人と被らない、あなたらしい回答を入力しましょう！',
+      });
+
+      const room = createMockRoom([{ id: 'user1', name: 'プレイヤー1', isHost: false, hasAnswered: false }]);
+      render(<PlayingGameView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText('他の人と被らない、あなたらしい回答を入力しましょう！')).toBeInTheDocument();
+      expect(screen.queryByText('他の参加者と同じ回答を目指しましょう！')).not.toBeInTheDocument();
     });
   });
 

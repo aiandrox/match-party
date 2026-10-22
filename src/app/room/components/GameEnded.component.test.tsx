@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { GameEndedView } from "./GameEnded.component";
 import { Room } from "@/types";
+import { getGameModeDefinition } from "@/lib/gameMode";
 
 jest.mock("./GameEnded.presenter", () => ({
   useGameEndedPresenter: jest.fn(),
@@ -17,13 +18,14 @@ describe("GameEndedView", () => {
     loadRoundAnswers: jest.fn(),
     gameStatistics: {
       totalRounds: 0,
-      matchedRounds: 0,
-      matchRate: 0,
+      successRounds: 0,
+      successRate: 0,
     },
     answerStyle: {
       bgColor: "bg-gray-50 border-gray-200",
       textColor: "text-gray-900",
     },
+    gameMode: getGameModeDefinition("match"),
   };
 
   const createMockRoom = (): Room => ({
@@ -80,8 +82,8 @@ describe("GameEndedView", () => {
         isLoadingHistory: false,
         gameStatistics: {
           totalRounds: 3,
-          matchedRounds: 2,
-          matchRate: 67,
+          successRounds: 2,
+          successRate: 67,
         },
       });
 
@@ -116,6 +118,50 @@ describe("GameEndedView", () => {
       render(<GameEndedView room={room} currentUserId="user1" />);
 
       expect(screen.queryByText("総ラウンド数")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("不一致モードの表示", () => {
+    it("集計ラベルが「被りなし回数」「被りなし率」に切り替わる", () => {
+      mockUseGameEndedPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        gameMode: getGameModeDefinition("mismatch"),
+        gameRounds: [
+          { id: "round1", roundNumber: 1, topicContent: "お題1", judgment: "no-duplicate" },
+          { id: "round2", roundNumber: 2, topicContent: "お題2", judgment: "has-duplicate" },
+        ],
+        gameStatistics: {
+          totalRounds: 2,
+          successRounds: 1,
+          successRate: 50,
+        },
+      });
+
+      const room = createMockRoom();
+      render(<GameEndedView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText("被りなし回数")).toBeInTheDocument();
+      expect(screen.getByText("被りなし率")).toBeInTheDocument();
+      expect(screen.getByText("50%")).toBeInTheDocument();
+      expect(screen.queryByText("一致回数")).not.toBeInTheDocument();
+      expect(screen.queryByText("一致率")).not.toBeInTheDocument();
+    });
+
+    it("履歴バッジが「被りなし」「被りあり」で表示される", () => {
+      mockUseGameEndedPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        gameMode: getGameModeDefinition("mismatch"),
+        gameRounds: [
+          { id: "round1", roundNumber: 1, topicContent: "お題1", judgment: "no-duplicate" },
+          { id: "round2", roundNumber: 2, topicContent: "お題2", judgment: "has-duplicate" },
+        ],
+      });
+
+      const room = createMockRoom();
+      render(<GameEndedView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText("被りなし")).toBeInTheDocument();
+      expect(screen.getByText("被りあり")).toBeInTheDocument();
     });
   });
 
@@ -211,8 +257,8 @@ describe("GameEndedView", () => {
         isLoadingHistory: false,
         gameStatistics: {
           totalRounds: 2,
-          matchedRounds: 2,
-          matchRate: 100,
+          successRounds: 2,
+          successRate: 100,
         },
       });
 
@@ -232,8 +278,8 @@ describe("GameEndedView", () => {
         isLoadingHistory: false,
         gameStatistics: {
           totalRounds: 2,
-          matchedRounds: 0,
-          matchRate: 0,
+          successRounds: 0,
+          successRate: 0,
         },
       });
 

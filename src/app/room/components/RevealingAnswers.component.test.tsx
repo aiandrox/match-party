@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RevealingAnswersView } from './RevealingAnswers.component';
 import { Room } from '@/types';
+import { getGameModeDefinition } from '@/lib/gameMode';
 
 jest.mock('./RevealingAnswers.presenter', () => ({
   useRevealingAnswersPresenter: jest.fn(),
@@ -21,6 +22,7 @@ describe('RevealingAnswersView', () => {
     currentTopicContent: null,
     allAnswers: [],
     hostJudgment: null,
+    gameMode: getGameModeDefinition('match'),
     isHost: false,
     isStartingNextRound: false,
     isEndingGame: false,
@@ -32,6 +34,15 @@ describe('RevealingAnswersView', () => {
       textColor: 'text-gray-900'
     },
     hasAnimated: false,
+    suggestions: [],
+    isFacilitationLoading: false,
+    facilitationError: null,
+    generateFacilitation: jest.fn(),
+    isFacilitationAvailable: true,
+    facilitationFallbackText: null,
+    feedbackSent: false,
+    isSubmittingFeedback: false,
+    submitTopicFeedback: jest.fn(),
   };
 
   const createMockRoom = (): Room => ({
@@ -221,6 +232,66 @@ describe('RevealingAnswersView', () => {
     });
   });
 
+  describe('不一致モードの判定', () => {
+    const mismatchPresenterReturn = {
+      ...defaultPresenterReturn,
+      gameMode: getGameModeDefinition('mismatch'),
+    };
+
+    it('不一致モードの判定ボタンは「被りなし」「被りあり」である', () => {
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...mismatchPresenterReturn,
+        isHost: true,
+        hostJudgment: null,
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText('回答の被りを判定してください')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '被りなし' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '被りあり' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '全員一致' })).not.toBeInTheDocument();
+    });
+
+    it('被りなしボタンでは no-duplicate、被りありボタンでは has-duplicate が送信される', () => {
+      const submitJudgment = jest.fn();
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...mismatchPresenterReturn,
+        isHost: true,
+        hostJudgment: null,
+        submitJudgment,
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      fireEvent.click(screen.getByRole('button', { name: '被りなし' }));
+      expect(submitJudgment).toHaveBeenCalledWith('no-duplicate');
+
+      fireEvent.click(screen.getByRole('button', { name: '被りあり' }));
+      expect(submitJudgment).toHaveBeenCalledWith('has-duplicate');
+    });
+
+    it('被りなし判定時は成功メッセージ、被りあり判定時は失敗メッセージが表示される', () => {
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...mismatchPresenterReturn,
+        hostJudgment: 'no-duplicate',
+      });
+      const room = createMockRoom();
+      const { unmount } = render(<RevealingAnswersView room={room} currentUserId="user1" />);
+      expect(screen.getByText('🎉✨ 被りなし ✨🎉')).toBeInTheDocument();
+      unmount();
+
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...mismatchPresenterReturn,
+        hostJudgment: 'has-duplicate',
+      });
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+      expect(screen.getByText('💥 被りあり 💥')).toBeInTheDocument();
+    });
+  });
+
   describe('次のアクション選択', () => {
     it('ホストで判定後は次ラウンド・ゲーム終了ボタンが表示される', () => {
       mockUseRevealingAnswersPresenter.mockReturnValue({
@@ -298,6 +369,102 @@ describe('RevealingAnswersView', () => {
       render(<RevealingAnswersView room={room} currentUserId="user1" />);
 
       expect(screen.getByRole('button', { name: '終了中...' })).toBeDisabled();
+    });
+  });
+
+  describe('会話のヒント', () => {
+    it('ホストには会話のヒント領域が表示される', () => {
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: true,
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText('会話のヒント')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '生成する' })).toBeInTheDocument();
+    });
+
+    it('生成するボタンクリック時にPresenterのgenerateFacilitationが呼ばれる', () => {
+      const generateFacilitation = jest.fn();
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: true,
+        generateFacilitation,
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      fireEvent.click(screen.getByRole('button', { name: '生成する' }));
+
+      expect(generateFacilitation).toHaveBeenCalled();
+    });
+
+    it('Presenterが保持する提案がそのまま表示される', () => {
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: true,
+        suggestions: [
+          {
+            id: 's1',
+            type: 'group',
+            message: 'みなさんの回答について詳しく聞いてみませんか？',
+            priority: 3,
+            category: 'common',
+          },
+        ],
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText('みなさんの回答について詳しく聞いてみませんか？')).toBeInTheDocument();
+    });
+
+    it('不一致モードでは会話のヒント領域が表示されず、固定の案内文が表示される', () => {
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: true,
+        gameMode: getGameModeDefinition('mismatch'),
+        isFacilitationAvailable: false,
+        facilitationFallbackText: '気になる回答の人に理由を聞いてみましょう',
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      expect(screen.queryByText('会話のヒント')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '生成する' })).not.toBeInTheDocument();
+      expect(screen.getByText(/気になる回答の人に理由を聞いてみましょう/)).toBeInTheDocument();
+    });
+
+    it('不一致モードの固定の案内文はゲストにも表示される', () => {
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: false,
+        gameMode: getGameModeDefinition('mismatch'),
+        isFacilitationAvailable: false,
+        facilitationFallbackText: '気になる回答の人に理由を聞いてみましょう',
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      expect(screen.getByText(/気になる回答の人に理由を聞いてみましょう/)).toBeInTheDocument();
+    });
+
+    it('ゲストには会話のヒント領域が表示されない', () => {
+      mockUseRevealingAnswersPresenter.mockReturnValue({
+        ...defaultPresenterReturn,
+        isHost: false,
+      });
+
+      const room = createMockRoom();
+      render(<RevealingAnswersView room={room} currentUserId="user1" />);
+
+      expect(screen.queryByText('会話のヒント')).not.toBeInTheDocument();
     });
   });
 

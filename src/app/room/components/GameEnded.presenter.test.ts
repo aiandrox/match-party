@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { useGameEndedPresenter } from './GameEnded.presenter';
-import { Room } from '@/types';
+import { GameRound, Room } from '@/types';
 
 jest.mock('@/lib/gameRoundService', () => ({
   getGameRoundsByRoomId: jest.fn(),
@@ -24,6 +24,16 @@ describe('useGameEndedPresenter', () => {
     currentGameRoundId: undefined,
     createdAt: new Date(),
     expiresAt: new Date(),
+  });
+
+  const createMockGameRound = (overrides: Partial<GameRound> = {}): GameRound => ({
+    id: 'round1',
+    roomId: 'room123',
+    roundNumber: 1,
+    topicContent: 'テストお題',
+    status: 'completed',
+    createdAt: new Date(),
+    ...overrides,
   });
 
   beforeEach(() => {
@@ -131,7 +141,7 @@ describe('useGameEndedPresenter', () => {
       ]);
 
       const room = createMockRoom('ended', [{ id: 'user1' }, { id: 'user2' }]);
-      const testRound = { id: 'round1', roundNumber: 1, topicContent: 'テストお題' };
+      const testRound = createMockGameRound();
 
       const { result } = renderHook(() =>
         useGameEndedPresenter({ room, currentUserId: 'user1' })
@@ -143,6 +153,46 @@ describe('useGameEndedPresenter', () => {
 
       expect(mockGetAnswers).toHaveBeenCalledWith('round1', room.participants);
       expect(result.current.selectedRound).toEqual(testRound);
+    });
+  });
+
+  describe('ゲームモード', () => {
+    it('モード未設定のルームは一致モードの定義が返る', () => {
+      const room = createMockRoom('ended', [{ id: 'user1' }]);
+
+      const { result } = renderHook(() =>
+        useGameEndedPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.gameMode.mode).toBe('match');
+      expect(result.current.gameMode.successCountLabel).toBe('一致回数');
+    });
+
+    it('不一致モードのルームでは被りなしのラウンドが成功として集計される', async () => {
+      const { getGameRoundsByRoomId } = await import('@/lib/gameRoundService');
+      (getGameRoundsByRoomId as jest.Mock).mockResolvedValue([
+        createMockGameRound({ id: 'round1', roundNumber: 1, judgment: 'no-duplicate' }),
+        createMockGameRound({ id: 'round2', roundNumber: 2, judgment: 'has-duplicate' }),
+        createMockGameRound({ id: 'round3', roundNumber: 3, judgment: 'no-duplicate' }),
+      ]);
+
+      const room = { ...createMockRoom('ended', [{ id: 'user1' }]), mode: 'mismatch' as const };
+
+      const { result } = renderHook(() =>
+        useGameEndedPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      expect(result.current.gameMode.mode).toBe('mismatch');
+      expect(result.current.gameMode.successCountLabel).toBe('被りなし回数');
+      expect(result.current.gameStatistics).toEqual({
+        totalRounds: 3,
+        successRounds: 2,
+        successRate: 67,
+      });
     });
   });
 
@@ -159,6 +209,83 @@ describe('useGameEndedPresenter', () => {
       expect(result.current.selectedRound).toBeDefined();
       expect(Array.isArray(result.current.roundAnswers)).toBe(true);
       expect(typeof result.current.loadRoundAnswers).toBe('function');
+    });
+  });
+
+  describe('統計情報', () => {
+    it('成功したラウンド数と成功率が集計される', async () => {
+      const { getGameRoundsByRoomId } = await import('@/lib/gameRoundService');
+      const mockGetGameRounds = getGameRoundsByRoomId as jest.Mock;
+      mockGetGameRounds.mockResolvedValue([
+        createMockGameRound({ id: 'round1', roundNumber: 1, judgment: 'match' }),
+        createMockGameRound({ id: 'round2', roundNumber: 2, judgment: 'no-match' }),
+        createMockGameRound({ id: 'round3', roundNumber: 3, judgment: 'match' }),
+      ]);
+
+      const room = createMockRoom('ended', [{ id: 'user1' }]);
+
+      const { result } = renderHook(() =>
+        useGameEndedPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      expect(result.current.gameStatistics).toEqual({
+        totalRounds: 3,
+        successRounds: 2,
+        successRate: 67,
+      });
+    });
+
+    it('判定なしのラウンドは成功として数えない', async () => {
+      const { getGameRoundsByRoomId } = await import('@/lib/gameRoundService');
+      const mockGetGameRounds = getGameRoundsByRoomId as jest.Mock;
+      mockGetGameRounds.mockResolvedValue([
+        createMockGameRound({ id: 'round1', roundNumber: 1, judgment: 'match' }),
+        createMockGameRound({ id: 'round2', roundNumber: 2 }),
+      ]);
+
+      const room = createMockRoom('ended', [{ id: 'user1' }]);
+
+      const { result } = renderHook(() =>
+        useGameEndedPresenter({ room, currentUserId: 'user1' })
+      );
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      expect(result.current.gameStatistics).toEqual({
+        totalRounds: 2,
+        successRounds: 1,
+        successRate: 50,
+      });
+    });
+
+    it('選択したラウンドの判定結果に応じて回答の配色が変わる', async () => {
+      const { getGameRoundAnswersWithParticipants } = await import('@/lib/gameRoundService');
+      const mockGetAnswers = getGameRoundAnswersWithParticipants as jest.Mock;
+      mockGetAnswers.mockResolvedValue([]);
+
+      const room = createMockRoom('ended', [{ id: 'user1' }]);
+
+      const { result } = renderHook(() =>
+        useGameEndedPresenter({ room, currentUserId: 'user1' })
+      );
+
+      expect(result.current.answerStyle.bgColor).toBe('bg-gray-50 border-gray-200');
+
+      await act(async () => {
+        await result.current.loadRoundAnswers(createMockGameRound({ judgment: 'match' }));
+      });
+      expect(result.current.answerStyle.bgColor).toBe('bg-emerald-100 border-emerald-300');
+
+      await act(async () => {
+        await result.current.loadRoundAnswers(createMockGameRound({ judgment: 'no-match' }));
+      });
+      expect(result.current.answerStyle.bgColor).toBe('bg-rose-100 border-rose-300');
     });
   });
 
@@ -191,7 +318,7 @@ describe('useGameEndedPresenter', () => {
       mockGetAnswers.mockRejectedValue(new Error('Network error'));
 
       const room = createMockRoom('ended', [{ id: 'user1' }]);
-      const testRound = { id: 'round1', roundNumber: 1, topicContent: 'テストお題' };
+      const testRound = createMockGameRound();
 
       const { result } = renderHook(() =>
         useGameEndedPresenter({ room, currentUserId: 'user1' })

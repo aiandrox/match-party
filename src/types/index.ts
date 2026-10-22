@@ -13,9 +13,20 @@ export const GameRoundStatus = {
 } as const;
 export type GameRoundStatus = (typeof GameRoundStatus)[keyof typeof GameRoundStatus];
 
+// ゲームモード（未設定は match として扱う）
+export const GameMode = {
+  MATCH: "match", // みんなで一致を目指す
+  MISMATCH: "mismatch", // みんなとズラす（被らない回答を目指す）
+} as const;
+export type GameMode = (typeof GameMode)[keyof typeof GameMode];
+
 export const JudgmentResult = {
+  // 一致モードの判定
   MATCH: "match",
   NO_MATCH: "no-match",
+  // 不一致モードの判定
+  NO_DUPLICATE: "no-duplicate",
+  HAS_DUPLICATE: "has-duplicate",
 } as const;
 export type JudgmentResult = (typeof JudgmentResult)[keyof typeof JudgmentResult];
 
@@ -30,6 +41,7 @@ export interface Room {
   id: string;
   code: string;
   status: RoomStatus;
+  mode?: GameMode; // 未設定は GameMode.MATCH として扱う（既存ルームとの後方互換）
   participants: User[];
   currentGameRoundId?: string;
   createdAt: Date;
@@ -61,6 +73,14 @@ export interface JoinRoomResponse {
 
 // Game History types
 
+// ラウンドの回答（未回答者も含む）
+export interface RoundAnswer {
+  content: string;
+  userName: string;
+  submittedAt: Date | null;
+  hasAnswered: boolean;
+}
+
 export interface GameRound {
   id: string;
   roomId: string;
@@ -68,14 +88,6 @@ export interface GameRound {
   roundNumber: number;
   status: GameRoundStatus;
   judgment?: JudgmentResult;
-  facilitationSuggestions?: Array<{
-    id: string;
-    type: string;
-    target?: string;
-    message: string;
-    priority: number;
-    category: string;
-  }>;
   createdAt: Date;
 }
 

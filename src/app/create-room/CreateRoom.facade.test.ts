@@ -74,13 +74,28 @@ describe('useCreateRoomFacade', () => {
       const { result } = renderHook(() => useCreateRoomFacade());
 
       await act(async () => {
-        await result.current.createRoom('テストホスト');
+        await result.current.createRoom('テストホスト', 'match');
       });
 
-      expect(mockCreateRoom).toHaveBeenCalledWith('テストホスト');
+      expect(mockCreateRoom).toHaveBeenCalledWith('テストホスト', 'match');
       expect(mockPush).toHaveBeenCalledWith('/room?code=ABC123DEF456GHI789JK');
       expect(result.current.isLoading).toBe(false);
       expect(result.current.error).toBeNull();
+    });
+
+    it('選択したゲームモードがそのままルーム作成に渡される', async () => {
+      mockCreateRoom.mockResolvedValue({
+        roomCode: 'ABC123DEF456GHI789JK',
+        hostUserId: 'user123',
+      });
+
+      const { result } = renderHook(() => useCreateRoomFacade());
+
+      await act(async () => {
+        await result.current.createRoom('テストホスト', 'mismatch');
+      });
+
+      expect(mockCreateRoom).toHaveBeenCalledWith('テストホスト', 'mismatch');
     });
 
     it('ルーム作成が成功した場合、入力した名前が次回のために保存される', async () => {
@@ -92,7 +107,7 @@ describe('useCreateRoomFacade', () => {
       const { result } = renderHook(() => useCreateRoomFacade());
 
       await act(async () => {
-        await result.current.createRoom('テストホスト');
+        await result.current.createRoom('テストホスト', 'match');
       });
 
       expect(mockLocalStorage.saveUserName).toHaveBeenCalledWith('テストホスト');
@@ -105,7 +120,7 @@ describe('useCreateRoomFacade', () => {
 
       await act(async () => {
         try {
-          await result.current.createRoom('テストホスト');
+          await result.current.createRoom('テストホスト', 'match');
         } catch {
           // エラーは期待されるので無視
         }
@@ -124,7 +139,7 @@ describe('useCreateRoomFacade', () => {
       const { result } = renderHook(() => useCreateRoomFacade());
 
       act(() => {
-        result.current.createRoom('テストホスト');
+        result.current.createRoom('テストホスト', 'match');
       });
 
       expect(result.current.isLoading).toBe(true);
@@ -149,7 +164,7 @@ describe('useCreateRoomFacade', () => {
 
       await act(async () => {
         try {
-          await result.current.createRoom('テストホスト');
+          await result.current.createRoom('テストホスト', 'match');
         } catch {
           // エラーは期待されるので無視
         }
@@ -174,7 +189,7 @@ describe('useCreateRoomFacade', () => {
 
       // 実行開始
       act(() => {
-        result.current.createRoom('テストホスト');
+        result.current.createRoom('テストホスト', 'match');
       });
 
       expect(result.current.isLoading).toBe(true);
@@ -211,7 +226,7 @@ describe('useCreateRoomFacade', () => {
 
       await act(async () => {
         try {
-          await result.current.createRoom('テストホスト');
+          await result.current.createRoom('テストホスト', 'match');
         } catch {
           // エラーは期待されるので無視
         }
@@ -227,7 +242,7 @@ describe('useCreateRoomFacade', () => {
 
       await act(async () => {
         try {
-          await result.current.createRoom('テストホスト');
+          await result.current.createRoom('テストホスト', 'match');
         } catch {
           // エラーは期待されるので無視
         }
@@ -243,7 +258,7 @@ describe('useCreateRoomFacade', () => {
 
       await act(async () => {
         try {
-          await result.current.createRoom('テストホスト');
+          await result.current.createRoom('テストホスト', 'match');
         } catch {
           // エラーは期待されるので無視
         }

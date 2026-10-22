@@ -1,9 +1,9 @@
 import React, { memo } from "react";
 import { Room, TopicFeedbackRating } from "@/types";
+import { isSuccessJudgment } from "@/lib/judgment";
 import { useRevealingAnswersPresenter } from "./RevealingAnswers.presenter";
 import { FacilitationSuggestions } from "./FacilitationSuggestions.component";
 import { ReactionBar } from "./ReactionBar.component";
-import { useFacilitation } from "../hooks/useFacilitation";
 import { useReactions } from "@/hooks/useReactions";
 
 interface RevealingAnswersViewProps {
@@ -17,6 +17,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
     currentGameRoundId,
     allAnswers,
     hostJudgment,
+    gameMode,
     isHost,
     isStartingNextRound,
     isEndingGame,
@@ -25,45 +26,22 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
     endGame,
     judgmentStyle,
     hasAnimated,
+    suggestions,
+    isFacilitationLoading,
+    facilitationError,
+    generateFacilitation,
+    isFacilitationAvailable,
+    facilitationFallbackText,
     feedbackSent,
     isSubmittingFeedback,
     submitTopicFeedback,
   } = useRevealingAnswersPresenter({ room, currentUserId });
-
-  const {
-    suggestions,
-    isLoading: isFacilitationLoading,
-    error: facilitationError,
-    generateSuggestions,
-    clearSuggestions,
-  } = useFacilitation();
 
   const { displayReactions, sendReaction, cooldown } = useReactions(
     currentGameRoundId,
     currentUserId,
     room.participants.find((p) => p.id === currentUserId)?.name ?? null
   );
-
-  const handleGenerateFacilitation = async () => {
-    if (!currentTopicContent || !room.code) return;
-
-    await generateSuggestions({
-      answers: allAnswers,
-      topicContent: currentTopicContent.content,
-      roomCode: room.code,
-      roundNumber: currentTopicContent.round,
-    });
-  };
-
-  const handleStartNextRound = () => {
-    clearSuggestions(); // 次のラウンド開始時に提案をクリア
-    startNextRound();
-  };
-
-  const handleEndGame = () => {
-    clearSuggestions(); // ゲーム終了時に提案をクリア
-    endGame();
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -130,13 +108,13 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
       {/* 判定結果表示 */}
       {hostJudgment && (
         <div className="mb-6 text-center">
-          {hostJudgment === "match" ? (
+          {isSuccessJudgment(hostJudgment) ? (
             <h3
               className={`text-3xl font-bold text-green-800 mb-2 ${
                 !hasAnimated ? "animate-match-text" : ""
               }`}
             >
-              🎉✨ 全員一致 ✨🎉
+              {gameMode.successHeading}
             </h3>
           ) : (
             <h3
@@ -144,7 +122,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
                 !hasAnimated ? "animate-no-match-text" : ""
               }`}
             >
-              💥 全員一致ならず 💥
+              {gameMode.failureHeading}
             </h3>
           )}
         </div>
@@ -180,31 +158,39 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
         cooldown={cooldown}
       />
 
-      {/* ファシリテーション提案 */}
-      <FacilitationSuggestions
-        suggestions={suggestions}
-        isLoading={isFacilitationLoading}
-        error={facilitationError}
-        onGenerateSuggestions={handleGenerateFacilitation}
-        isHost={isHost}
-      />
+      {/* ファシリテーション提案（AI の会話のヒント）。使わないモードでは固定文を表示 */}
+      {isFacilitationAvailable ? (
+        <FacilitationSuggestions
+          suggestions={suggestions}
+          isLoading={isFacilitationLoading}
+          error={facilitationError}
+          onGenerateSuggestions={generateFacilitation}
+          isHost={isHost}
+        />
+      ) : (
+        facilitationFallbackText && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 text-center">
+            <p className="text-gray-700 text-sm">💬 {facilitationFallbackText}</p>
+          </div>
+        )
+      )}
 
-      {/* ホストのみに一致判定ボタンを表示 */}
+      {/* ホストのみに判定ボタンを表示（文言・判定値はモード定義に従う） */}
       {isHost && !hostJudgment && (
         <div className="text-center mb-6">
-          <p className="text-gray-700 font-medium mb-4">回答の一致を判定してください</p>
+          <p className="text-gray-700 font-medium mb-4">{gameMode.judgmentPrompt}</p>
           <div className="flex justify-center gap-4">
             <button
-              onClick={() => submitJudgment("match")}
+              onClick={() => submitJudgment(gameMode.successJudgment)}
               className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
             >
-              全員一致
+              {gameMode.successButtonLabel}
             </button>
             <button
-              onClick={() => submitJudgment("no-match")}
+              onClick={() => submitJudgment(gameMode.failureJudgment)}
               className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium transition-colors"
             >
-              全員一致ならず
+              {gameMode.failureButtonLabel}
             </button>
           </div>
         </div>
@@ -215,7 +201,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
         <div className="text-center space-y-4">
           <div className="flex justify-center gap-4">
             <button
-              onClick={handleStartNextRound}
+              onClick={startNextRound}
               disabled={isStartingNextRound}
               className={`px-6 py-3 rounded-lg font-medium transition-colors ${
                 !isStartingNextRound
@@ -226,7 +212,7 @@ export const RevealingAnswersView = memo(({ room, currentUserId }: RevealingAnsw
               {isStartingNextRound ? "開始中..." : "次のラウンド"}
             </button>
             <button
-              onClick={handleEndGame}
+              onClick={endGame}
               disabled={isEndingGame}
               className={`px-6 py-3 rounded-lg font-medium transition-colors ${
                 !isEndingGame
